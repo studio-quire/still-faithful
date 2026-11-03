@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.lighting.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ChunkMixin",
+    "GeneratorDecorateMixin",
+    "LightUpdateMixin",
+    "WorldMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

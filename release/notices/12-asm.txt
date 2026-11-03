@@ -1,0 +1,4 @@
+ASM 9.10.1
+  libraries/asm-*.jar (asm, asm-analysis, asm-commons, asm-tree, asm-util). Reads and writes Java bytecode for the
+  loader and Mixin. By INRIA, France Telecom and the ASM contributors. https://asm.ow2.io/
+  BSD 3-Clause: licenses/common/ASM-BSD-3-Clause.txt.

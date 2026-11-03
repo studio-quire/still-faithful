@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-polish-selftest",
+  "version": "1",
+  "name": "Still Faithful self-test (test harness only, not shipped)",
+  "environment": "client",
+  "entrypoints": {
+    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.polish.selftest.StillCheck", "org.studioquire.oldfaithful.polish.selftest.DuskCheck"]
+  },
+  "mixins": ["oldfaithful-polish-selftest.mixins.json"],
+  "depends": {
+    "oldfaithful-selftest": "*",
+    "stillfaithful-polish": "*"
+  }
+}

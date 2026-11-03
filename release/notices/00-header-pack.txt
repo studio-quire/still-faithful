@@ -1,0 +1,13 @@
+Pure Faithful @VERSION@: notices
+================================
+
+Pure Faithful is open source under the MIT licence (licenses/pure-faithful/LICENSE.txt): the purefaithful-* mods in
+.minecraft/mods, and the LWJGL 2 API and launcher setup in libraries/purefaithful-lwjgl-@VERSION@.jar. Source code:
+https://github.com/@REPO@
+
+Minecraft is not included. Your launcher downloads it from Mojang with your own account. Pure Faithful is not an
+official Minecraft product, and is not approved by or associated with Mojang or Microsoft.
+
+The pack also contains software by others, listed below: what each is, where it is in this folder, its licence,
+and where the licence text is. Where a licence asks for the source code to come with the program, it is in
+sources/ (see sources/README.txt).

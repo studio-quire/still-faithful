@@ -1,0 +1,51 @@
+rootProject.name = 'old-faithful'
+
+// Everything resolves from our own mirror in local/mirror/maven (docs/mirror.md), filled by `python tools/mirror.py
+// sync` and checked against gradle/verification-metadata.xml. `-Poldfaithful.upstream` resolves from the original
+// repositories instead, for adding or updating a dependency: HTTPS, and each repository limited to the groups we
+// expect from it, so a compromised or confused one can't serve some other artifact. buildSrc/build.gradle has the
+// same two modes.
+dependencyResolutionManagement {
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+    repositories {
+        def mirror = file('local/mirror/maven')
+        if (providers.gradleProperty('oldfaithful.upstream').isPresent()) {
+            // Our own builds (natives/build.py) only ever come from the mirror, never from a public repository.
+            exclusiveContent {
+                forRepository { maven { name = 'OldFaithfulMirror'; url = mirror; metadataSources { gradleMetadata(); mavenPom() } } }
+                filter { includeGroupByRegex 'org\\.studioquire(\\..*)?' }
+            }
+            exclusiveContent {
+                forRepository { maven { name = 'Babric'; url = 'https://maven.glass-launcher.net/babric/' } }
+                filter { includeGroup 'babric' }
+            }
+            exclusiveContent {
+                forRepository { maven { name = 'Glass'; url = 'https://maven.glass-launcher.net/releases/' } }
+                filter { includeGroup 'net.glasslauncher' }
+            }
+            exclusiveContent {
+                forRepository { maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' } }
+                filter { includeGroup 'net.fabricmc' }
+            }
+            mavenCentral()
+        } else {
+            // Gradle module metadata first: the mirror holds exactly the pinned files, and for modules published with
+            // it, that's the .module without the .pom that would otherwise only point Gradle to it.
+            maven { name = 'OldFaithfulMirror'; url = mirror; metadataSources { gradleMetadata(); mavenPom() } }
+        }
+    }
+}
+
+include 'oldfaithful-hardening'
+include 'oldfaithful-lwjgl'
+include 'oldfaithful-display'
+include 'oldfaithful-speed'
+include 'oldfaithful-saves'
+// The Fixed edition's own mods (Old Faithful). Not in Pure Faithful's public snapshot until Old Faithful is released
+// (tools/publish/rules.py), so they're included only where they exist.
+['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options'].each { if (file(it).isDirectory()) include it }
+// Still Faithful's own mod (the third edition): private for now (tools/publish/rules.py), so included only where it exists.
+if (file('oldfaithful-polish').isDirectory()) include 'oldfaithful-polish'
+// Test-only bug hunts (hunt/): private (tools/publish/rules.py), so included only where it exists.
+if (file('hunt').isDirectory()) include 'hunt'
+include 'harness'

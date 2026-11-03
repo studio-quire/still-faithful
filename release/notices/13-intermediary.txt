@@ -1,0 +1,4 @@
+Babric's intermediary mappings for b1.7.3
+  libraries/intermediary-upstream-b1.7.3-v2.jar. Stable names for the game's classes, so mods work across launches.
+  By the Babric project. https://github.com/babric/intermediary
+  CC0 1.0 (public domain dedication): licenses/common/CC0-1.0.txt.

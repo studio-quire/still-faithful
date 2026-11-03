@@ -1,0 +1,14 @@
+# The same test machine on a current distribution (Ubuntu 24.04: glibc 2.39, Mesa 24/25), so our natives meet
+# today's system libraries too (tools/in_linux.py).
+FROM ubuntu:24.04@sha256:fe81560990fae86dc4743202b2cb4d3df98d0bcf949173cecef15ce1127ef852
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      xvfb libgl1 libegl1 libgl1-mesa-dri libglx-mesa0 \
+      libx11-6 libxext6 libxrandr2 libxcursor1 libxfixes3 libxi6 libxss1 libxtst6 libxrender1 libxkbcommon0 \
+      libasound2t64 libpulse0 libdbus-1-3 fontconfig fonts-dejavu-core procps curl ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+RUN curl -fsSL -o /tmp/jdk.tar.gz https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz \
+    && echo "d7f5d5cf865a2902b70ff549b97586a7d3f234e016f041ab447ea740c7d66d1c  /tmp/jdk.tar.gz" | sha256sum -c - \
+    && mkdir /opt/jdk21 && tar -xzf /tmp/jdk.tar.gz -C /opt/jdk21 --strip-components=1 && rm /tmp/jdk.tar.gz
+COPY run.sh /usr/local/bin/oldfaithful-run
+RUN chmod 755 /usr/local/bin/oldfaithful-run
+ENTRYPOINT ["/usr/local/bin/oldfaithful-run"]

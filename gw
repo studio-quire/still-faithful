@@ -1,0 +1,5 @@
+#!/bin/sh
+# Runs the Gradle wrapper with the portable JDK in local/tools/jdk21 when present (docs/building.md).
+here="$(cd "$(dirname "$0")" && pwd)"
+[ -d "$here/local/tools/jdk21" ] && export JAVA_HOME="$here/local/tools/jdk21"
+exec "$here/gradlew" "$@"

@@ -1,0 +1,192 @@
+plugins {
+    id 'oldfaithful.minecraft'
+}
+
+// What our instance puts on the game's classpath and in its natives folder, besides Minecraft (which Prism fetches
+// from Mojang) and our mods. All of it comes from our mirror, pinned in gradle/verification-metadata.xml.
+configurations {
+    loaderLibraries { transitive = false }
+    lwjglLibraries { transitive = false }
+    sdlNatives { transitive = false }
+}
+dependencies {
+    loaderLibraries "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderLibraries "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderLibraries "org.ow2.asm:${it}:${asm_version}"
+    }
+    lwjglLibraries "org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}"
+    lwjglLibraries "org.studioquire.oldfaithful.natives:lwjgl_util:${lwjgl_version}"
+    lwjglLibraries "org.studioquire.oldfaithful.natives:lwjgl-platform:${lwjgl_version}:natives-windows"
+    lwjglLibraries "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-windows"
+    // Phase 3's component: the natives beside our LWJGL jar (oldfaithful-lwjgl).
+    sdlNatives "org.studioquire.oldfaithful.natives:lwjgl3:${lwjgl3_natives_version}:natives-windows"
+    sdlNatives "org.studioquire.oldfaithful.natives:sdl3:${sdl3_version}:natives-windows"
+    sdlNatives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-windows-lwjgl3"
+    sdlNatives "org.studioquire.oldfaithful.natives:lwjgl3:${lwjgl3_natives_version}:natives-linux"
+    sdlNatives "org.studioquire.oldfaithful.natives:sdl3:${sdl3_version}:natives-linux"
+    sdlNatives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-linux"
+}
+
+// An importable Prism instance for the user's client checks (docs/building.md): our own components for Minecraft
+// (launch settings and Java 21), LWJGL (our builds) and Fabric Loader, every library inside the zip with Prism's
+// "local" hint, so nothing but the game itself is downloaded. Written to local/prism/, never committed.
+tasks.register('prismDevInstance', Zip) {
+    group = 'oldfaithful'
+    description = 'Builds local/prism/OldFaithful-dev.zip, a Prism instance with our mods, for client checks.'
+    def intermediaryJar = oldfaithfulMinecraft.intermediaryMappings
+    def loaderLibraries = configurations.loaderLibraries
+    def lwjglLibraries = configurations.lwjglLibraries
+    def loaderModules = ["net.fabricmc:fabric-loader:${fabric_loader_version}", "net.fabricmc:sponge-mixin:${mixin_version}"] +
+            ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].collect { "org.ow2.asm:${it}:${asm_version}" }
+    def tokens = [
+        FABRIC_LOADER_VERSION: fabric_loader_version,
+        LWJGL_VERSION        : lwjgl_version,
+        OPENAL_VERSION       : openal_version,
+        INTERMEDIARY         : intermediary,
+        MINECRAFT_CLIENT_URL : minecraft_client_url,
+        MINECRAFT_CLIENT_SHA1: minecraft_client_sha1,
+        MINECRAFT_CLIENT_SIZE: minecraft_client_size,
+        LOADER_LIBRARIES     : loaderModules.collect { "        {\"name\": \"${it}\", \"MMC-hint\": \"local\"}" }.join(',\n'),
+    ]
+    inputs.property('tokens', tokens)
+    from('prism/dev') {
+        filesMatching(['mmc-pack.json', 'patches/*.json']) {
+            filter { String line -> line.replaceAll(/@([A-Z0-9_]+)@/) { all, name -> tokens[name] } }
+        }
+    }
+    from(intermediaryJar) { into 'libraries' }
+    from(loaderLibraries) { into 'libraries' }
+    from(lwjglLibraries) { into 'libraries' }
+    from(project(':oldfaithful-hardening').tasks.named('remapJar')) { into '.minecraft/mods' }
+    from(project(':oldfaithful-saves').tasks.named('remapJar')) { into '.minecraft/mods' }
+    destinationDirectory = layout.projectDirectory.dir('local/prism')
+    archiveFileName = 'OldFaithful-dev.zip'
+}
+
+// The same instance on phase 3's component (docs/lwjgl.md): our LWJGL jar (the LWJGL 2 API on LWJGL 3 and SDL3) in
+// place of LWJGL 2, its natives, and oldfaithful-display beside the hardening mod. Imports alongside the LWJGL 2
+// one, so the two can be compared.
+tasks.register('prismSdlInstance', Zip) {
+    group = 'oldfaithful'
+    description = 'Builds local/prism/OldFaithful-sdl-dev.zip: the dev instance on our LWJGL 3 + SDL3 component.'
+    def intermediaryJar = oldfaithfulMinecraft.intermediaryMappings
+    def loaderLibraries = configurations.loaderLibraries
+    def sdlNatives = configurations.sdlNatives
+    def loaderModules = ["net.fabricmc:fabric-loader:${fabric_loader_version}", "net.fabricmc:sponge-mixin:${mixin_version}"] +
+            ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].collect { "org.ow2.asm:${it}:${asm_version}" }
+    def componentVersion = "${oldfaithful_version}+lwjgl.${lwjgl3_version}"
+    def tokens = [
+        FABRIC_LOADER_VERSION    : fabric_loader_version,
+        LWJGL_VERSION            : componentVersion,
+        OLDFAITHFUL_LWJGL_VERSION: oldfaithful_version,
+        LWJGL3_NATIVES_VERSION   : lwjgl3_natives_version,
+        SDL3_VERSION             : sdl3_version,
+        OPENAL_VERSION           : openal_version,
+        INTERMEDIARY             : intermediary,
+        MINECRAFT_CLIENT_URL     : minecraft_client_url,
+        MINECRAFT_CLIENT_SHA1    : minecraft_client_sha1,
+        MINECRAFT_CLIENT_SIZE    : minecraft_client_size,
+        LOADER_LIBRARIES         : loaderModules.collect { "        {\"name\": \"${it}\", \"MMC-hint\": \"local\"}" }.join(',\n'),
+    ]
+    inputs.property('tokens', tokens)
+    def filterTokens = { String line -> line.replaceAll(/@([A-Z0-9_]+)@/) { all, name -> tokens[name] } }
+    from('prism/dev') {
+        exclude 'instance.cfg', 'mmc-pack.json', 'patches/org.lwjgl.json'
+        filesMatching('patches/*.json') { filter filterTokens }
+    }
+    from('prism/sdl-dev') {
+        filesMatching(['mmc-pack.json', 'patches/*.json']) { filter filterTokens }
+    }
+    from(intermediaryJar) { into 'libraries' }
+    from(loaderLibraries) { into 'libraries' }
+    from(sdlNatives) { into 'libraries' }
+    from(project(':oldfaithful-lwjgl').tasks.named('bakeLwjgl').flatMap { it.output }) { into 'libraries' }
+    from(project(':oldfaithful-hardening').tasks.named('remapJar')) { into '.minecraft/mods' }
+    from(project(':oldfaithful-saves').tasks.named('remapJar')) { into '.minecraft/mods' }
+    from(project(':oldfaithful-display').tasks.named('remapJar')) { into '.minecraft/mods' }
+    from(project(':oldfaithful-speed').tasks.named('remapJar')) { into '.minecraft/mods' }
+    destinationDirectory = layout.projectDirectory.dir('local/prism')
+    archiveFileName = 'OldFaithful-sdl-dev.zip'
+}
+
+// Old Faithful (the Fixed edition) for client checks: the SDL dev instance plus the edition's own mods, under its own
+// name, so it imports beside the others; its display defaults come from oldfaithful-options. Until the edition has
+// a release pack.
+tasks.register('prismFixedInstance', Zip) {
+    group = 'oldfaithful'
+    description = 'Builds local/prism/OldFaithful-fixed-dev.zip: the SDL dev instance with the Fixed edition\'s mods.'
+    def sdl = tasks.named('prismSdlInstance')
+    dependsOn sdl
+    from({ zipTree(sdl.get().archiveFile) }) {
+        filesMatching('instance.cfg') {
+            filter { String line ->
+                line == 'name=Old Faithful (SDL dev)' ? 'name=Old Faithful (fixed dev)' :
+                line == 'iconKey=default' ? 'iconKey=oldfaithful' : line
+            }
+        }
+    }
+    // The edition's icon, the green β seal, named for iconKey as the release pack does.
+    from('prism/release/icons/final/oldfaithful-128.png') { rename { 'oldfaithful.png' } }
+    ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options'].each { name ->
+        if (findProject(":$name") != null) from(project(":$name").tasks.named('remapJar')) { into '.minecraft/mods' }
+    }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    destinationDirectory = layout.projectDirectory.dir('local/prism')
+    archiveFileName = 'OldFaithful-fixed-dev.zip'
+}
+
+
+// The server package (docs/multiplayer.md): beta 1.7.3's server, which the owner supplies, run through Fabric Loader
+// with our hardening mod; start scripts that check the server jar's hash. Written to local/server-package/, never
+// committed; :harness:multiplayerTest runs the game from it.
+// Applied inside each task's configuration, which runs lazily, after the subprojects are evaluated. The notices,
+// licences, sources and the editions come from gradle/release.gradle, as for the pack; the dev tasks here build Pure
+// Faithful's, and `releaseServerFixed` Old Faithful's (its own README and mods).
+ext.serverPackageContents = { spec, Map ed = releaseEditions.pure ->
+  spec.with(copySpec {
+    def tokens = releaseFilter(ed)
+    from('server') {
+        if (ed.serverReadme != 'server/README.txt') exclude 'README.txt'
+        filesMatching(['*.bat', '*.sh', '*.txt']) { filter tokens }
+        filesMatching(['*.bat', '*.txt']) { filter(org.apache.tools.ant.filters.FixCrLfFilter, eol: org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance('crlf')) }
+        filesMatching('*.sh') {
+            filter(org.apache.tools.ant.filters.FixCrLfFilter, eol: org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance('lf'))
+            filePermissions { unix('rwxr-xr-x') }
+        }
+    }
+    if (ed.serverReadme != 'server/README.txt') {
+        from(ed.serverReadme) {
+            rename { 'README.txt' }
+            filter tokens
+            filter(org.apache.tools.ant.filters.FixCrLfFilter, eol: org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance('crlf'))
+        }
+    }
+    from(oldfaithfulMinecraft.intermediaryMappings) { into 'libraries' }
+    from(configurations.loaderLibraries) { into 'libraries' }
+    ed.serverMods.each { from(project(":${it}").tasks.named('remapJar')) { into 'mods' } }
+    with licencesSpec(false, ed)
+    with sourcesSpec(false, ed)
+  })
+}
+tasks.register('serverPackage', Sync) {
+    group = 'oldfaithful'
+    description = 'Builds local/server-package/OldFaithful-server/: the hardened b1.7.3 server package (bring your own server jar).'
+    inputs.property('serverSha1', minecraft_server_sha1)
+    serverPackageContents(it)
+    includeEmptyDirs = false
+    into layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+}
+tasks.register('serverPackageZip', Zip) {
+    group = 'oldfaithful'
+    description = 'Zips the server package into local/server-package/OldFaithful-server.zip.'
+    inputs.property('serverSha1', minecraft_server_sha1)
+    into('OldFaithful-server') { serverPackageContents(it) }
+    includeEmptyDirs = false
+    destinationDirectory = layout.projectDirectory.dir('local/server-package')
+    archiveFileName = 'OldFaithful-server.zip'
+}
+
+apply from: 'gradle/release.gradle'
+// Still Faithful, the third edition (private for now): its pack and dev instance, where its files exist.
+if (file('gradle/still-faithful.gradle').isFile()) apply from: 'gradle/still-faithful.gradle'

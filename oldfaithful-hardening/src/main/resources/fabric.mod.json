@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "purefaithful-hardening",
+  "version": "${version}",
+  "name": "Pure Faithful Hardening",
+  "description": "Closes b1.7.3's network holes: sounds, skins and logins over HTTPS from Mojang, checked by hash, with no file written outside its folder and no access token sent in cleartext or printed; keeps a log of the client's output in logs/purefaithful.",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/purefaithful-hardening/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "preLaunch": ["org.studioquire.oldfaithful.hardening.log.GameLog"]
+  },
+  "mixins": ["oldfaithful-hardening.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  }
+}

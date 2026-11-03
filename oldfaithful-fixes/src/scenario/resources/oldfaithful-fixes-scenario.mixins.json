@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.fixes.scenario.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "server": ["NaturalSpawnerInvoker", "WorldQueueAccessor", "WorldTickMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

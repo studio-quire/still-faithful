@@ -1,0 +1,175 @@
+{
+ "about": "Mods whose org.lwjgl references the link check resolves against our LWJGL component: popular b1.7.3 Babric mods on Modrinth, by downloads (2026-11-01), latest b1.7.3 versions. Fetched by URL, kept only if the SHA-512 matches. Pylon is left out: it is itself an LWJGL replacement.",
+ "mods": [
+  {
+   "slug": "stationapi",
+   "version": "2.0.0-alpha.6.4",
+   "date": "2026-09-05",
+   "file": "StationAPI-2.0.0-alpha.6.4.jar",
+   "url": "https://cdn.modrinth.com/data/472oW63Q/versions/VJqorUPj/StationAPI-2.0.0-alpha.6.4.jar",
+   "sha512": "0fbce98e30e2a0fc53b5afe64fcba1c3bb0ba5f8502584fe1b132226b28c545b38f982731a87094bae4ba20ed22c6f078713a425b414bdc4b6f705c0a8e69269"
+  },
+  {
+   "slug": "modmenu-beta",
+   "version": "1.8.5-beta.11",
+   "date": "2025-01-24",
+   "file": "modmenu-1.8.5-beta.11.jar",
+   "url": "https://cdn.modrinth.com/data/6v8kVRE3/versions/YFZrfL26/modmenu-1.8.5-beta.11.jar",
+   "sha512": "695dd8e040991c5a711d5446712255f5745cffc097d12a19767042b64120c8920b84084fbce46f5bc24b9605a6550e4936469ac423e7bef9687c0f3a9488905d"
+  },
+  {
+   "slug": "modmenu-babric",
+   "version": "1.1.1",
+   "date": "2025-12-11",
+   "file": "modmenu-1.1.1.jar",
+   "url": "https://cdn.modrinth.com/data/vf3X9pHM/versions/eqQFtReE/modmenu-1.1.1.jar",
+   "sha512": "264409277a9b5f0377ec1241e54545764de2dc1a6aad1eca64db3d4109e67978c8fbc1128db502e4e87a10e9168ab174ca028a5f71c78ad431905c8989dcbac3"
+  },
+  {
+   "slug": "smoothbeta",
+   "version": "1.1.8",
+   "date": "2026-09-11",
+   "file": "SmoothBeta-1.1.8.jar",
+   "url": "https://cdn.modrinth.com/data/pocqBhPk/versions/BYDgQlSb/SmoothBeta-1.1.8.jar",
+   "sha512": "43e8598b78b53e9d6860b7a5e0cbf4cbab1964cac11b0928cac716c8b07e5c5766793de46ffbc8fffd9c50954a95ae6ebbd7ad2168ef6ae2a8f3051996390227"
+  },
+  {
+   "slug": "unitweaks",
+   "version": "0.31.0",
+   "date": "2026-09-16",
+   "file": "UniTweaks-0.31.0.jar",
+   "url": "https://cdn.modrinth.com/data/1pyTGaA4/versions/d86KBsHi/UniTweaks-0.31.0.jar",
+   "sha512": "51cc6a1328b014aece4a4bc34a86381cb603d78a499348da1a116bb2deadd5a91776917748f0c8bc4793fdcf35de4c800aed39a2a8523c58a12a5cce9899b07f"
+  },
+  {
+   "slug": "mojangfix-stationapi-edition",
+   "version": "2.4.5",
+   "date": "2026-09-01",
+   "file": "mojangfixstationapi-2.4.5.jar",
+   "url": "https://cdn.modrinth.com/data/cTg2WC1D/versions/T9SQ75b1/mojangfixstationapi-2.4.5.jar",
+   "sha512": "427daa8e85f96a855cab833d97aed336ad18f95c3a2332b1cff223033b1efa90fe15ef36eb2787b3194e7b4de13eeb727b6a2c20fbcc9f3a77a65f295b0fc368"
+  },
+  {
+   "slug": "glass-config-api",
+   "version": "3.2.5",
+   "date": "2025-09-17",
+   "file": "GlassConfigAPI-3.2.5.jar",
+   "url": "https://cdn.modrinth.com/data/rFeWTq4G/versions/OWPc554s/GlassConfigAPI-3.2.5.jar",
+   "sha512": "c2851e1e2f2c680a5b903a78a22cfdc81119963a00f9111ba8a470fa4b7679a7744c664a9b70aa276caf8fc0b1ca5d869c2290245438cf38db4a8ad7bb78f4f7"
+  },
+  {
+   "slug": "omnilook",
+   "version": "0.2.1",
+   "date": "2026-04-19",
+   "file": "omnilook-0.2.1.jar",
+   "url": "https://cdn.modrinth.com/data/PebRjBL7/versions/4ablvWsr/omnilook-0.2.1.jar",
+   "sha512": "d807709044627025b31857a9fa37c0bf17f0f6d3b8c96158ad98ba8e310da29f3b33420fa40af55cfb25f3ece46dfa281c5d2026b6b8935e7a52ef7e7d7f3178"
+  },
+  {
+   "slug": "fullscreen-tweaks",
+   "version": "0.1.0+b1.7.3-babric",
+   "date": "2026-06-16",
+   "file": "stop_minimizing_on_focus_loss-0.1.0+b1.7.3-babric.jar",
+   "url": "https://cdn.modrinth.com/data/Brn4WjBD/versions/f5dId25E/stop_minimizing_on_focus_loss-0.1.0%2Bb1.7.3-babric.jar",
+   "sha512": "710fc7a118aedf144eb52425c91568c3792f281a637a8ccffce952b626c4183bc478b36831ed5c53dd8ff500376eca93388f54395345504084ef77a45c9244db"
+  },
+  {
+   "slug": "inventorytweaks",
+   "version": "2.6.2",
+   "date": "2026-10-10",
+   "file": "InventoryTweaks-2.6.2.jar",
+   "url": "https://cdn.modrinth.com/data/wHcBlPi1/versions/HE8NpKcy/InventoryTweaks-2.6.2.jar",
+   "sha512": "d5cff0dd33d843cf55007413d90ea7c2bfdbb61997aea07755c1abdcfc0977b0cc5f919bceb48254efae4a0943661583efff700b9d4118ea65e80f677447c166"
+  },
+  {
+   "slug": "catalyst",
+   "version": "1.3.3+stapi",
+   "date": "2026-06-02",
+   "file": "catalyst-all-1.3.3+stapi.jar",
+   "url": "https://cdn.modrinth.com/data/vT5p53cB/versions/4dKMkJpd/catalyst-all-1.3.3%2Bstapi.jar",
+   "sha512": "00010d53be0eebd3a6782dcaff570a1811100ae905070653c9f80042e2868eb8dca32079f36370adc34ca30a7e63493b7df05ad171709ba6d0238b751dd54f99"
+  },
+  {
+   "slug": "thirdpersonfix-babric",
+   "version": "1.1.1",
+   "date": "2024-09-30",
+   "file": "third-person-fix-1.1.1.jar",
+   "url": "https://cdn.modrinth.com/data/ros9lAuk/versions/tk9tDFz1/third-person-fix-1.1.1.jar",
+   "sha512": "cac86da806a823fb5841a07f0af93c73fe97a2bd6f123017a712585ff7d0ebbe02c13857c7a15fce5f27ea3b471c72ac0af630f3fcea185c2b62e4f0abd6d1ad"
+  },
+  {
+   "slug": "font-fixer",
+   "version": "b1.7.3-2-Fabric",
+   "date": "2025-06-01",
+   "file": "FontFixer-b1.7.3-2-Fabric.jar",
+   "url": "https://cdn.modrinth.com/data/uXRLUJiN/versions/ER2u0RjP/FontFixer-b1.7.3-2-Fabric.jar",
+   "sha512": "73eb647599ffa16bf991efec609b23c7beb0833e369cdd25a52b668adec16c5ad2ee856bdc4f765343c0a10a49aa891cf3831f9df1a314feae4d8d05dfaffd38"
+  },
+  {
+   "slug": "retrocommands",
+   "version": "0.7.5+babric",
+   "date": "2026-08-03",
+   "file": "retrocommands-0.7.5-babric.jar",
+   "url": "https://cdn.modrinth.com/data/wIWtkL0s/versions/SnMFQeIQ/retrocommands-0.7.5-babric.jar",
+   "sha512": "4f10f534d91c6a030a9bbba7f0e3fdd63aa0f407db0fb062d6ed231d2e74001281cb61ab5396d00b507c52294bafffebe9c78d9084c84ec1c2192465a88b8938"
+  },
+  {
+   "slug": "ears",
+   "version": "1.4.7+stapi-b1.7.3",
+   "date": "2025-06-17",
+   "file": "ears-stapi-b1.7.3-1.4.7.jar",
+   "url": "https://cdn.modrinth.com/data/mfzaZK3Z/versions/e84truih/ears-stapi-b1.7.3-1.4.7.jar",
+   "sha512": "8a18fc932055166ec122d74c0c9d3dcff13c44b8fabab6a93173d77c111659e0a2437b63b94c40f0062fe8b79591c6c59772a60f1ae4283dd0380e2d77df90d2"
+  },
+  {
+   "slug": "windows-priority-boost",
+   "version": "1.0.0",
+   "date": "2026-08-04",
+   "file": "WindowsPriorityBoost-1.0.0.jar",
+   "url": "https://cdn.modrinth.com/data/7ZoK90Xo/versions/ZKOItDNB/WindowsPriorityBoost-1.0.0.jar",
+   "sha512": "ff6d522295a0d80ead6dbce4d7d4823aa07c6e81110b4835e44f884849665d49f675e5a88f08e23b966e76bbd34cc56f5e54d2a66a2fd8fcdd512c880fa5d2d5"
+  },
+  {
+   "slug": "block-helper",
+   "version": "b1.7.3-2.0.0-pre14",
+   "date": "2026-10-11",
+   "file": "BlockHelper-b1.7.3-2.0.0-pre14-client.jar",
+   "url": "https://cdn.modrinth.com/data/CiDIVfkf/versions/jluJgejE/BlockHelper-b1.7.3-2.0.0-pre14-client.jar",
+   "sha512": "1d11908f0a9b3a6098903a9f7841ad10e9c432dfcee1124300f86b8db656e3cb4a1fb10de7adf6ec890c2a02fe4c72cb33a76de583eced12d17772ae6d93dc2c"
+  },
+  {
+   "slug": "bh-creative",
+   "version": "0.4.9",
+   "date": "2025-05-13",
+   "file": "BHCreative-0.4.9.jar",
+   "url": "https://cdn.modrinth.com/data/MTea0HEh/versions/reBNQY2O/BHCreative-0.4.9.jar",
+   "sha512": "8f421c6258c33dce35b7b4b7fc9b5d775b95955e97a162d801c2306ea2eaef00b68955d5bf2862076f4b5a37c8dd3c823678651ee3c642e71e45fc0ee893e4f8"
+  },
+  {
+   "slug": "glass-networking",
+   "version": "1.0.6",
+   "date": "2025-04-11",
+   "file": "glass-networking-1.0.6.jar",
+   "url": "https://cdn.modrinth.com/data/2r34vF2R/versions/fxBpnrp3/glass-networking-1.0.6.jar",
+   "sha512": "db3e2c7660d8692399853b562eb95fed5d1532f6e9206a0f05d06f2a0ae2022018f29ffac782ce70bc208f3e53534a8cfb8d4a7886ff6de19a980dc395af0b6e"
+  },
+  {
+   "slug": "viewbobbingmod",
+   "version": "1.0.0",
+   "date": "2025-08-14",
+   "file": "no_screen_bobbing-1.0.0.jar",
+   "url": "https://cdn.modrinth.com/data/VLMZgNEJ/versions/GCGKQSfu/no_screen_bobbing-1.0.0.jar",
+   "sha512": "d5f7c995be5f782ac24f9078b96431b4cf2c547e6f4a64f9a42434c4e534c442b56c054d4ae22000f2935b920742c6d71e24d459d01614142fbd3f3834bbf3ec"
+  }
+ ],
+ "expected": [
+  {
+   "ref": "@org/lwjgl/opengl/WindowsDisplay",
+   "why": "fullscreen-tweaks mixes into LWJGL 2's internal Windows window class to stop minimise-on-focus-loss; SDL is told not to minimise instead"
+  },
+  {
+   "ref": "@org/lwjgl/opengl/LinuxDisplay",
+   "why": "fullscreen-tweaks, the same for Linux"
+  }
+ ]
+}

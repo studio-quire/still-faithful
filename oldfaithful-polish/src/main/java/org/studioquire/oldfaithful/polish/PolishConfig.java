@@ -1,0 +1,210 @@
+package org.studioquire.oldfaithful.polish;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+
+import net.fabricmc.loader.api.FabricLoader;
+import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
+import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+
+/**
+ * config/stillfaithful-polish.properties: one switch per change, all on by default (they're the edition's). A change
+ * that's off isn't applied at all (its mixins are skipped), as Old Faithful's fixes are: turning one off also clears it
+ * out of the way of another mod. Each change's mixins live in their own package under {@code mixin}, named in
+ * {@link #CHANGES}; {@code mixin.edition} (the edition's name on screen) is always in. The file is written with
+ * explanations if missing; a switch it lacks (written by an older version) is appended.
+ */
+public final class PolishConfig implements IMixinConfigPlugin {
+	static final String FILE = "stillfaithful-polish.properties";
+	private static final String ALWAYS = "edition";
+	/** The background autosave relies on Pure Faithful's crash-safe region writes (BackgroundSaves). */
+	private static final String SAVES_KEY = "saves.backgroundAutosave", SAVES_PACKAGE = "autosave";
+	/** #6 is a choice rather than a switch: stepped or smooth (the dusk mixins in; DuskLight), or beta (off). */
+	public static final String DUSK_KEY = "sky.dusk";
+	private static final String HEADER = "# stillfaithful-polish: Still Faithful's changes, what later versions improved while beta stayed beta.\n"
+			+ "# false (for sky.dusk, beta) leaves that part of the game exactly as beta had it. Restart the game after changing\n"
+			+ "# anything here (the settings screen, Options > Still Faithful..., writes this file too).\n"
+			+ "# In multiplayer, changes to the world (drops, leaves, water, boats, animals, saving) take effect where the world\n"
+			+ "# runs: on the server. Changes to what you see take effect on your client.\n";
+
+	/** Key, mixin package, explanation (docs/bugs.md entry), and the default where it isn't true. */
+	private static final String[][] CHANGES = {
+			{"blocks.stairsDropStairs", "stairs",
+					"# #13: stairs dropped their material (a plank, a cobblestone) instead of the stairs, from a recipe of six\n"
+					+ "# blocks for four stairs. With this, they drop themselves.\n"},
+			{"leaves.placedStay", "leaves",
+					"# #24: leaves you placed decayed unless a log was near (they were placed already marked to decay). With this,\n"
+					+ "# placed leaves never decay; leaves on trees still do. Placed leaves carry a mark in their data that\n"
+					+ "# beta ignores, so the world still opens in beta.\n"},
+			{"glowstone.anyTool", "glowstone",
+					"# #10: glowstone dropped nothing unless mined with a pickaxe. With this, it drops by hand or with any tool,\n"
+					+ "# as from 1.0 (and mines at the speed 1.0 had). In multiplayer, mining is faster only on a server that\n"
+					+ "# has this change too; drops are the server's.\n"},
+			{"liquids.lavaThins", "lava",
+					"# #20: flowing lava cut off from its source could stay forever (three times in four it refused to thin\n"
+					+ "# out, and then never looked again). With this, it thins out, waiting four times longer each of those times.\n"
+					+ "# Lava already stuck in a world goes once something beside it changes.\n"},
+			{"liquids.waterSources", "watersources",
+					"# #20: water between two sources became a source only over solid ground, not over still water (the check\n"
+					+ "# read the wrong block). With this, it becomes one over still water too.\n"},
+			{"render.droppedItemSize", "itemsize",
+					"# #34: dropped stairs, fences, cactus, pressure plates and other blocks that aren't full cubes lay on the\n"
+					+ "# ground at twice the size of other dropped blocks.\n"},
+			{"render.bowPose", "bow",
+					"# #34: players and skeletons held a bow out flat, like any item. With this, it's held upright, like a bow.\n"},
+			{DUSK_KEY, "dusk",
+					"# #6: the light changed in eleven steps at dusk and at dawn, and each step rebuilt every chunk in view (a\n"
+					+ "# wave of rebuilding sweeping across the landscape, and a hitch). stepped: beta's eleven steps, each\n"
+					+ "# exactly as beta drew it, changing the whole view at once with nothing rebuilt. smooth: the light\n"
+					+ "# follows the time of day without steps (beta's picture at each of its steps, gliding between them).\n"
+					+ "# beta: as beta had it. stepped and smooth need OpenGL 2.0; without it, dusk is beta's. Switching between\n"
+					+ "# stepped and smooth on the settings screen takes effect at once.\n",
+					"smooth"},
+			{"boats.sturdy", "boats",
+					"# #12: a boat broke whenever it brushed a shore or a floating item at more than a slow speed. With this, only a\n"
+					+ "# real crash breaks it (hitting a wall hard at an angle; head-on bumps never broke boats, nor do they now),\n"
+					+ "# or hitting it. Floating items no longer stop it.\n"},
+			{"boats.handling", "boathandling",
+					"# #12: boats coasted on for about forty blocks after you stopped paddling and bobbed up and down at the\n"
+					+ "# surface. With this, a boat you stop paddling slows to a stop in a few blocks and rides the water\n"
+					+ "# steadily. Top speed, acceleration and turning are beta's.\n"},
+			{"minecarts.cartCollisions", "minecarts",
+					"# #31: on north-south and curved track, minecarts were walls to each other (a slip in the check meant to\n"
+					+ "# keep carts on parallel tracks apart): a cart running into another stopped dead, and a furnace cart\n"
+					+ "# couldn't push a train. East-west track worked. With this, every track works as east-west track did: carts\n"
+					+ "# on one track bump, push and boost each other, and carts side by side on parallel tracks don't.\n"},
+			{"animals.keepTended", "animals",
+					"# #4: every cow, pig, sheep and chicken could despawn once you were far enough away, penned ones included.\n"
+					+ "# With this, animals a player has dealt with (sheared, milked, saddled, dyed, ridden, carried in a boat\n"
+					+ "# or minecart, or hatched from a thrown egg) stay for good; the rest despawn as in beta. Kept animals still\n"
+					+ "# count towards how many animals the world spawns around you.\n"},
+			{"saves.backgroundAutosave", "autosave",
+					"# #14: every 2 seconds the game stopped to compress and write the chunks that had changed (and again for\n"
+					+ "# chunks unloading), a hitch while building or exploring. With this, the same saves, of the same moment,\n"
+					+ "# are compressed and written on a thread of their own, starting at once. Needs Pure Faithful's saves mod\n"
+					+ "# (purefaithful-saves), whose crash-safe writes it relies on; without it, saves stay as beta's.\n"},
+	};
+
+	private static final List<String> off = new ArrayList<>();
+	private static volatile boolean read;
+	private static String dusk = "smooth";
+
+	@Override
+	public void onLoad(String mixinPackage) {
+		read = true;
+		Properties p = new Properties();
+		File file = FabricLoader.getInstance().getConfigDir().resolve(FILE).toFile();
+		try {
+			StringBuilder add = new StringBuilder();
+			if (file.isFile()) {
+				try (InputStream in = new FileInputStream(file)) {
+					p.load(in);
+				}
+			} else {
+				file.getParentFile().mkdirs();
+				add.append(HEADER);
+			}
+			for (String[] c : CHANGES) {
+				if (!p.containsKey(c[0])) add.append('\n').append(c[2]).append(c[0]).append('=').append(fallback(c)).append('\n');
+			}
+			if (add.length() > 0) {
+				try (OutputStream out = new FileOutputStream(file, true)) {
+					out.write(add.toString().getBytes(StandardCharsets.ISO_8859_1));
+				}
+			}
+		} catch (IOException e) {
+			System.out.println("[stillfaithful-polish] WARN Could not read or write " + file + ", every change on: " + e);
+		}
+		for (String[] c : CHANGES) {
+			String v = p.getProperty(c[0], fallback(c)).trim();
+			if (DUSK_KEY.equals(c[0])) {
+				dusk = duskMode(v);
+				if (dusk.equals("beta")) off.add(c[0]);
+			} else if (!Boolean.parseBoolean(v)) {
+				off.add(c[0]);
+			}
+		}
+		if (!off.isEmpty()) System.out.println("[stillfaithful-polish] Turned off in " + file.getName() + ": " + String.join(", ", off));
+	}
+
+	private static String fallback(String[] change) {
+		return change.length > 3 ? change[3] : "true";
+	}
+
+	/** The dusk choice as read: stepped, beta, or smooth (the default) for anything else (as the settings screen reads it). */
+	static String duskMode(String value) {
+		String v = value.trim().toLowerCase(java.util.Locale.ROOT);
+		return v.equals("stepped") || v.equals("beta") ? v : "smooth";
+	}
+
+	/** The dusk choice the game started with: stepped, smooth or beta. */
+	public static String duskAtStart() {
+		return dusk;
+	}
+
+	/** Whether the change was on when the game started, so its mixins are in. */
+	public static boolean applied(String key) {
+		if (SAVES_KEY.equals(key) && !savesModLoaded()) return false;
+		return !off.contains(key);
+	}
+
+	private static boolean savesModLoaded() {
+		return FabricLoader.getInstance().isModLoaded("purefaithful-saves");
+	}
+
+	/** Every switch, in the file's order. */
+	public static List<String> keys() {
+		List<String> keys = new ArrayList<>();
+		for (String[] c : CHANGES) keys.add(c[0]);
+		return keys;
+	}
+
+	@Override
+	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+		String pkg = mixinClassName.substring(0, mixinClassName.lastIndexOf('.'));
+		pkg = pkg.substring(pkg.lastIndexOf('.') + 1);
+		if (ALWAYS.equals(pkg)) {
+			// The edition's name goes into other mods' screens: only where they're installed.
+			if (targetClassName.startsWith("org.studioquire.oldfaithful.hardening.")) return FabricLoader.getInstance().isModLoaded("purefaithful-hardening");
+			if (targetClassName.startsWith("org.studioquire.oldfaithful.options.")) return FabricLoader.getInstance().isModLoaded("oldfaithful-options");
+			return true;
+		}
+		if (SAVES_PACKAGE.equals(pkg) && !savesModLoaded()) return false;
+		for (String[] c : CHANGES) {
+			if (c[1].equals(pkg)) return !off.contains(c[0]);
+		}
+		throw new IllegalStateException("A mixin outside any change's package: " + mixinClassName);
+	}
+
+	@Override
+	public String getRefMapperConfig() {
+		return null;
+	}
+
+	@Override
+	public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
+	}
+
+	@Override
+	public List<String> getMixins() {
+		return null;
+	}
+
+	@Override
+	public void preApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+	}
+
+	@Override
+	public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+	}
+}

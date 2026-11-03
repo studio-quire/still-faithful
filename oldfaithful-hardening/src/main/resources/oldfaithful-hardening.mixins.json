@@ -1,0 +1,30 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.hardening.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ChunkDataS2CPacketMixin",
+    "ConnectionMixin",
+    "ExplosionS2CPacketMixin"
+  ],
+  "client": [
+    "client.ChunkMixin",
+    "client.ClientContentMixin",
+    "client.ClientNetworkHandlerMixin",
+    "client.DataTrackerMixin",
+    "client.ImageDownloadThreadMixin",
+    "client.MinecraftAppletMixin",
+    "client.MinecraftMixin",
+    "client.ResourceDownloadThreadMixin",
+    "client.TitleScreenMixin"
+  ],
+  "server": [
+    "server.ServerLoginAuthThreadMixin",
+    "server.ServerLoginNetworkHandlerMixin",
+    "server.ServerPlayNetworkHandlerMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

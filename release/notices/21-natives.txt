@@ -1,0 +1,17 @@
+Native libraries, built for Pure Faithful from the projects' own source (each jar's META-INF/build-info.json records
+the commit, the compiler and the flags; the build script is sources/build-natives.py)
+  - libraries/lwjgl3-3.4.3+oldfaithful.1-natives-windows.jar: lwjgl.dll and lwjgl_opengl.dll, LWJGL 3.4.3's native
+    side. BSD 3-Clause, licenses/lwjgl3-natives/LICENSE.md. lwjgl.dll includes libffi 3.8.0 (LWJGL's fork), MIT:
+    licenses/lwjgl3-natives/libffi-LICENSE.
+  - libraries/sdl3-3.4.18+oldfaithful.1-natives-windows.jar: SDL3.dll, SDL 3.4.18, by Sam Lantinga and the SDL
+    contributors. zlib licence: licenses/sdl3/LICENSE.txt. Built into it: HIDAPI (used under its BSD-style licence:
+    licenses/sdl3/hidapi-LICENSE*.txt) and yuv2rgb (BSD 3-Clause, licenses/sdl3/yuv2rgb-LICENSE).
+    https://www.libsdl.org/
+  - libraries/openal-soft-1.25.2+oldfaithful.1-natives-windows-lwjgl3.jar: OpenAL.dll, OpenAL Soft 1.25.2, by
+    Christopher Robinson and the OpenAL Soft contributors. https://openal-soft.org/
+    GNU Library General Public License, version 2 or (at your option) any later version:
+    licenses/openal-soft/COPYING. Some parts are under other licences: licenses/openal-soft/BSD-3Clause,
+    licenses/openal-soft/LICENSE-pffft, and {fmt}'s licence in licenses/openal-soft/LICENSE.
+    OpenAL Soft is used unmodified, as a separate library (OpenAL.dll) that the game loads at run time: you may
+    replace it with another build of OpenAL Soft, including one you've changed. Its complete source code, and the
+    script and settings it was built with, are in sources/openal-soft/.

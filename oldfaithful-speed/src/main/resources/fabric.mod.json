@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "purefaithful-speed",
+  "version": "${version}",
+  "name": "Pure Faithful Speed",
+  "description": "Makes b1.7.3 faster without changing anything it does or shows: the same pixels, the same behaviour, the same world generator, only less work to get there.",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/purefaithful-speed/icon.png",
+  "environment": "client",
+  "mixins": ["oldfaithful-speed.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  }
+}

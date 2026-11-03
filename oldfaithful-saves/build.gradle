@@ -1,0 +1,81 @@
+plugins { id 'oldfaithful.mod' }
+
+// Tests: the region writer against vanilla's own RegionFile (the official game, named, on the test classpath only) as
+// the reference reader and as the negative control, including writer processes killed mid-save. `serverSaveTest`
+// runs the real dedicated server with this mod: damaged chunks, kills during saves (docs/saves.md).
+def mc = rootProject.oldfaithfulMinecraft
+
+// The scenario source set is a test-only server mod: it uses and breaks blocks whose block entity was unreadable.
+sourceSets { scenario }
+
+dependencies {
+    testImplementation files(mc.namedJar)
+    scenarioCompileOnly files(mc.namedJar)
+    scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    scenarioCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
+}
+
+tasks.named('compileScenarioJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+
+def scenarioJar = tasks.register('scenarioJar', Jar) {
+    from sourceSets.scenario.output
+    archiveClassifier = 'scenario-dev'
+}
+def scenarioRemap = tasks.register('scenarioRemapJar', oldfaithful.gradle.RemapJarTask) {
+    input = scenarioJar.flatMap { it.archiveFile }
+    namedMappings = mc.namedMappings
+    classpath.from(sourceSets.main.compileClasspath)
+    output = layout.buildDirectory.file('libs/oldfaithful-saves-scenario.jar')
+}
+
+tasks.named('test') {
+    // -Pmeasure runs only the game-thread cost measurement (WriteLatencyTest), with its output.
+    if (project.hasProperty('measure')) {
+        useJUnitPlatform { includeTags 'measure' }
+        testLogging { showStandardStreams = true }
+        outputs.upToDateWhen { false }
+    } else {
+        useJUnitPlatform { excludeTags 'server', 'measure' }
+    }
+    maxHeapSize = '512m'
+    // -Pkills=N: more kills in KillTest than its default 30.
+    if (project.hasProperty('kills')) systemProperty 'oldfaithful.kills', project.property('kills')
+}
+
+configurations {
+    // What a launcher puts on the classpath for Fabric (as harness/build.gradle).
+    loaderRuntime { transitive = false }
+}
+
+dependencies {
+    loaderRuntime "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderRuntime "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderRuntime "org.ow2.asm:${it}:${asm_version}"
+    }
+}
+
+tasks.register('serverSaveTest', Test) {
+    group = 'verification'
+    description = 'The real dedicated server with this mod: damaged chunks kept and reported, kills during saves.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'server' }
+    maxHeapSize = '512m'
+    def remapped = tasks.named('remapJar')
+    dependsOn remapped, scenarioRemap
+    def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    inputs.files(serverClasspath)
+    outputs.upToDateWhen { false }
+    testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+    doFirst {
+        systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
+        systemProperty 'oldfaithful.saves.mod', remapped.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.saves.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.run', rootProject.file('local/run/saves-server-test').absolutePath
+    }
+}
+

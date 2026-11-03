@@ -1,0 +1,7 @@
+plugins { id 'oldfaithful.mod' }
+
+// FramePacing reads the display's refresh through LWJGL 2's Display API, which both LWJGL 2 and our component offer;
+// the game's launcher supplies it at runtime.
+dependencies {
+    compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-options",
+  "version": "${version}",
+  "name": "Old Faithful Options",
+  "description": "A few options and comforts for b1.7.3: Old Faithful... in Options, a screen for every switch of Old Faithful's mods (and Pure Faithful Display's), a field-of-view slider beside Difficulty, the GUI at Normal size on a first start, Quit Game on the title screen (handy in fullscreen), and, with Pure Faithful Display, a window that opens maximised the first time and where you left it after. Each has its own switch in config/oldfaithful-options.properties (the window's are in purefaithful-display.properties).",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/oldfaithful-options/icon.png",
+  "environment": "client",
+  "mixins": ["oldfaithful-options.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  },
+  "custom": {
+    "purefaithful-display:defaults": {
+      "window.remember": "true",
+      "window.startMaximized": "true"
+    }
+  }
+}

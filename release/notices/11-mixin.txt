@@ -1,0 +1,5 @@
+Mixin 0.8.7 (FabricMC's build, sponge-mixin 0.17.5)
+  libraries/sponge-mixin-0.17.5+mixin.0.8.7.jar. Lets mods change the game's code as it loads. By SpongePowered
+  and FabricMC. https://github.com/FabricMC/Mixin
+  MIT: licenses/sponge-mixin/LICENSE.txt. It contains, relocated, parts of Guava 21.0 and Gson 2.2.4, by Google:
+  Apache License 2.0, licenses/common/Apache-2.0.txt.

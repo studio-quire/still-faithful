@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "stillfaithful-polish",
+  "version": "${version}",
+  "name": "Still Faithful Polish",
+  "description": "What later versions improved in b1.7.3 while it stayed beta: stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats, animals you've dealt with that stay, and more. Each has its own switch, in Options > Still Faithful... (with Old Faithful Options) or config/stillfaithful-polish.properties.",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/stillfaithful-polish/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "oldfaithful-options:settings": ["org.studioquire.oldfaithful.polish.PolishSettings"]
+  },
+  "mixins": ["oldfaithful-polish.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  }
+}

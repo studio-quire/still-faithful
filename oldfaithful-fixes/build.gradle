@@ -1,0 +1,74 @@
+plugins { id 'oldfaithful.mod' }
+
+// The Fixed edition's fixes of beta's own bugs (docs/fixes.md). The client-side fixes call GL11, Keyboard and Mouse,
+// which the game's launcher supplies at runtime (LWJGL 2 or our component).
+def mc = rootProject.oldfaithfulMinecraft
+
+// The scenario source set is a test-only server mod for `serverTicksTest` (#42): a repeater clock beside the spawn.
+sourceSets { scenario }
+
+dependencies {
+    compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+    // FixesSettings, the switches on Old Faithful's settings screen: loaded only by the options mod, when present.
+    compileOnly project(':oldfaithful-options')
+    testImplementation project(':oldfaithful-options')
+    testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
+    testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    scenarioCompileOnly files(mc.namedJar)
+    scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    scenarioCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
+}
+
+tasks.named('compileScenarioJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+
+def scenarioJar = tasks.register('scenarioJar', Jar) {
+    from sourceSets.scenario.output
+    archiveClassifier = 'scenario-dev'
+}
+def scenarioRemap = tasks.register('scenarioRemapJar', oldfaithful.gradle.RemapJarTask) {
+    input = scenarioJar.flatMap { it.archiveFile }
+    namedMappings = mc.namedMappings
+    classpath.from(sourceSets.main.compileClasspath)
+    output = layout.buildDirectory.file('libs/oldfaithful-fixes-scenario.jar')
+}
+
+tasks.named('test') {
+    useJUnitPlatform { excludeTags 'server' }
+}
+
+configurations {
+    // What a launcher puts on the classpath for Fabric (as harness/build.gradle).
+    loaderRuntime { transitive = false }
+}
+
+dependencies {
+    loaderRuntime "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderRuntime "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderRuntime "org.ow2.asm:${it}:${asm_version}"
+    }
+}
+
+tasks.register('serverTicksTest', Test) {
+    group = 'verification'
+    description = 'The real dedicated server: a repeater clock still running after a save and restart (#42); the world fixes from the piston hunt.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'server' }
+    maxHeapSize = '256m'
+    def remapped = tasks.named('remapJar')
+    dependsOn remapped, scenarioRemap
+    def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    inputs.files(serverClasspath)
+    outputs.upToDateWhen { false }
+    testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+    doFirst {
+        systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
+        systemProperty 'oldfaithful.fixes.mod', remapped.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.fixes.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.run', rootProject.file('local/run/fixes-server-test').absolutePath
+    }
+}

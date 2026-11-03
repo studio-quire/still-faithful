@@ -1,0 +1,223 @@
+# Building and testing
+
+Claude Opus 5.5, 2026-11-01.
+
+## Quick reference
+
+`gw` / `gw.cmd` run the Gradle wrapper with the portable JDK in `local/tools/jdk21` if it's there (any JDK 17+ on
+`JAVA_HOME` also works). Gradle is kept small: two workers, no parallel projects, 1 GB heap. Run `./gw --stop` when
+done; the CPU is shared.
+
+| Command | What it does |
+|---|---|
+| `./gw build` | Compiles the mods, runs unit tests, remaps. Installable jars: `<mod>/build/libs/<mod>-<version>.jar` (the `-dev` jar is the named one, not for players). |
+| `./gw :harness:serverTest` | Headless dedicated server with our mods: boots, generates and saves a world, refuses an online-mode login through the hardened check, stops; fails on any error from our mixins. About 20 s. |
+| `./gw :harness:nativesTest` | Loads our LWJGL and OpenAL builds as a launcher does, with no visible window: display modes, an offscreen GL context, OpenAL device listing and silent mixing (`docs/natives.md`). A few seconds. |
+| `./gw :harness:clientAudit` | Starts the client through Fabric with no window, applies every client mixin, and exercises sounds, skins, capes and the session join against Mojang, launched with a made-up session that must not appear in the console or in `logs/purefaithful/latest.log`; then exits. The first run downloads all sounds (44 MB) into `local/cache/selftest-sounds`. |
+| `-Poldfaithful.gameJava=<java>` | Runs any of those on another JRE (an absolute path), e.g. Prism's `jre-legacy` (8u51). All three pass on 8u51, 21 and 25. |
+| `-Poldfaithful.upstream` | Resolves from the original repositories instead of our mirror, for adding or updating a dependency (`docs/mirror.md`). |
+| `./gw decompileMinecraft` | Vineflower source of the merged named jar in `local/decomp/` for reading mixin targets. Never commit it. |
+| `./gw prismDevInstance` | `local/prism/OldFaithful-dev.zip`, a Prism instance to import for client checks (below). |
+| `./gw :harness:linkCheck` | Every `org.lwjgl` reference in b1.7.3, our mods, the popular mods pinned in `harness/linkcheck-mods.json` and our LWJGL jar's own classes resolves against our LWJGL component (`docs/lwjgl.md`). Report: `harness/build/reports/linkcheck.txt`. Seconds; the first run fetches the mods (hash-checked) into `local/cache/linkcheck-mods`. |
+| `./gw :oldfaithful-speed:test` | `ChunkMap` against HashMap through 400,000 random operations on chunk-shaped keys. Seconds. The speed mod itself joins `clientAudit`, `clientAuditSdl` and the start-up tests; the benchmark's `speed` configuration measures it (`docs/speed.md`). |
+| `./gw :oldfaithful-fixes:test`, `./gw :harness:clientStartupTestFixed`, `./gw :oldfaithful-fixes:serverTicksTest` | The Fixed edition's fix mod: its unit test, the start-up test with it, then its fixes set up and checked in the running world, and the real server keeping a repeater clock running across a restart (#42) (`docs/fixes.md`). Seconds; about 25 s; about 45 s. The mod also joins `serverTest` and the client audits. |
+| `./gw :harness:fixesMultiplayerTest` | Old Faithful's multiplayer fixes on the server package with and without the fix mod, each joined by the real client (hidden) with and without it, plus raw-packet clients for the server side; without a fix the check expects beta's bug (`docs/fixes.md` > Tests). About 4.5 minutes. |
+| `./gw :oldfaithful-lighting:serverLightTest`, `:oldfaithful-lighting:lightCheck -Pworld=<folder>` | Old Faithful's lighting (`docs/lighting.md`): the real server with and without the mod through a scenario (also at a single player client's lighting pace, checked before the queue is done, and with `lava.lightGenerated` off), every saved chunk's light against b1.7.3's rule computed from scratch; the checker alone on any world. About 2 minutes. The mod also joins `serverTest`, the client audits and `clientStartupTestFixed`. |
+| `./gw :oldfaithful-options:test` | Old Faithful's options mod (`docs/options.md`): its unit tests (the FOV, and the settings screen's config editing and registry). It joins the client audits and `clientStartupTestFixed`, which with it checks Quit Game, the FOV in the world and the settings screen (clicks, files, what applies at once, multiplayer, layouts at three GUI scales in three window sizes, pictures in `settings-shots/`), and adds a first start (maximised, GUI Normal, stopped by Quit Game). |
+| `./gw :harness:lwjglTest` | Our LWJGL component at run time with no visible window: changed classes load and verify; Display, GL and a shared context on a hidden SDL window; keyboard and mouse against synthetic SDL events; the game's paulscode playing through our AL into OpenAL Soft's wave writer. About 20 s. Takes `-Poldfaithful.gameJava` (passes on 21 and 25). |
+| `./gw :harness:clientAuditSdl` | The client audit on our LWJGL component with `oldfaithful-display`, whose mixins apply only there. |
+| `./gw :harness:clientStartupTest` | The real client on our LWJGL component, unseen, as the SDL instance starts it: main menu, a paste, a small world created and run, a clean stop (below). About 10 s; Windows; needs `python`. |
+| `./gw :harness:lwjglTestLinux`, `:harness:clientStartupTestLinux` | The same two tests on Linux x64, in Docker on AlmaLinux 8 and Ubuntu 24.04 (Xvfb, Mesa's llvmpipe), through `tools/in_linux.py`; any host with Docker, nothing shown. Per image: `lwjglTestLinux-alma8-display`, `clientStartupTestLinux-ubuntu2404` and so on (below). |
+| `./gw :harness:clientStartupTestStill [-Pstill.beta]`, `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves` | Still Faithful's mod (`docs/still-faithful.md` > Tests): the start-up test with all three editions' mods and its changes checked in the world, stepped and smooth dusk pixel by pixel against beta's (`-Pstill.beta`: every switch off, beta's behaviour expected; `-Pstill.duskFull`: every lighting mode and the Nether, about 5 minutes), about 1.5 minutes; the saves mod's real-server kill test with its background autosave beside it. |
+| `./gw releaseStill [-Prelease.test]`, `python tools/publish.py --target still-faithful --check`, `./gw prismStillInstance` | Still Faithful's release in `local/release/still-faithful-<v>/` (its pack, server package, its mod, SHA256SUMS; on released Pure Faithful and Old Faithful parts, under the release guard; a test build into `-test/`), its public snapshot built and checked (`docs/release.md`), and its dev instance `local/prism/StillFaithful-dev.zip`. |
+| `./gw :harness:benchSetup`, `python tools/bench.py` | The speed benchmark: the real game unseen on a fixed script, per-frame timings, reports (`docs/speed.md`). |
+| `./gw prismSdlInstance` | `local/prism/OldFaithful-sdl-dev.zip`: the dev instance on our LWJGL component (below). |
+| `./gw prismFixedInstance` | `local/prism/OldFaithful-fixed-dev.zip`: the SDL dev instance with Old Faithful's own mods (whose `oldfaithful-options` brings its display defaults), for client checks of the Fixed edition. |
+| `./gw :harness:multiplayerTest` | Phase 6 (`docs/multiplayer.md`): the server package started by its own `start.bat`, offline mode, against raw-packet clients, honest and malicious. The server must refuse the malicious ones, keep answering `list`, keep its world whole, and never run out of memory. About a minute. |
+| `./gw serverPackage`, `serverPackageZip` | `local/server-package/OldFaithful-server/` (and `.zip`): start scripts that check the server jar's hash, Fabric Loader and its libraries, the hardening mod; the owner adds `minecraft_server.jar` (`docs/multiplayer.md`). |
+| `./gw release`, `python tools/publish.py --check` | A release in `local/release/<version>/` (the pack, the mods, the LWJGL component file, the server package, sources, SHA256SUMS), and the public snapshot built and checked; nothing published (`docs/release.md`). Seconds. |
+| `./gw releaseFixed [-Prelease.test]`, `python tools/publish.py --target old-faithful --check` | Old Faithful's release in `local/release/old-faithful-<version>/` (its pack, server package, its three mods, SHA256SUMS; a test build into `-test/`), and its public snapshot built and checked (`docs/release.md`). Seconds. |
+| `./gw :harness:sceneShot [-PsceneSeed=N]` | Pictures for the site and listings: Old Faithful's mods in a hidden 1440x900 window, the new world searched for lava lying in caves near the spawn (lit by the lighting mod), the best six shot from the cave's air with the HUD hidden, into `local/run/scene-shot/shots/` with where each was (`SceneShot`). The spawn moves between runs, so the places do too. About 90 s. |
+| `./gw :harness:clientStartupTestPack`, `clientStartupTestPackFixed`, `clientStartupTestPackStill` | The start-up test on what's inside each release pack (its libraries, natives and mods), unseen; Old Faithful's and Still Faithful's with Old Faithful's fix and first-start checks, Still Faithful's title line and settings button. About 30 s, 45 s and 45 s. |
+| `./gw :harness:sceneShotStill -PsceneViews="x y z yaw pitch time;..." [-PsceneSeed=N]` | Landscapes with Still Faithful's mods (its dusk) for the site: each view held at its time of day at the Far render distance until the view fills in, then shot, into `local/run/scene-shot-still/shots/` (`SceneShot`'s view mode; x and z a block, y the eye's height; seed 31337 by default). About a minute a view. |
+| `./gw :hunt:pistonHunt`, `:hunt:pistonEdgeTest` | The piston hunt (`docs/bugs.md` > The piston hunt): the real server with a test-only mod (`hunt/`) runs 25,848 piston scenes in a flat test world and writes what went wrong to `local/run/piston-hunt/run-*/`; about 6 minutes. `-Phunt.only=<scene prefix>`, `-Phunt.trace=true`, `-Phunt.unguarded=true` (crash as vanilla does), `-Phunt.mods=saves,fixes`, `-Phunt.set=falls` (fall damage into water). Not a pass/fail test of the game. `pistonEdgeTest` checks #53's fix with and without `oldfaithful-saves`; about a minute. |
+| `./gw :harness:runServer` | A local online-mode server with our mods on 127.0.0.1:25565, world kept in `local/run/server`. `stop` or kill it to end. |
+
+Setting up a new machine:
+- JDKs from Adoptium, hashes checked against Adoptium's API, unpacked into `local/tools/`: Temurin 21
+  (`OpenJDK21U-jdk_x64_windows_hotspot_21.0.13_9.zip`, SHA-256 `a4dbaa05…2004f9`) as `jdk21`, the build's own; Temurin
+  8u504 (`ea43d46e…b2aa`) as `jdk8`, for building LWJGL; Temurin 25.0.5 (`636bdc13…6c42`) as `jdk25`, for testing.
+- `python tools/mirror.py sync` fills the artifact mirror; `python natives/build.py all` (Visual Studio 2022 Build
+  Tools, `docs/natives.md`), `python natives/build.py linux-x64` (Docker) and `python tools/mirror.py natives` add our
+  native builds. Gradle resolves nothing else.
+- Docker (Desktop here, with its dashboard-on-start turned off so starting it shows nothing) for the Linux builds and
+  tests: `docker desktop start`.
+
+## The toolchain: our own small plugin
+
+`buildSrc/` holds a Gradle plugin of our own (about 1,000 lines, half of it the test harness) instead of Fabric
+Loom plus an add-on. Considered:
+
+- **Babric's Loom add-on**: no licence, so not ours to copy (the brief and the audit).
+- **Ornithe's Ploceus** (Apache-2.0): built for Ornithe's Calamus intermediary and feather/nests/signature
+  processing, compiled against a Loom `1.18-SNAPSHOT` and Java 25. Using it with Babric's intermediary means fighting
+  its design, and a snapshot dependency can't be pinned reproducibly.
+- **Loom alone with our own add-on**: Loom is large, churns with every Gradle release, and an add-on has to reach into
+  its internals (Babric's does), which break between versions.
+
+For one frozen game version the job is small and fixed, so our own plugin does exactly it, on two well-maintained
+libraries, tiny-remapper (LGPL-3.0, build-time only, never shipped) and mapping-io (Apache-2.0):
+
+1. `downloadMinecraftClient` / `downloadMinecraftServer`: HTTPS only, kept only if the SHA-1 matches the pinned hash
+   (`gradle.properties`). A correct file already in `local/cache/minecraft` is used as is, so the jars can be dropped
+   in by hand.
+2. `prepareMinecraft`: client remapped `clientOfficial → intermediary`, server `serverOfficial → intermediary`
+   (Babric's split namespaces), merged with `@Environment` marks on side-only classes and members, then remapped
+   `intermediary → named` (Biny). Output: `local/cache/minecraft/b1.7.3-merged-{intermediary,named}.jar`.
+3. Each mod (`oldfaithful.mod` plugin) compiles against the named jar plus Fabric Loader, Mixin and MixinExtras
+   (compile-only: the loader provides them at runtime), to **Java 8 bytecode**, so the mods also run on old JREs.
+   `remapJar` rewrites it to intermediary with tiny-remapper's Mixin extension, which rewrites Mixin annotation
+   targets in place: **no refmaps**, so a mixin config must not name one.
+
+Missing compared with Loom, add when needed: IDE run configurations, access wideners, jar-in-jar, remapping other
+mods as dependencies (`modImplementation`). Loom stays an option if we ever need its breadth.
+
+## What's pinned, and where
+
+| What | Version | Pinned by |
+|---|---|---|
+| Gradle | 9.8.2 | `distributionSha256Sum` in the wrapper properties; the wrapper jar matches Gradle's published SHA-256 |
+| Every Maven artifact (build, mods, harness) | `gradle.properties` | SHA-256 in `gradle/verification-metadata.xml` (Gradle dependency verification; covers `buildSrc` too). A changed artifact fails the build. Checked against independent sources once: Fabric's published hashes for ASM and Mixin, the audit's earlier copy of the intermediary. |
+| Repositories | | Only our mirror, `local/mirror/maven` (`docs/mirror.md`). With `-Poldfaithful.upstream`, the originals: HTTPS, each limited to the groups we expect from it (`exclusiveContent`), and our own group never from them |
+| Game client | b1.7.3, from Mojang | SHA-1 `43db9b49…` in `gradle.properties` |
+| Game server | b1.7.3 | SHA-1 `2f90dc1c…`. **Mojang no longer hosts it** (every launcher.mojang.com / piston-data / S3 URL is 404), so it comes from Omniarchive's archive; the hash is Mojang's original, confirmed by two independent manifests (Ornithe's and Babric's). Local only, never redistributed. |
+| Intermediary | `babric:intermediary-upstream:b1.7.3:v2` (CC0) | dependency verification |
+| Names | `net.glasslauncher:biny:b1.7.3+e0778a3:v2` (CC0), the latest release | dependency verification |
+| Fabric Loader / Mixin / MixinExtras / ASM | 0.20.1 / 0.17.5+mixin.0.8.7 / 0.5.5 (bundled in the loader) / 9.10.1 | dependency verification |
+| LWJGL 2 / OpenAL Soft | Legacy Fabric's 2.9.4+legacyfabric.18 / 1.25.2, built by us | Source commits in `natives/build.py`; the built artifacts by dependency verification (`docs/natives.md`) |
+| LWJGL 3 (Java side) | 3.4.3 from Maven Central (`lwjgl`, `-opengl`, `-openal`, `-sdl`) | dependency verification; the jars' PGP signatures checked once against LWJGL's release key (Ioannis Tsakpinis, `72EB0D1C9B1FB0FC`) |
+| SDL3, LWJGL 3 natives, libffi | 3.4.18 / 3.4.3 / 3.8.0, built by us | as LWJGL 2 above (`docs/natives.md`) |
+| Mods for the link check | `harness/linkcheck-mods.json` | SHA-512 from Modrinth; read only, never run or shipped |
+| Mojang's legacy asset index | `pre-1.6`, SHA-1 `3d8e5548…` | hard-coded in `LegacyAssets`; the mod refuses any other |
+
+Updating something: change the version in `gradle.properties`, run
+`./gw -Poldfaithful.upstream --write-verification-metadata sha256 build :harness:nativesTest prismDevInstance decompileMinecraft`,
+review the diff to the verification file, checking new hashes against a source other than the repository they came
+from where one exists, then `python tools/mirror.py sync`.
+
+## Writing mixins
+
+- Read targets in `local/decomp/` (or `javap -p` on the named jar). Biny leaves a few names as `method_123`; avoid
+  depending on those where the URL or a parameter carries the same information.
+- Handler names start with `oldfaithful$`. Prefer MixinExtras' `@WrapOperation` / `@ModifyExpressionValue` to `@Redirect`
+  (they compose with other mods), and `@Inject` at `HEAD` + cancel only where a whole method is replaced on purpose.
+- Never `@Overwrite` or paste a vanilla method body: that ships Mojang's code.
+- `defaultRequire: 1` is set, so a target that moves is an error, not a silent no-op. `clientAudit` and
+  `serverTest` force-load every target (Mixin's audit) and fail on any Mixin error; a deliberately broken target
+  was checked to fail the audit.
+- Logic that can live outside a mixin does, in plain classes with unit tests (`oldfaithful-hardening/src/test`).
+
+## The harness
+
+`harness/` is a test-only mod (`oldfaithful-selftest`, never shipped) plus the tasks above. It launches the game the way a
+player's launcher does: Fabric Loader, Mixin and ASM, the intermediary jar and the untouched official jar on the
+classpath, our remapped jars in `mods/`; Fabric remaps the game itself. The self-test runs inside that runtime (the
+server's init entrypoint; the client's pre-launch entrypoint, which exits before the game's main) and prints
+`[oldfaithful-selftest] PASS/FAIL` lines the task checks. Full output: `local/run/*/harness-output.log`.
+
+## The client start-up test
+
+`./gw :harness:clientStartupTest` (Claude Opus 5.5, 2026-11-01; allowed by the user the same day) launches the game
+the way the SDL dev instance does: Fabric's launch with the official jar, our LWJGL component and its natives, the
+hardening and display mods plus the self-test mod, Java 21, offline as `OldFaithfulTest`, in a fresh
+`local/run/client-startup` with the sounds copied in from `local/cache/selftest-sounds` (clientAudit fills it) and a
+tiny render distance. The self-test's `StartupCheck` drives it from the game's tick: the main menu comes up; the window
+is titled "Minecraft", exists and was never shown or active; the mouse is on the system's pointer settings; a synthetic
+Ctrl+V into Multiplayer's address field pastes what SDL reads from the clipboard (read, never written or printed);
+then a new world (`saves/oldfaithful-startup`) is created as the Create World screen does, runs 100 ticks, and the
+game stops itself as its close button would. The launch carries a Prism window size (1000x600, in Prism's system
+property) and the window and the game must be that size. Three short launches follow in `window-memory/` with the display
+mod's `window.remember` on, to the main menu only: Prism asking for maximised over a placement kept from when it asked
+otherwise (Prism's change wins), which the self-test then resizes, moves and maximises; then one that must open exactly
+there and then stop in (borderless) fullscreen; then one that must open fullscreen over that window and come back to it
+on F11; the kept file is read back after each (`docs/lwjgl.md` > The display mod). The task fails on a failed or missing check, any error-like line in the
+output (exceptions, stack frames, `[ERROR]`, GL errors, Mixin errors, our WARNs), no "OpenAL initialized", no
+"Stopping!", no saved world, a nonzero exit or the timeout. Output: `local/run/client-startup/harness-output.log` and
+the game's own `logs/purefaithful/latest.log` there.
+
+Why it can run while the PC is in use:
+- **A private desktop.** `tools/private_desktop.py` starts the game on a Windows desktop of its own (CreateDesktop),
+  which is never switched to: nothing on it can be seen, take the user's focus or receive their input, whatever the
+  game does, including AWT's frames and a crash window. Checked: a visible window made there isn't among the user's
+  desktop's windows, and GL there is the real NVIDIA driver.
+- **The cursor is shared, though.** The session has one cursor and one clip rectangle: ClipCursor from the private
+  desktop confines the user's cursor (a LWJGL 2 benchmark run took the user's mouse that way, 2026-11-01, and a probe
+  confirmed it), and SetCursorPos may move it. So in test and benchmark launches the game never grabs or warps the
+  mouse (the self-test mod's `HandsOff`: b1.7.3's `Mouse.lockCursor`/`unlockCursor` don't reach LWJGL, so neither
+  LWJGL 2 nor SDL clips, centres or warps), and `private_desktop.py` guards the cursor while the game runs: a changed
+  clip stops it at once and restores the clip (exit 125); repeated cursor moves with no mouse input behind them stop
+  it too (exit 126, best effort: it can't see a warp while the user is moving the mouse). SDL can still release a
+  clip (`ClipCursor(NULL)`) on window events if the user's own app has clipped from the desktop's corner; the guard
+  would catch that and put it back. `PRIVATE_DESKTOP_NO_GUARD=1` turns the guard off (the user's call, 2026-11-03:
+  their own game clipping the cursor kept stopping tests; `HandsOff` still keeps the test game from grabbing). When the guard stops a benchmark run, `tools/bench.py` doesn't halt the series
+  (user, 2026-11-01: the cursor being taken while they're away doesn't matter, hours of stopped work does): it checks
+  the user's idle time (GetLastInputInfo); after three minutes without input they count as away and the run is
+  retried at once, otherwise it waits until they are. Trips are recorded in the run's `run.json`. HandsOff stays on
+  regardless: not touching the cursor is the default.
+- **A hidden window** besides (`-Doldfaithful.lwjgl.hidden=true`: created hidden, never shown or raised). Our layer
+  never grabs (relative mode) or warps the real cursor for a hidden window, whatever the caller asks; the grab's
+  semantics still apply to its own state. That makes `:harness:lwjglTest`, which runs on the user's desktop and
+  grabs and releases, safe too (before this, its release check moved the user's cursor with SetCursorPos).
+- **No sound out loud**: OpenAL Soft's wave writer (`ALSOFT_DRIVERS=wave`) writes `sound.wav` in the run folder.
+- **Always stops**: the game and anything it starts run in a job object that's killed on the timeout (180 s), and
+  whenever the launcher script itself ends, even if killed; the Gradle task waits 30 s more, then kills the script.
+- **On Linux** (`clientStartupTestLinux-<image>`): the same launch inside a container from
+  `harness/linux/Dockerfile.<image>`, through `tools/in_linux.py`, which mounts the project (read-only but
+  `local/run/`) and Gradle's caches, translates the command line's paths and runs it on an Xvfb display under a
+  timeout (300 s: llvmpipe is slower). Nothing reaches the host's screen, input or speakers. Output in
+  `local/run/client-startup-linux-<image>/`.
+- Only in this test, the self-test mod stops the game pausing itself when its window lacks focus (it never has
+  focus here), so the world runs. Nothing else of the game's is changed.
+
+## Client checks (the user's)
+
+What the headless runs can't show: the game with a window, a real account, sound through the speakers, and Prism's
+own launch. `./gw prismDevInstance` writes `local/prism/OldFaithful-dev.zip`, our own instance: our `net.minecraft`
+component (Mojang's jar by URL and SHA-1, Fabric's main class through Prism's legacy launcher with `noapplet`, Java 21
+or 25), our LWJGL and OpenAL builds, Fabric Loader, Mixin, ASM and the intermediary, every library inside the zip
+(Prism's `local` hint), and the mod. Prism picks Java 21 for it (its own `java-runtime-delta` if automatic Java is on).
+Import it in Prism (Add Instance > Import); it doesn't touch other instances.
+
+1. Launch with a Microsoft account; make a singleplayer world. It starts, no crash, and Prism's log shows Java 21.
+2. Sounds: footsteps, breaking blocks, music after a few minutes (our OpenAL Soft build). Prism copies the sounds
+   into `.minecraft/resources`, so nothing should download.
+3. Your skin in third person (F5), and your cape if you have one.
+4. Online-mode join: with `./gw :harness:runServer` running, Multiplayer > 127.0.0.1. Getting in means the
+   client's HTTPS join and the server's HTTPS check both worked.
+5. Prism's log for the instance has no `[oldfaithful-hardening] WARN` lines, no Mixin errors, and no "Failed to initialise
+   controllers" (the skipped jinput call). "Setting user:" shows your name only, with no token after it, and there's
+   no "Failed to add pack.mcmeta" or "READ_ME_I_AM_VERY_IMPORTANT".
+6. `.minecraft/logs/purefaithful/latest.log` in the instance folder holds the same output, time-stamped, and a session
+   can read it from there; no token anywhere in it.
+7. If it doesn't start at all: Prism's log for the launch.
+
+### Phase 3: the SDL instance
+
+`./gw prismSdlInstance` writes `local/prism/OldFaithful-sdl-dev.zip`: the same instance with our LWJGL component in
+place of LWJGL 2 and `oldfaithful-display` beside the hardening mod. It imports alongside the LWJGL 2 one (Prism
+names it "Old Faithful (SDL dev)"), so the two can be compared. What to look at, beyond the list above:
+
+1. It starts in a window of its own, with no empty "Minecraft" frame flashing or left behind, and takes focus.
+2. Resize the window, maximise it, drag it between displays if there are two: the picture fills it and stays sharp,
+   the GUI rescales.
+3. F11: fullscreen at once (borderless); alt-tab away and back: still fullscreen; F11 again: the window comes back
+   at its earlier size.
+4. Mouse look: smooth, and the same speed as on the LWJGL 2 instance at the same sensitivity (it follows Windows'
+   pointer settings, as vanilla did; `mouse.input=raw` in `config/purefaithful-display.properties` for raw input);
+   menus: the pointer where it should be after Esc.
+5. Typing in chat and on signs, with Shift, with the keypad, and anything layout-specific you use; Ctrl+V pastes
+   into the server address and world names; WASD and other bound keys work, and the Controls screen names keys
+   sensibly. The window's title reads "Minecraft".
+6. Sound and music as on the LWJGL 2 instance; unplug or switch the output device while playing: sound follows.
+7. `.minecraft/logs/purefaithful/latest.log` has no `WARN`, no exception, no `[LWJGL] [ERROR]`.
+8. If it doesn't start: Prism's log for the launch, and the log above (it starts before the window does).

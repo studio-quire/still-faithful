@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-selftest",
+  "version": "${version}",
+  "name": "Old Faithful self-test (test harness only, not shipped)",
+  "environment": "*",
+  "entrypoints": {
+    "server": ["org.studioquire.oldfaithful.selftest.SelfTest"],
+    "preLaunch": ["org.studioquire.oldfaithful.selftest.SelfTest"]
+  },
+  "mixins": ["oldfaithful-selftest.mixins.json"],
+  "depends": {
+    "purefaithful-hardening": "*"
+  }
+}

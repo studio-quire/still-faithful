@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-polish-scenario",
+  "version": "0",
+  "name": "Still Faithful polish test scenario (test only)",
+  "environment": "server",
+  "mixins": ["oldfaithful-polish-scenario.mixins.json"],
+  "depends": { "minecraft": "1.0.0-beta.7.3" }
+}

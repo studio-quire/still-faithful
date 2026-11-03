@@ -1,0 +1,39 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.selftest.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "ConnectionAccessor"
+  ],
+  "client": [
+    "ChunkBuilderBenchMixin",
+    "ChunkCacheBenchMixin",
+    "GameRendererBenchMixin",
+    "GameRendererStartupMixin",
+    "GameRendererFovProbeMixin",
+    "MinecraftBenchMixin",
+    "MinecraftStartupMixin",
+    "MouseHandsOffMixin",
+    "WorldSpawnBenchMixin",
+    "TitleScreenStartupMixin",
+    "MultiplayerScreenAccessor",
+    "ScreenAccessor",
+    "WorldRendererAccessor",
+    "MinecraftPickInvoker",
+    "RedstoneTorchInvoker",
+    "FishingBobberAccessor",
+    "LivingEntityLerpAccessor",
+    "MinecraftMouseDriveMixin",
+    "ButtonWidgetAccessor",
+    "GameRendererScreenCaptureMixin",
+    "GameRendererSceneMixin"
+  ],
+  "server": [
+    "PlayerManagerRideMixin",
+    "MultiplayerScenesMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

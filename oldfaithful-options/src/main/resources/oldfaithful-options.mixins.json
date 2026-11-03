@@ -1,0 +1,18 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.options.mixin",
+  "plugin": "org.studioquire.oldfaithful.options.OptionsConfig",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "fov.GameOptionsMixin",
+    "fov.GameRendererMixin",
+    "fov.OptionsScreenMixin",
+    "gui.GameOptionsMixin",
+    "quit.TitleScreenMixin",
+    "screen.OptionsScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

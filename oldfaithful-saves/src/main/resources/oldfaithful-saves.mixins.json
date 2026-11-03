@@ -1,0 +1,29 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.saves.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+    "AlphaChunkStorageMixin",
+    "AlphaWorldStorageMixin",
+    "EntityRegistryAccessor",
+    "ChunkCacheMixin",
+    "NbtCompoundAccessor",
+    "PersistentStateManagerMixin",
+    "PistonBlockMixin",
+    "RegionChunkStorageMixin",
+    "RegionFileMixin"
+  ],
+  "client": [
+    "AlphaWorldStorageSourceMixin",
+    "MinecraftNoticeMixin"
+  ],
+  "server": [
+    "AlphaWorldStoragePlayersMixin",
+    "ReadOnlyServerWorldMixin",
+    "ServerChunkCacheMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

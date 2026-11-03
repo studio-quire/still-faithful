@@ -1,0 +1,13 @@
+plugins { id 'oldfaithful.mod' }
+
+// Old Faithful's options and conveniences (docs/options.md). The FOV and slider code calls GL11, GLU and Mouse, which
+// the game's launcher supplies at runtime (LWJGL 2 or our component). The settings screen sets Pure Faithful
+// Display's settings where it keeps them (DisplaySettings, loaded only with that mod and our component), so this
+// compiles against both; neither ships in this jar.
+evaluationDependsOn(':oldfaithful-lwjgl')
+def bakedLwjgl = project(':oldfaithful-lwjgl').tasks.named('bakeLwjgl').flatMap { it.output }
+dependencies {
+    compileOnly files(bakedLwjgl)
+    compileOnly project(':oldfaithful-display')
+    testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+}

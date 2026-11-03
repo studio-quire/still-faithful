@@ -1,0 +1,10 @@
+plugins { id 'oldfaithful.mod' }
+
+// Compiles against our LWJGL component (its Display and the Settings it adds); players get that from the
+// launcher's org.lwjgl component, never from this mod.
+evaluationDependsOn(':oldfaithful-lwjgl')
+def bakedLwjgl = project(':oldfaithful-lwjgl').tasks.named('bakeLwjgl').flatMap { it.output }
+dependencies {
+    compileOnly files(bakedLwjgl)
+    testImplementation files(bakedLwjgl)
+}

@@ -1,0 +1,30 @@
+{
+    "formatVersion": 1,
+    "name": "LWJGL (Old Faithful: the LWJGL 2 API on LWJGL 3 and SDL3)",
+    "uid": "org.lwjgl",
+    "version": "@LWJGL_VERSION@",
+    "type": "release",
+    "order": -1,
+    "conflicts": [{"uid": "org.lwjgl3"}],
+    "libraries": [
+        {"name": "org.studioquire.purefaithful:purefaithful-lwjgl:@OLDFAITHFUL_LWJGL_VERSION@", "MMC-hint": "local"},
+        {
+            "name": "org.studioquire.oldfaithful.natives:lwjgl3:@LWJGL3_NATIVES_VERSION@",
+            "MMC-hint": "local",
+            "natives": {"windows": "natives-windows", "linux": "natives-linux"},
+            "extract": {"exclude": ["META-INF/"]}
+        },
+        {
+            "name": "org.studioquire.oldfaithful.natives:sdl3:@SDL3_VERSION@",
+            "MMC-hint": "local",
+            "natives": {"windows": "natives-windows", "linux": "natives-linux"},
+            "extract": {"exclude": ["META-INF/"]}
+        },
+        {
+            "name": "org.studioquire.oldfaithful.natives:openal-soft:@OPENAL_VERSION@",
+            "MMC-hint": "local",
+            "natives": {"windows": "natives-windows-lwjgl3", "linux": "natives-linux"},
+            "extract": {"exclude": ["META-INF/"]}
+        }
+    ]
+}

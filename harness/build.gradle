@@ -1,0 +1,540 @@
+// The self-test mod (never shipped) and the headless game tests: `serverTest` and `clientAudit` (docs/building.md).
+plugins {
+    id 'oldfaithful.mod'
+}
+
+// The mods' remapJars and our LWJGL's bake are looked up below, so they have to be configured first.
+evaluationDependsOn(':oldfaithful-hardening')
+evaluationDependsOn(':oldfaithful-display')
+evaluationDependsOn(':oldfaithful-speed')
+evaluationDependsOn(':oldfaithful-saves')
+evaluationDependsOn(':oldfaithful-lwjgl')
+// The Fixed edition's mods, where present (settings.gradle).
+def fixedModProjects = [':oldfaithful-fixes', ':oldfaithful-lighting', ':oldfaithful-options'].findAll { findProject(it) != null }
+fixedModProjects.each { evaluationDependsOn(it) }
+
+configurations {
+    // What a launcher puts on the classpath for Fabric: the loader, Mixin and ASM (MixinExtras is inside the loader).
+    loaderRuntime { transitive = false }
+}
+
+dependencies {
+    compileOnly project(':oldfaithful-hardening')
+    loaderRuntime "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderRuntime "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderRuntime "org.ow2.asm:${it}:${asm_version}"
+    }
+}
+
+def mc = rootProject.oldfaithfulMinecraft
+// -Poldfaithful.gameJava=<path to java> runs the game on another JRE (e.g. Java 8, as Prism uses for b1.7.3 by
+// default).
+def gameJava = providers.gradleProperty('oldfaithful.gameJava')
+def testedMods = [project(':oldfaithful-hardening').tasks.named('remapJar'), project(':oldfaithful-saves').tasks.named('remapJar'),
+                  tasks.named('remapJar')]
+// The benchmark keeps its baseline as measured (hardening and the self-test only).
+def benchMods = [project(':oldfaithful-hardening').tasks.named('remapJar'), tasks.named('remapJar')]
+// The speed mod (client only) joins every client test; the benchmark's sdl and lwjgl2 configurations leave it out,
+// as vanilla's baseline, and its `speed` configuration adds it to sdl.
+def speedMod = project(':oldfaithful-speed').tasks.named('remapJar')
+// The Fixed edition's own mods join the server test and the client audits, which check that every mixin applies;
+// `clientStartupTestFixed` runs them in a world.
+def fixedMods = fixedModProjects.collect { project(it).tasks.named('remapJar') }
+// Still Faithful's own mod, where present (settings.gradle): it joins the server test and the client audits too, and
+// `clientStartupTestStill` runs it in a world with its test-only checks (its `selftest` source set, docs/still-faithful.md).
+def stillModProjects = [':oldfaithful-polish'].findAll { findProject(it) != null }
+stillModProjects.each { evaluationDependsOn(it) }
+def stillMods = stillModProjects.collect { project(it).tasks.named('remapJar') }
+
+tasks.register('serverTest', oldfaithful.gradle.ServerTestTask) {
+    group = 'verification'
+    description = 'Boots a b1.7.3 dedicated server with our mods: world generation, an online-mode login, save, stop.'
+    gameJar = mc.serverJar
+    intermediaryMappings = mc.intermediaryMappings
+    loaderClasspath.from(configurations.loaderRuntime)
+    mods.from(testedMods, fixedMods, stillMods)
+    runDir = rootProject.layout.projectDirectory.dir('local/run/server-test')
+    if (gameJava.isPresent()) javaExecutable = gameJava
+}
+
+// Phase 6 (docs/multiplayer.md): the server package, started by its own script, against raw-packet clients doing
+// honest play and the attacks the hardening stops. Offline mode, so the raw clients can log in.
+tasks.register('multiplayerTest', oldfaithful.gradle.MultiplayerTestTask) {
+    group = 'verification'
+    description = 'Runs the server package against honest and malicious raw-packet clients: refusals, no hang, no OOM.'
+    dependsOn rootProject.tasks.named('serverPackage')
+    serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+    gameJar = mc.serverJar
+    intermediaryMappings = mc.intermediaryMappings
+    mods.from(tasks.named('remapJar'))
+    runDir = rootProject.layout.projectDirectory.dir('local/run/multiplayer-test')
+    if (gameJava.isPresent()) javaExecutable = gameJava
+}
+
+tasks.register('clientAudit', oldfaithful.gradle.ClientAuditTask) {
+    group = 'verification'
+    description = 'Applies every client mixin headlessly (no window) and runs the self-test, then exits.'
+    gameJar = mc.clientJar
+    intermediaryMappings = mc.intermediaryMappings
+    loaderClasspath.from(configurations.loaderRuntime)
+    mods.from(testedMods, speedMod, fixedMods, stillMods)
+    runDir = rootProject.layout.projectDirectory.dir('local/run/client-audit')
+    if (gameJava.isPresent()) javaExecutable = gameJava
+    // Kept between runs: the first run downloads every sound (about 44 MB) from Mojang, later ones find them present.
+    extraJvmArgs.add("-Doldfaithful.selftest.soundsGameDir=${rootProject.file('local/cache/selftest-sounds')}")
+}
+
+// The native layer on its own (docs/natives.md): our LWJGL and OpenAL builds from the mirror, loaded the way a
+// launcher does (natives extracted to one folder, java.library.path and org.lwjgl.librarypath pointing at it), with
+// no visible window. `nativesTest` runs all three checks; -Poldfaithful.gameJava picks the JRE as above.
+sourceSets { natives }
+configurations {
+    lwjglRuntime { transitive = false }
+    lwjglNatives { transitive = false }
+    nativesCompileOnly.extendsFrom lwjglRuntime
+}
+dependencies {
+    lwjglRuntime "org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}"
+    lwjglRuntime "org.studioquire.oldfaithful.natives:lwjgl_util:${lwjgl_version}"
+    lwjglNatives "org.studioquire.oldfaithful.natives:lwjgl-platform:${lwjgl_version}:natives-windows"
+    lwjglNatives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-windows"
+}
+tasks.named('compileNativesJava') { options.release = 8 }
+
+def nativesDir = layout.buildDirectory.dir('natives-test/natives')
+def extractNatives = tasks.register('extractNatives', Sync) {
+    from { configurations.lwjglNatives.collect { zipTree(it) } }
+    exclude 'META-INF/**'
+    into nativesDir
+}
+def nativesChecks = [core: [:], 'al-devices': [:], 'al-play': [ALSOFT_DRIVERS: 'null']].collect { mode, env ->
+    tasks.register("nativesTest-${mode}", JavaExec) {
+        dependsOn extractNatives
+        classpath = files(sourceSets.natives.output, configurations.lwjglRuntime)
+        mainClass = 'org.studioquire.oldfaithful.selftest.NativesCheck'
+        args mode
+        environment env
+        if (gameJava.isPresent()) executable = gameJava.get()
+        doFirst {
+            def dir = nativesDir.get().asFile.absolutePath
+            jvmArgs "-Djava.library.path=${dir}", "-Dorg.lwjgl.librarypath=${dir}"
+        }
+    }
+}
+tasks.register('nativesTest') {
+    group = 'verification'
+    description = 'Loads our LWJGL and OpenAL natives headlessly: display modes, an offscreen GL context, OpenAL mixing.'
+    dependsOn nativesChecks
+}
+
+// A local server with our mods for the user's client checks: online mode, localhost only (no firewall prompt), the
+// world kept in local/run/server between runs. Type `stop` to end it.
+tasks.register('runServer', JavaExec) {
+    group = 'oldfaithful'
+    description = 'Runs a b1.7.3 server with oldfaithful-hardening on 127.0.0.1:25565 (online mode) for client checks.'
+    def dir = rootProject.file('local/run/server')
+    def hardening = project(':oldfaithful-hardening').tasks.named('remapJar')
+    dependsOn hardening, mc.serverJar
+    classpath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    mainClass = 'net.fabricmc.loader.impl.launch.knot.KnotServer'
+    args 'nogui'
+    maxHeapSize = '1g'
+    workingDir = dir
+    standardInput = System.in
+    doFirst {
+        project.sync {
+            from hardening
+            into new File(dir, 'mods')
+        }
+        def props = new File(dir, 'server.properties')
+        if (!props.exists()) {
+            props.text = ['level-name=world', 'online-mode=true', 'server-ip=127.0.0.1', 'server-port=25565',
+                          'view-distance=10', 'max-players=8', ''].join('\n')
+        }
+    }
+}
+
+// Phase 3's link check (docs/lwjgl.md): every org.lwjgl reference in b1.7.3, in our mods and in the popular b1.7.3
+// mods pinned in linkcheck-mods.json links against our LWJGL component, as do the component's own classes.
+def lwjglProject = project(':oldfaithful-lwjgl')
+def bakedLwjgl = lwjglProject.tasks.named('bakeLwjgl')
+tasks.register('linkCheck', oldfaithful.gradle.LinkCheckTask) {
+    group = 'verification'
+    description = 'Checks that the game, our mods and popular mods link against our LWJGL component.'
+    library.from(bakedLwjgl.flatMap { it.output })
+    lwjgl3.from(lwjglProject.configurations.lwjgl3)
+    gameJar = mc.clientJar
+    modList = file('linkcheck-mods.json')
+    extraSubjects.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+    cacheDir = rootProject.layout.projectDirectory.dir('local/cache/linkcheck-mods')
+    report = layout.buildDirectory.file('reports/linkcheck.txt')
+}
+
+// The client audit again with our LWJGL component on the classpath in place of none, and the display mod, whose
+// mixins only apply there: every injection point of both mods is force-loaded and checked.
+tasks.register('clientAuditSdl', oldfaithful.gradle.ClientAuditTask) {
+    group = 'verification'
+    description = 'The client audit on our LWJGL component, with oldfaithful-display.'
+    gameJar = mc.clientJar
+    intermediaryMappings = mc.intermediaryMappings
+    loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+    mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods)
+    runDir = rootProject.layout.projectDirectory.dir('local/run/client-audit-sdl')
+    if (gameJava.isPresent()) javaExecutable = gameJava
+    extraJvmArgs.add("-Doldfaithful.selftest.soundsGameDir=${rootProject.file('local/cache/selftest-sounds')}")
+}
+
+// Our LWJGL component at run time, windowless (LwjglCheck): the classes the bake changed load and verify; Display,
+// GL and a shared context on a hidden window; keyboard and mouse against synthetic SDL events; the game's sound
+// library playing through our AL into OpenAL Soft's wave writer. Natives extracted as a launcher does.
+sourceSets { lwjgl }
+dependencies {
+    lwjglCompileOnly files(bakedLwjgl)
+    lwjglCompileOnly files(mc.clientJar)
+}
+tasks.named('compileLwjglJava') { options.release = 8; options.compilerArgs.add('-Xlint:-options') }
+def lwjgl3NativesDir = layout.buildDirectory.dir('lwjgl-test/natives')
+def extractLwjgl3Natives = tasks.register('extractLwjgl3Natives', Sync) {
+    from { lwjglProject.configurations.lwjgl3Natives.collect { zipTree(it) } }
+    exclude 'META-INF/**'
+    into lwjgl3NativesDir
+}
+def lwjglRunDir = rootProject.layout.projectDirectory.dir('local/run/lwjgl-test')
+def lwjglChecks = ['classes', 'display', 'input', 'sound'].collect { mode ->
+    tasks.register("lwjglTest-${mode}", JavaExec) {
+        dependsOn extractLwjgl3Natives, bakedLwjgl
+        classpath = files(sourceSets.lwjgl.output, bakedLwjgl, mc.clientJar)
+        mainClass = 'org.studioquire.oldfaithful.selftest.LwjglCheck'
+        jvmArgs '-Doldfaithful.lwjgl.hidden=true', '-Djava.awt.headless=true'
+        if (gameJava.isPresent()) executable = gameJava.get()
+        def wave = lwjglRunDir.file('sound.wav').asFile
+        def conf = lwjglRunDir.file('alsoft.ini').asFile
+        if (mode == 'sound') {
+            args 'sound', wave.absolutePath, rootProject.file('local/cache/selftest-sounds/resources').absolutePath
+            environment ALSOFT_DRIVERS: 'wave', ALSOFT_CONF: conf.absolutePath
+        } else {
+            args mode
+        }
+        doFirst {
+            def dir = lwjgl3NativesDir.get().asFile.absolutePath
+            jvmArgs "-Djava.library.path=${dir}", "-Dorg.lwjgl.librarypath=${dir}"
+            // Java 24+ warns about native access without it; 21 accepts it quietly.
+            jvmArgs '--enable-native-access=ALL-UNNAMED'
+            lwjglRunDir.asFile.mkdirs()
+            wave.delete()
+            // OpenAL Soft's wave writer: 16-bit stereo at 44.1 kHz into sound.wav.
+            conf.text = ['[general]', 'channels = stereo', 'sample-type = int16', 'frequency = 44100', '[wave]',
+                         "file = ${wave.absolutePath.replace('\\', '/')}", ''].join('\n')
+        }
+    }
+}
+tasks.register('lwjglTest') {
+    group = 'verification'
+    description = 'Runs our LWJGL component windowlessly: classes, display and GL, input semantics, sound to a file.'
+    dependsOn lwjglChecks
+}
+
+// The same checks on Linux x64 (docs/lwjgl.md > Linux): in Docker through tools/in_linux.py, on AlmaLinux 8 (the
+// oldest system our natives target) and Ubuntu 24.04, each with an X server nobody sees and Mesa's software GL.
+def linuxImages = ['alma8', 'ubuntu2404']
+def inLinuxScript = rootProject.file('tools/in_linux.py').absolutePath
+def python = providers.gradleProperty('oldfaithful.python').orElse('python')
+def lwjglLinuxChecks = linuxImages.collectMany { img ->
+    ['classes', 'display', 'input', 'sound'].collect { mode ->
+        tasks.register("lwjglTestLinux-${img}-${mode}", Exec) {
+            dependsOn extractLwjgl3Natives, bakedLwjgl, tasks.named('lwjglClasses')
+            def runDir = rootProject.layout.projectDirectory.dir("local/run/lwjgl-test-linux-${img}").asFile
+            doFirst {
+                def dir = lwjgl3NativesDir.get().asFile.absolutePath
+                def cp = files(sourceSets.lwjgl.output, bakedLwjgl, mc.clientJar).files*.absolutePath.join(';')
+                def wave = new File(runDir, 'sound.wav')
+                def conf = new File(runDir, 'alsoft.ini')
+                runDir.mkdirs()
+                wave.delete()
+                // The file is read inside the container, where the project is /of (tools/in_linux.py).
+                def waveInside = '/of/' + rootProject.projectDir.toPath().relativize(wave.toPath()).toString().replace('\\', '/')
+                conf.text = ['[general]', 'channels = stereo', 'sample-type = int16', 'frequency = 44100', '[wave]',
+                             "file = ${waveInside}", ''].join('\n')
+                def command = [python.get(), inLinuxScript, '--image', img, '--timeout', '300']
+                if (mode == 'sound') command += ['--env', 'ALSOFT_DRIVERS=wave', '--env', "ALSOFT_CONF=${conf.absolutePath}"]
+                command += ['--', 'java', '-Doldfaithful.lwjgl.hidden=true', '-Djava.awt.headless=true',
+                            "-Djava.library.path=${dir}", "-Dorg.lwjgl.librarypath=${dir}", '--enable-native-access=ALL-UNNAMED',
+                            '-cp', cp, 'org.studioquire.oldfaithful.selftest.LwjglCheck', mode]
+                if (mode == 'sound') command += [wave.absolutePath, rootProject.file('local/cache/selftest-sounds/resources').absolutePath]
+                commandLine command
+            }
+        }
+    }
+}
+tasks.register('lwjglTestLinux') {
+    group = 'verification'
+    description = 'lwjglTest on Linux x64 in Docker (AlmaLinux 8 and Ubuntu 24.04, Xvfb, llvmpipe), unseen.'
+    dependsOn lwjglLinuxChecks
+}
+
+
+// The real client started on our LWJGL component as the SDL dev instance starts it, offline, in local/run/client-startup:
+// main menu, a paste, a small world created, loaded and run, a clean stop (StartupCheck in the self-test mod drives it).
+// It runs on a private Windows desktop with a hidden window and sound to a file, so it can run while the PC is in use.
+dependencies {
+    compileOnly files(bakedLwjgl)
+}
+tasks.register('clientStartupTest', oldfaithful.gradle.ClientStartupTask) {
+    group = 'verification'
+    description = 'Starts the real client on our LWJGL, unseen: main menu, paste, a small world, a clean stop.'
+    dependsOn extractLwjgl3Natives
+    gameJar = mc.clientJar
+    intermediaryMappings = mc.intermediaryMappings
+    loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+    mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+    natives = lwjgl3NativesDir
+    soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+    privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+    runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup')
+    if (gameJava.isPresent()) javaExecutable = gameJava
+}
+// Old Faithful (the Fixed edition): the same with its own mods, whose fixes FixesCheck then sets up and checks in the
+// world (docs/fixes.md).
+if (!fixedMods.isEmpty()) {
+    tasks.register('clientStartupTestFixed', oldfaithful.gradle.ClientStartupTask) {
+        group = 'verification'
+        description = 'The start-up test with the Fixed edition mods, and their fixes checked in the running world.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup-fixed')
+        // oldfaithful-options' window defaults and first start (ClientStartupTask), where it exists.
+        oldFaithful = findProject(':oldfaithful-options') != null
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Still Faithful (the third edition): the same with Old Faithful's mods and its own, then its changes checked in the
+// world by its test-only mod (WorldCheck, from oldfaithful-polish's `selftest` source set; docs/still-faithful.md).
+if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
+    def stillSelftest = project(':oldfaithful-polish').tasks.named('selftestRemapJar')
+    tasks.register('clientStartupTestStill', oldfaithful.gradle.ClientStartupTask) {
+        group = 'verification'
+        description = "The start-up test with Still Faithful's mods, and its changes checked in the running world."
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods,
+                stillSelftest.flatMap { it.output })
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup-still')
+        oldFaithful = findProject(':oldfaithful-options') != null
+        // Smooth dusk's picture comparisons (DuskCheck) take a few minutes; -Pstill.duskFull runs all four graphics modes.
+        def duskFull = providers.gradleProperty('still.duskFull').isPresent()
+        timeoutSeconds = duskFull ? 900 : 420
+        extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
+                        "-Doldfaithful.selftest.stallMs=${(duskFull ? 860 : 390) * 1000}".toString(),
+                        "-Doldfaithful.selftest.duskFull=${duskFull}".toString()]
+        // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead.
+        if (providers.gradleProperty('still.beta').isPresent()) {
+            configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
+                    'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+        }
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Pictures of the real game for the site (SceneShot, docs/release.md): Old Faithful's mods, a 1440x900 hidden
+// window, lava lying in caves near the spawn of -PsceneSeed (default 7373), shots in local/run/scene-shot/shots/.
+if (!fixedMods.isEmpty()) {
+    tasks.register('sceneShot', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Takes pictures of lit lava in caves of a new world, unseen, with Old Faithful\'s mods.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/scene-shot')
+        runDir = runDirectory
+        oldFaithful = findProject(':oldfaithful-options') != null
+        windowRuns = false
+        timeoutSeconds = 600
+        // Later -D values win: the window's size, and what the start-up checks expect of it.
+        extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1440x900', '-Doldfaithful.selftest.expectSize=1440x900',
+                        "-Doldfaithful.selftest.scene=${runDirectory.dir('shots').asFile.absolutePath}",
+                        "-Doldfaithful.selftest.sceneSeed=${providers.gradleProperty('sceneSeed').getOrElse('7373')}"]
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Landscapes with Still Faithful's mods (its dusk), for its site page: -PsceneViews="x y z yaw pitch time;..." (SceneShot's
+// view mode) in a world of -PsceneSeed, shots in local/run/scene-shot-still/shots/.
+if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
+    tasks.register('sceneShotStill', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Takes pictures of given views of a new world, unseen, with Still Faithful\'s mods.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/scene-shot-still')
+        runDir = runDirectory
+        oldFaithful = findProject(':oldfaithful-options') != null
+        windowRuns = false
+        def views = providers.gradleProperty('sceneViews').getOrElse('')
+        def seconds = 300 + 60 * Math.max(1, views.split(';').length)
+        timeoutSeconds = seconds
+        extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1440x900', '-Doldfaithful.selftest.expectSize=1440x900',
+                        "-Doldfaithful.selftest.stallMs=${(seconds - 30) * 1000}".toString(),
+                        "-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
+                        "-Doldfaithful.selftest.scene=${runDirectory.dir('shots').asFile.absolutePath}".toString(),
+                        "-Doldfaithful.selftest.sceneViews=${views}".toString(),
+                        "-Doldfaithful.selftest.sceneSeed=${providers.gradleProperty('sceneSeed').getOrElse('31337')}".toString()]
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Old Faithful's multiplayer fixes in every mix of sides (docs/fixes.md): the server package with and without the fix
+// mod, each joined by the real client (hidden) with and without it, and raw-packet clients for the server-side ones.
+if (findProject(':oldfaithful-fixes') != null) {
+    def fixesJar = project(':oldfaithful-fixes').tasks.named('remapJar')
+    def clientMods = [testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod]
+    tasks.register('fixesMultiplayerTest', oldfaithful.gradle.FixesMultiplayerTestTask) {
+        group = 'verification'
+        description = 'The multiplayer fixes on the real server and the real client (hidden), with and without the fix mod on each side.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(clientMods, fixesJar)
+        clientModsWithoutFixes.from(clientMods)
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        harnessMod = tasks.named('remapJar').flatMap { it.output }
+        fixesMod = fixesJar.flatMap { it.output }
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/fixes-multiplayer-test')
+        windowRuns = false
+        rawOnly = providers.gradleProperty('fixesmp.rawOnly').map { it.toBoolean() }.orElse(false)
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// The release packs as they'll be published (docs/release.md): the start-up test on what's inside each pack's zip,
+// unpacked as Prism would lay it out: its libraries on the classpath, its natives extracted, its mods (with the
+// self-test mod beside them). `clientStartupTestPack` for Pure Faithful's, `clientStartupTestPackFixed` for Old
+// Faithful's, `clientStartupTestPackStill` for Still Faithful's (its title line and settings button checked; its own
+// changes are `clientStartupTestStill`'s). Prism itself and the instance files (components, icon, notes) aren't run here.
+[[task: 'clientStartupTestPack', pack: 'releasePack', key: 'pure', oldFaithful: false, name: 'Pure Faithful'],
+ [task: 'clientStartupTestPackFixed', pack: 'releasePackFixed', key: 'fixed', oldFaithful: true, name: 'Old Faithful'],
+ [task: 'clientStartupTestPackStill', pack: 'releasePackStill', key: 'still', oldFaithful: true, name: 'Still Faithful',
+  edition: 'Still Faithful:stillfaithful-polish']].each { p ->
+    if (!rootProject.tasks.names.contains(p.pack)) return
+    def packZip = rootProject.tasks.named(p.pack)
+    def unpacked = tasks.register("${p.task}Unpack", Sync) {
+        from { zipTree(packZip.get().archiveFile) }
+        into layout.buildDirectory.dir("pack-test/${p.key}/instance")
+    }
+    def packNatives = tasks.register("${p.task}Natives", Sync) {
+        dependsOn unpacked
+        from { fileTree(unpacked.get().destinationDir) { include 'libraries/*natives*.jar' }.collect { zipTree(it) } }
+        exclude 'META-INF/**'
+        into layout.buildDirectory.dir("pack-test/${p.key}/natives")
+    }
+    def libraries = unpacked.map { fileTree(it.destinationDir) { include 'libraries/*.jar'; exclude 'libraries/*natives*.jar', 'libraries/intermediary-*.jar' } }
+    tasks.register(p.task, oldfaithful.gradle.ClientStartupTask) {
+        group = 'verification'
+        description = "The start-up test on what's in the ${p.name} release pack."
+        dependsOn packNatives
+        gameJar = mc.clientJar
+        intermediaryMappings = layout.file(unpacked.map { fileTree(it.destinationDir) { include 'libraries/intermediary-*.jar' }.singleFile })
+        loaderClasspath.from(libraries)
+        mods.from(unpacked.map { fileTree(it.destinationDir) { include '.minecraft/mods/*.jar' } }, tasks.named('remapJar'))
+        natives = layout.buildDirectory.dir("pack-test/${p.key}/natives")
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir("local/run/client-startup-pack-${p.key}")
+        oldFaithful = p.oldFaithful
+        if (p.edition) extraJvmArgs = ["-Doldfaithful.selftest.edition=${p.edition}".toString()]
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// The same on Linux x64, in Docker (tools/in_linux.py): `clientStartupTestLinux` runs it on both test images.
+def clientStartupLinux = linuxImages.collect { img ->
+    tasks.register("clientStartupTestLinux-${img}", oldfaithful.gradle.ClientStartupTask) {
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        inLinux = rootProject.layout.projectDirectory.file('tools/in_linux.py')
+        platform = "linux-${img}"
+        runDir = rootProject.layout.projectDirectory.dir("local/run/client-startup-linux-${img}")
+        // Mesa's software renderer is slower than a GPU: more time for the world.
+        timeoutSeconds = 300
+    }
+}
+tasks.register('clientStartupTestLinux') {
+    group = 'verification'
+    description = 'The client start-up test on Linux x64 in Docker (AlmaLinux 8 and Ubuntu 24.04), unseen.'
+    dependsOn clientStartupLinux
+}
+
+// The speed benchmark (docs/speed.md): this writes local/bench/launch.json, the launch of each configuration as a
+// player's launcher would do it (classpath, natives, mods), and tools/bench.py runs the game from it, unseen.
+// `sdl` is our LWJGL component with the display mod; `lwjgl2` is vanilla's LWJGL 2 (our build of it), as the
+// phase 2 instance runs it. Both carry the hardening mod and the self-test mod, which holds the benchmark.
+tasks.register('benchSetup') {
+    group = 'oldfaithful'
+    description = 'Writes local/bench/launch.json for tools/bench.py: how to launch each benchmark configuration.'
+    def display = project(':oldfaithful-display').tasks.named('remapJar')
+    def lightingMod = findProject(':oldfaithful-lighting')?.tasks?.named('remapJar')
+    dependsOn extractLwjgl3Natives, extractNatives, bakedLwjgl, benchMods, display, speedMod
+    if (lightingMod != null) dependsOn lightingMod
+    inputs.file(mc.clientJar)
+    inputs.file(mc.intermediaryMappings)
+    def out = rootProject.file('local/bench/launch.json')
+    outputs.upToDateWhen { false }
+    doLast {
+        def base = files(configurations.loaderRuntime).files*.absolutePath
+        def game = [mc.intermediaryMappings.get().asFile.absolutePath, mc.clientJar.get().asFile.absolutePath]
+        def jar = { t -> t.get().outputs.files.singleFile.absolutePath }
+        def mods = benchMods.collect { jar(it) }
+        def java = gameJava.isPresent() ? gameJava.get() : new File(System.getProperty('java.home'), 'bin/java').absolutePath
+        def spec = [
+            java: java,
+            mainClass: 'net.fabricmc.loader.impl.launch.knot.KnotClient',
+            configs: [
+                sdl: [classpath: base + [bakedLwjgl.get().output.get().asFile.absolutePath] + game,
+                      natives: lwjgl3NativesDir.get().asFile.absolutePath,
+                      mods: mods + [jar(display)]],
+                speed: [classpath: base + [bakedLwjgl.get().output.get().asFile.absolutePath] + game,
+                        natives: lwjgl3NativesDir.get().asFile.absolutePath,
+                        mods: mods + [jar(display), jar(speedMod)]],
+                lwjgl2: [classpath: base + configurations.lwjglRuntime.files*.absolutePath + game,
+                         natives: nativesDir.get().asFile.absolutePath,
+                         mods: mods],
+            ],
+            sounds: rootProject.file('local/cache/selftest-sounds/resources').absolutePath,
+        ]
+        // Old Faithful's lighting (docs/lighting.md) on top of speed, where the mod is in the build.
+        if (lightingMod != null) spec.configs.lighting = [classpath: spec.configs.speed.classpath, natives: spec.configs.speed.natives,
+                                                          mods: spec.configs.speed.mods + [jar(lightingMod)]]
+        out.parentFile.mkdirs()
+        out.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(spec))
+        logger.lifecycle("Wrote ${out}")
+    }
+}

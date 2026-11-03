@@ -1,0 +1,19 @@
+Fabric Loader 0.20.1
+  libraries/fabric-loader-0.20.1.jar. Loads the mods. By FabricMC. https://github.com/FabricMC/fabric-loader
+  Apache License 2.0: licenses/fabric-loader/LICENSE_fabric-loader, licenses/common/Apache-2.0.txt.
+  Built into it (relocated under net/fabricmc/loader/impl/lib), each under its own licence:
+  - tiny-remapper 0.15.0, by Player, asie and FabricMC: GNU Lesser General Public License, version 3 or (at your
+    option) any later version: licenses/common/LGPL-3.0.txt and the GPL it builds on, licenses/common/GPL-3.0.txt.
+    Its source code, and Fabric Loader's (so the two can be rebuilt and relinked), are in sources/.
+    https://github.com/FabricMC/tiny-remapper
+  - SAT4J 2.3.6 (core and pb), by the SAT4J project, distributed under the Eclipse Public License 1.0 as the loader
+    ships it (licenses/fabric-loader/about-sat4j.html, licenses/common/EPL-1.0.txt; SAT4J is also offered under the
+    GNU LGPL 2.1 or later). Parts are based on MiniSat 1.1.4: licenses/common/MiniSat-MIT.txt. Its source code is in
+    sources/, and at https://www.sat4j.org/.
+  - mapping-io 0.9.1 and class-tweaker 0.3.0, by FabricMC: Apache License 2.0.
+  - Parts of Gson's JSON reader, by Google: Apache License 2.0.
+  - MixinExtras 0.5.5 (META-INF/jars inside the loader), by LlamaLad7: MIT, licenses/common/MixinExtras-MIT.txt.
+    It contains, relocated: Gson 2.11.0 by Google (Apache License 2.0); parts of Apache Commons Lang 3.3.2
+    (Apache License 2.0, with its notice in licenses/common/Apache-Commons-Lang-NOTICE.txt); the ANTLR 4.13.1
+    runtime (BSD 3-Clause, licenses/common/ANTLR-BSD-3-Clause.txt); java-semver 0.10.2 by Zafar Khaja (MIT,
+    licenses/common/java-semver-MIT.txt).

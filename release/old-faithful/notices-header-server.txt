@@ -1,0 +1,13 @@
+Old Faithful @VERSION@ server package: notices
+==============================================
+
+Old Faithful is Pure Faithful @PURE_VERSION@ with Old Faithful's own mods. Both are open source under the MIT licence
+(licenses/old-faithful/LICENSE.txt): the purefaithful-* and oldfaithful-* mods in mods/. Source code:
+https://github.com/@REPO@
+
+Minecraft is not included: you add Mojang's beta 1.7.3 server yourself. Old Faithful is not an official Minecraft
+product, and is not approved by or associated with Mojang or Microsoft.
+
+The package also contains software by others, listed below: what each is, where it is in this folder, its licence,
+and where the licence text is. Where a licence asks for the source code to come with the program, it is in
+sources/ (see sources/README.txt).

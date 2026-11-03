@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.lighting.scenario.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "server": ["ServerPaceMixin", "WorldSpawnMixin", "WorldTickMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

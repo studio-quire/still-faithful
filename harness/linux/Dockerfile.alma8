@@ -1,0 +1,15 @@
+# A Linux x64 test machine for our LWJGL component (tools/in_linux.py): the oldest system our natives target
+# (AlmaLinux 8, glibc 2.28, the build image's base) with an X server nobody sees (Xvfb) and Mesa's software
+# OpenGL (llvmpipe). Only the runtime libraries a desktop has; nothing from the build image.
+FROM almalinux:8@sha256:2d0f2eb2a83cc09dbc2eb92fade4dbe8f709628149e81aa00aec70630406603b
+RUN dnf -y install xorg-x11-server-Xvfb mesa-dri-drivers mesa-libGL mesa-libEGL libglvnd-glx \
+      libX11 libXext libXrandr libXcursor libXfixes libXi libXScrnSaver libXtst libXrender libxkbcommon \
+      alsa-lib pulseaudio-libs dbus-libs fontconfig dejavu-sans-fonts procps-ng \
+    && dnf clean all
+# Temurin 21 as the instance runs the game, hash from Adoptium's API.
+RUN curl -fsSL -o /tmp/jdk.tar.gz https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.13%2B9/OpenJDK21U-jdk_x64_linux_hotspot_21.0.13_9.tar.gz \
+    && echo "d7f5d5cf865a2902b70ff549b97586a7d3f234e016f041ab447ea740c7d66d1c  /tmp/jdk.tar.gz" | sha256sum -c - \
+    && mkdir /opt/jdk21 && tar -xzf /tmp/jdk.tar.gz -C /opt/jdk21 --strip-components=1 && rm /tmp/jdk.tar.gz
+COPY run.sh /usr/local/bin/oldfaithful-run
+RUN chmod 755 /usr/local/bin/oldfaithful-run
+ENTRYPOINT ["/usr/local/bin/oldfaithful-run"]

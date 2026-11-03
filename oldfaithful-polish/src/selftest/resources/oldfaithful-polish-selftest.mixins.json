@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.polish.selftest.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": ["ChunkCacheStorage", "LivingEntityInvoker"],
+  "client": ["DuskChunkBuilderMixin", "DuskGameRendererMixin", "DuskParticleManagerMixin", "DuskTextureManagerMixin", "DuskWorldRendererMixin"],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

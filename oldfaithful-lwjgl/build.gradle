@@ -1,0 +1,80 @@
+// Our LWJGL component: the LWJGL 2 API that b1.7.3 and its mods call, on LWJGL 3 and SDL3 (docs/lwjgl.md). The
+// shipped jar is baked from LWJGL 3's jars, our classes here and a few of LWJGL 2's (BakeLwjglTask).
+plugins {
+    id 'java'
+}
+
+version = oldfaithful_version
+
+configurations {
+    lwjgl3 { transitive = false }
+    legacyLwjgl { transitive = false }
+    legacyLwjglUtil { transitive = false }
+    // What the component puts in the natives folder: LWJGL 3's JNI libraries, SDL3, OpenAL Soft (OpenAL.dll,
+    // libopenal.so), for Windows and Linux x64.
+    lwjgl3Natives { transitive = false }
+}
+dependencies {
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:lwjgl3:${lwjgl3_natives_version}:natives-windows"
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:sdl3:${sdl3_version}:natives-windows"
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-windows-lwjgl3"
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:lwjgl3:${lwjgl3_natives_version}:natives-linux"
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:sdl3:${sdl3_version}:natives-linux"
+    lwjgl3Natives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-linux"
+    ['lwjgl', 'lwjgl-opengl', 'lwjgl-openal', 'lwjgl-sdl'].each { lwjgl3 "org.lwjgl:${it}:${lwjgl3_version}" }
+    legacyLwjgl "org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}"
+    legacyLwjglUtil "org.studioquire.oldfaithful.natives:lwjgl_util:${lwjgl_version}"
+}
+
+// LWJGL 2 classes shipped as LWJGL 2 compiled them: plain value classes and interfaces whose exact behaviour
+// (equals, toString, defaults) callers may rely on. BSD, like LWJGL 3; the licence travels in the jar.
+def legacyClassList = ['org/lwjgl/LWJGLException', 'org/lwjgl/opengl/DisplayMode', 'org/lwjgl/opengl/PixelFormat',
+                     'org/lwjgl/opengl/PixelFormatLWJGL', 'org/lwjgl/opengl/OpenGLException', 'org/lwjgl/input/Controller',
+                     'org/lwjgl/opengl/GLUConstants']
+// From lwjgl_util: geometry, vectors and GLU. Not its AWT applet loader, jinput bridge, mapped objects or generator.
+def utilPrefixList = ['org/lwjgl/util/']
+def utilExcludeList = ['org/lwjgl/util/applet/', 'org/lwjgl/util/jinput/', 'org/lwjgl/util/mapped/',
+                          'org/lwjgl/util/generator/', 'org/lwjgl/util/input/']
+
+def legacyApi = tasks.register('legacyApiJar', Jar) {
+    description = 'The LWJGL 2 classes we ship unchanged, alone, to compile our classes against.'
+    archiveFileName = 'lwjgl2-api.jar'
+    destinationDirectory = layout.buildDirectory.dir('tmp/legacy-api')
+    from({ zipTree(configurations.legacyLwjgl.singleFile) }) {
+        include legacyClassList.collectMany { ["${it}.class", "${it}\$*.class"] }
+    }
+}
+// Stand-ins for classes the bake generates (ContextCapabilities), to compile against; never shipped.
+sourceSets { stubs }
+configurations.stubsCompileOnly.extendsFrom configurations.lwjgl3
+tasks.named('compileStubsJava') { options.release = 8 }
+dependencies {
+    compileOnly files(legacyApi)
+    compileOnly sourceSets.stubs.output
+}
+configurations.compileOnly.extendsFrom configurations.lwjgl3
+
+tasks.named('compileJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+    options.compilerArgs.add('-Xlint:-options')
+}
+tasks.named('jar') { archiveClassifier = 'classes' }
+
+def bake = tasks.register('bakeLwjgl', oldfaithful.gradle.BakeLwjglTask) {
+    group = 'build'
+    description = 'Bakes the component jar: LWJGL 3 with the LWJGL 2 API added (build/libs).'
+    lwjgl3.from(configurations.lwjgl3)
+    legacyJar.fileProvider(provider { configurations.legacyLwjgl.singleFile })
+    legacyUtilJar.fileProvider(provider { configurations.legacyLwjglUtil.singleFile })
+    legacyClasses.set(legacyClassList)
+    legacyUtilPrefixes.set(utilPrefixList)
+    legacyUtilExcludes.set(utilExcludeList)
+    classes.set(sourceSets.main.java.destinationDirectory)
+    resources.set(layout.projectDirectory.dir('src/main/resources'))
+    natives.from(configurations.lwjgl3Natives)
+    dependsOn tasks.named('compileJava')
+    output = layout.buildDirectory.file("libs/purefaithful-lwjgl-${version}.jar")
+    report = layout.buildDirectory.file('reports/lwjgl-bake.txt')
+}
+tasks.named('assemble') { dependsOn bake }

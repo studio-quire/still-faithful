@@ -1,0 +1,8 @@
+local/
+build/
+.gradle/
+.kotlin/
+out/
+.idea/
+*.iml
+__pycache__/

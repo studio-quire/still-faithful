@@ -1,0 +1,14 @@
+LWJGL 3.4.3 and parts of LWJGL 2, in Pure Faithful's LWJGL component
+  libraries/purefaithful-lwjgl-@PURE_VERSION@.jar holds Pure Faithful's own LWJGL 2 API (MIT) together with:
+  - LWJGL 3.4.3's core, OpenGL, OpenAL and SDL classes, as published by the LWJGL project: BSD 3-Clause,
+    licenses/purefaithful-lwjgl/LWJGL3-LICENSE.md. https://www.lwjgl.org/. Their bindings follow the Khronos
+    registry (licenses/purefaithful-lwjgl/LWJGL3-opengl-khronos_license.txt), SDL's headers
+    (LWJGL3-sdl-sdl_license.txt), libffi's (LWJGL3-core-libffi_license.txt) and liburing's
+    (LWJGL3-core-liburing_license.txt).
+  - From LWJGL 2.9.4 (Legacy Fabric's maintained build, compiled here from its source): a few value classes and
+    lwjgl_util's geometry, vector and GLU classes. BSD 3-Clause, licenses/purefaithful-lwjgl/LWJGL2-LICENSE.
+    https://github.com/Legacy-Fabric/lwjgl
+  - LWJGL 2's GLU tessellator (org/lwjgl/util/glu/tessellation and GLUtessellator*) comes from JOGL (Sun
+    Microsystems, BSD) and the OpenGL Sample Implementation (Silicon Graphics, Inc., SGI Free Software License B
+    1.1): licenses/purefaithful-lwjgl/LWJGL2-util-glu-tessellator-NOTICE.txt, which includes SGI's notice, and
+    licenses/purefaithful-lwjgl/SGI-FreeB-1.1.txt.

@@ -1,0 +1,94 @@
+plugins { id 'oldfaithful.mod' }
+
+// Tests: `serverLightTest` runs the real dedicated server, with and without this mod, and checks every saved chunk's
+// light against b1.7.3's own rule computed from scratch (LightCheck, which shares no code with the mod). The
+// scenario source set is a test-only mod that sets off explosions and digs under overhangs on the running server.
+def mc = rootProject.oldfaithfulMinecraft
+
+sourceSets { scenario }
+
+dependencies {
+    // LightingSettings, the lava switch on Old Faithful's settings screen: loaded only by the options mod, when present.
+    compileOnly project(':oldfaithful-options')
+    testImplementation files(mc.namedJar)
+    // Block's tables need the game's language files, which are in the official jar (its classes keep their own names).
+    testRuntimeOnly files(mc.clientJar)
+    scenarioCompileOnly files(mc.namedJar)
+    scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    scenarioCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
+    scenarioCompileOnly "io.github.llamalad7:mixinextras-fabric:${mixinextras_version}"
+    // The paced scenario checks the world with the mod's own Verify (the mod is always beside it there).
+    scenarioCompileOnly sourceSets.main.output
+}
+
+tasks.named('compileScenarioJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+
+def scenarioJar = tasks.register('scenarioJar', Jar) {
+    from sourceSets.scenario.output
+    archiveClassifier = 'scenario-dev'
+}
+def scenarioRemap = tasks.register('scenarioRemapJar', oldfaithful.gradle.RemapJarTask) {
+    input = scenarioJar.flatMap { it.archiveFile }
+    namedMappings = mc.namedMappings
+    classpath.from(sourceSets.main.compileClasspath)
+    output = layout.buildDirectory.file('libs/oldfaithful-lighting-scenario.jar')
+}
+
+tasks.named('test') {
+    useJUnitPlatform { excludeTags 'server' }
+    maxHeapSize = '512m'
+}
+
+configurations {
+    loaderRuntime { transitive = false }
+}
+
+dependencies {
+    loaderRuntime "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderRuntime "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderRuntime "org.ow2.asm:${it}:${asm_version}"
+    }
+}
+
+evaluationDependsOn(':oldfaithful-saves')
+
+tasks.register('serverLightTest', Test) {
+    group = 'verification'
+    description = 'The real dedicated server with and without this mod: every saved chunk\'s light against the rule.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'server' }
+    maxHeapSize = '2g'
+    def remapped = tasks.named('remapJar')
+    def saves = project(':oldfaithful-saves').tasks.named('remapJar')
+    dependsOn remapped, saves, scenarioRemap
+    def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    inputs.files(serverClasspath)
+    outputs.upToDateWhen { false }
+    testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+    doFirst {
+        systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
+        systemProperty 'oldfaithful.lighting.mod', remapped.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.saves.mod', saves.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.run', rootProject.file('local/run/lighting-server-test').absolutePath
+        // -Plighting.only=<variant,...> runs only those variants; -Plighting.keep keeps the worlds.
+        if (project.hasProperty('lighting.only')) systemProperty 'oldfaithful.lighting.only', project.property('lighting.only')
+        if (project.hasProperty('lighting.keep')) systemProperty 'oldfaithful.lighting.keep', 'true'
+        if (project.hasProperty('lighting.idle')) systemProperty 'oldfaithful.lighting.idle', project.property('lighting.idle')
+    }
+}
+
+// `./gw :oldfaithful-lighting:lightCheck -Pworld=<world folder>`: any saved world's light against the rule.
+tasks.register('lightCheck', JavaExec) {
+    group = 'verification'
+    description = 'Checks a saved world\'s light against b1.7.3\'s rule computed from scratch (LightCheck).'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.studioquire.oldfaithful.lighting.LightCheck'
+    maxHeapSize = '2g'
+    args = [project.findProperty('world') ?: 'missing -Pworld'] + (project.findProperty('probe')?.toString()?.split(',')?.toList() ?: [])
+}

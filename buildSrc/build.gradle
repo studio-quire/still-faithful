@@ -1,0 +1,47 @@
+plugins {
+    id 'java-gradle-plugin'
+}
+
+// One place for versions: the root gradle.properties.
+def rootProps = new Properties()
+file('../gradle.properties').withInputStream { rootProps.load(it) }
+
+// The same two modes as settings.gradle: our mirror, or upstream with -Poldfaithful.upstream.
+repositories {
+    if (providers.gradleProperty('oldfaithful.upstream').isPresent()) {
+        exclusiveContent {
+            forRepository { maven { url = 'https://maven.fabricmc.net/' } }
+            filter { includeGroup 'net.fabricmc' }
+        }
+        mavenCentral()
+    } else {
+        maven { url = file('../local/mirror/maven'); metadataSources { gradleMetadata(); mavenPom() } }
+    }
+}
+
+dependencies {
+    implementation "net.fabricmc:tiny-remapper:${rootProps.tiny_remapper_version}"
+    implementation "net.fabricmc:mapping-io:${rootProps.mapping_io_version}"
+    implementation "org.ow2.asm:asm:${rootProps.asm_version}"
+    implementation "org.ow2.asm:asm-tree:${rootProps.asm_version}"
+    implementation "org.ow2.asm:asm-commons:${rootProps.asm_version}"
+    implementation "org.ow2.asm:asm-analysis:${rootProps.asm_version}"
+}
+
+
+gradlePlugin {
+    plugins {
+        minecraft {
+            id = 'oldfaithful.minecraft'
+            implementationClass = 'oldfaithful.gradle.MinecraftPlugin'
+        }
+        mod {
+            id = 'oldfaithful.mod'
+            implementationClass = 'oldfaithful.gradle.ModPlugin'
+        }
+    }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.release = 21
+    options.encoding = 'UTF-8'
+}

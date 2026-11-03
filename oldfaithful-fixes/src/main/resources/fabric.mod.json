@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-fixes",
+  "version": "${version}",
+  "name": "Old Faithful Fixes",
+  "description": "Fixes b1.7.3's own clear mistakes, the way the game was meant to work: the grey sky with a chest open, tools whose last use drops nothing, wooden slabs that need a pickaxe, the furnace eating the lava bucket, and more. Each fix has its own switch, in Options > Old Faithful... (with Old Faithful Options) or config/oldfaithful-fixes.properties.",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/oldfaithful-fixes/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "oldfaithful-options:settings": ["org.studioquire.oldfaithful.fixes.FixesSettings"]
+  },
+  "mixins": ["oldfaithful-fixes.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  },
+  "custom": {
+    "purefaithful-hardening:branding": "Old Faithful"
+  }
+}

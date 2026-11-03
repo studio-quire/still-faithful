@@ -1,0 +1,8 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.polish.scenario.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "server": ["WorldTickMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

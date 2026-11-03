@@ -1,0 +1,109 @@
+plugins { id 'oldfaithful.mod' }
+
+// Still Faithful's changes (docs/still-faithful.md): what later versions improved, still beta in content. The
+// client-side ones call GL11 and GL20, which the game's launcher supplies at runtime (LWJGL 2 or our component).
+def mc = rootProject.oldfaithfulMinecraft
+
+// The selftest source set is a test-only client and server mod: Still Faithful's changes set up and checked in a
+// running world, from the harness's start-up test (gradle/still-faithful.gradle). Never shipped.
+// The scenario source set is a test-only server mod for `serverCartsTest` (#31 on the real server); its cart scenes
+// (CartScenes, Tracks) are shared with the selftest mod, whose jar carries them too.
+sourceSets { selftest; scenario }
+
+dependencies {
+    compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+    // PolishSettings, the switches on the settings screen: loaded only by Old Faithful's options mod, when present;
+    // the edition's name on that screen and on the title line (mixin/edition) reaches into it and the hardening mod.
+    compileOnly project(':oldfaithful-options')
+    compileOnly project(':oldfaithful-hardening')
+    compileOnly project(':oldfaithful-saves')
+    testImplementation project(':oldfaithful-options')
+    testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
+    selftestCompileOnly files(mc.namedJar)
+    selftestCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    selftestCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
+    selftestCompileOnly "io.github.llamalad7:mixinextras-fabric:${mixinextras_version}"
+    selftestCompileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+    selftestCompileOnly project(':harness')
+    selftestCompileOnly sourceSets.main.output
+    selftestCompileOnly project(':oldfaithful-saves')
+    selftestCompileOnly sourceSets.scenario.output
+    scenarioCompileOnly files(mc.namedJar)
+    scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    scenarioCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
+}
+
+tasks.named('compileSelftestJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+tasks.named('compileScenarioJava') {
+    options.release = 8
+    options.encoding = 'UTF-8'
+}
+
+def sharedScenes = ['org/studioquire/oldfaithful/polish/scenario/CartScenes*.class', 'org/studioquire/oldfaithful/polish/scenario/Tracks.class']
+def selftestJar = tasks.register('selftestJar', Jar) {
+    from sourceSets.selftest.output
+    from(sourceSets.scenario.output) { include sharedScenes }
+    archiveClassifier = 'selftest-dev'
+}
+tasks.register('selftestRemapJar', oldfaithful.gradle.RemapJarTask) {
+    input = selftestJar.flatMap { it.archiveFile }
+    namedMappings = mc.namedMappings
+    classpath.from(sourceSets.selftest.compileClasspath)
+    output = layout.buildDirectory.file('libs/oldfaithful-polish-selftest.jar')
+}
+
+def scenarioJar = tasks.register('scenarioJar', Jar) {
+    from sourceSets.scenario.output
+    archiveClassifier = 'scenario-dev'
+}
+def scenarioRemap = tasks.register('scenarioRemapJar', oldfaithful.gradle.RemapJarTask) {
+    input = scenarioJar.flatMap { it.archiveFile }
+    namedMappings = mc.namedMappings
+    classpath.from(sourceSets.scenario.compileClasspath)
+    output = layout.buildDirectory.file('libs/oldfaithful-polish-scenario.jar')
+}
+
+tasks.named('test') {
+    useJUnitPlatform { excludeTags 'server' }
+}
+
+configurations {
+    // What a launcher puts on the classpath for Fabric (as harness/build.gradle).
+    loaderRuntime { transitive = false }
+}
+
+dependencies {
+    loaderRuntime "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    loaderRuntime "net.fabricmc:sponge-mixin:${mixin_version}"
+    ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].each {
+        loaderRuntime "org.ow2.asm:${it}:${asm_version}"
+    }
+}
+
+tasks.register('serverCartsTest', Test) {
+    group = 'verification'
+    description = 'The real dedicated server: #31, carts meeting carts with the polish mod and without, and the long boosters.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'server' }
+    maxHeapSize = '256m'
+    def remapped = tasks.named('remapJar')
+    dependsOn remapped, scenarioRemap
+    def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    inputs.files(serverClasspath)
+    outputs.upToDateWhen { false }
+    testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+    doFirst {
+        systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
+        systemProperty 'oldfaithful.polish.mod', remapped.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.polish.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.run', rootProject.file('local/run/polish-server-test').absolutePath
+        // -Ppolish.debug prints the booster scene tick by tick; -Ppolish.run=<ticks> follows the long boosters for less.
+        if (project.hasProperty('polish.debug')) systemProperty 'oldfaithful.polish.scenario.debug', 'true'
+        if (project.hasProperty('polish.run')) systemProperty 'oldfaithful.polish.scenario.run', project.property('polish.run')
+    }
+}

@@ -1,0 +1,167 @@
+// Still Faithful, the third edition (docs/still-faithful.md): Old Faithful plus its own mod, oldfaithful-polish, public
+// since 0.1.0 (2026-11-03) in its own repository (tools/publish/rules.py; this file, the mod and its texts are in
+// neither of the other editions' snapshots). `./gw releaseStill` builds its pack, server package and mod into
+// local/release/still-faithful-<v>/, with SHA256SUMS.txt; `./gw prismStillInstance` the dev instance beside the others.
+// Nothing here publishes anything. As Old Faithful's release does with Pure Faithful's (docs/release.md > Versions), it
+// ships on released editions: Pure Faithful's parts must be its release's in local/release/<pure version>/ and Old
+// Faithful's its release's in local/release/old-faithful-<fixed version>/, byte for byte; and a release folder never
+// changes silently.
+
+def stillProject = findProject(':oldfaithful-polish')
+if (stillProject == null || !releaseEditions.containsKey('fixed')) return
+
+def stillMods = ['oldfaithful-polish']
+// A new mod of the edition must be placed here on purpose.
+def unlisted = subprojects.findAll {
+    def props = it.file('gradle.properties')
+    props.isFile() && props.getText('UTF-8') =~ /(?m)^oldfaithful_edition=still\s*$/ && !(it.name in stillMods)
+}
+if (unlisted) throw new GradleException("Still Faithful mods missing from gradle/still-faithful.gradle's stillMods: ${unlisted*.name}")
+
+def stillProp = { String key -> stillProject.property(key).toString() }
+def fixed = releaseEditions.fixed
+def stillVersion = stillProp('still_edition_version')
+releaseEditions.still = [
+    name: stillProp('still_release_name'), fileName: stillProp('still_release_file_name'),
+    tagline: stillProp('still_release_tagline'), repo: stillProp('still_release_repo'),
+    homepage: stillProp('still_release_homepage'), version: stillVersion, icon: 'stillfaithful', licenceFolder: 'still-faithful',
+    mods: fixed.mods + stillMods, serverMods: fixed.serverMods + stillMods,
+    serverModsText: 'hardening, saves, fixes, lighting and polish',
+    packReadme: 'release/still-faithful/pack-README.txt', serverReadme: 'release/still-faithful/server-README.txt',
+    packHeader: 'release/still-faithful/notices-header-pack.txt', serverHeader: 'release/still-faithful/notices-header-server.txt',
+    out: "local/release/still-faithful-${stillVersion}"]
+def still = releaseEditions.still
+def staging = layout.buildDirectory.dir('release')
+def modJars = { List<String> mods -> mods.collect { project(":${it}").tasks.named('remapJar') } }
+def componentJar = { project(':oldfaithful-lwjgl').tasks.named('bakeLwjgl').flatMap { it.output } }
+
+// As gradle/release.gradle's packs: the Prism instance a player imports, everything but Minecraft inside.
+def packStill = tasks.register('releasePackStill', Zip) {
+    group = 'oldfaithful'
+    description = 'Builds the Still Faithful pack: the Prism instance to import.'
+    inputs.property('tokens', releaseTokens(still))
+    def tokensFilter = releaseFilter(still)
+    from('prism/release') {
+        include 'instance.cfg', 'mmc-pack.json', 'patches/*.json'
+        filesMatching(['mmc-pack.json', 'patches/*.json', 'instance.cfg']) { filter tokensFilter }
+    }
+    from("prism/release/icons/final/${still.icon}-128.png") { rename { "${still.icon}.png" } }
+    from('prism/dev/patches') {
+        include 'net.fabricmc.fabric-loader.json', 'net.fabricmc.intermediary.json'
+        into 'patches'
+        filter tokensFilter
+    }
+    from(still.packReadme) { rename { 'README.txt' }; filter tokensFilter; releaseCrlf(delegate) }
+    from(oldfaithfulMinecraft.intermediaryMappings) { into 'libraries' }
+    from(configurations.loaderLibraries) { into 'libraries' }
+    from(configurations.releaseNatives) { into 'libraries' }
+    from(componentJar()) { into 'libraries' }
+    modJars(still.mods).each { from(it) { into '.minecraft/mods' } }
+    with licencesSpec(true, still)
+    with sourcesSpec(true, still)
+    includeEmptyDirs = false
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    destinationDirectory = staging.map { it.dir("out-${still.icon}") }
+    archiveFileName = "${still.fileName}-${still.version}.zip"
+}
+
+def serverStill = tasks.register('releaseServerStill', Zip) {
+    group = 'oldfaithful'
+    description = 'Zips the Still Faithful server package.'
+    inputs.property('tokens', releaseTokens(still))
+    into("${still.fileName}-server") { serverPackageContents(it, still) }
+    includeEmptyDirs = false
+    destinationDirectory = staging.map { it.dir("out-${still.icon}") }
+    archiveFileName = "${still.fileName}-server-${still.version}.zip"
+}
+
+def sha256 = { File f -> java.security.MessageDigest.getInstance('SHA-256').digest(f.bytes).encodeHex().toString() }
+def testBuild = project.hasProperty('release.test')
+
+// Still Faithful carries Pure Faithful's and Old Faithful's parts as their releases have them: each checked against
+// that release's SHA256SUMS.txt. Unlike Old Faithful's check, a missing release folder stops it too (both editions
+// are released before this one). A test build (-Prelease.test, into still-faithful-<version>-test/) warns instead.
+def stillPartsCheck = tasks.register('releaseStillPartsCheck') {
+    description = 'Checks that Still Faithful\'s Pure Faithful and Old Faithful parts are those of the releases they name.'
+    def pure = releaseEditions.pure
+    def pureJars = modJars(pure.mods)
+    def fixedJars = modJars(fixed.mods - pure.mods)
+    dependsOn pureJars, fixedJars, componentJar()
+    outputs.upToDateWhen { false }
+    doLast {
+        def problems = []
+        def compare = { String edition, String version, String folder, Map<String, File> ours ->
+            def sums = file("${folder}/SHA256SUMS.txt")
+            if (!sums.isFile()) { problems << "${edition} ${version} isn't in ${folder}/".toString(); return }
+            def released = sums.readLines().findAll { it.trim() }.collectEntries { def p = it.split(/\s+/, 2); [p[1], p[0]] }
+            def differ = ours.findAll { name, f -> released[name] != sha256(f) }.keySet()
+            if (differ) problems << "${edition}'s parts differ from its ${version} release (${differ.join(', ')})".toString()
+            else logger.lifecycle("${edition}'s parts are its ${version} release's, byte for byte.")
+        }
+        def jarFiles = { List jars -> jars.collectEntries { def f = it.get().output.get().asFile; [f.name, f] } }
+        def pureParts = jarFiles(pureJars)
+        pureParts["purefaithful-lwjgl-${pure.version}.jar".toString()] = componentJar().get().asFile
+        compare(pure.name, pure.version, pure.out, pureParts)
+        compare(fixed.name, fixed.version, fixed.out, jarFiles(fixedJars))
+        if (problems) {
+            def what = problems.join('; ') + ": Still Faithful must ship on released Pure Faithful and Old Faithful, so " +
+                    "release new versions of them with it (docs/release.md > Versions)."
+            if (!testBuild) throw new GradleException(what + " For a test build, -Prelease.test.")
+            logger.warn("TEST BUILD, not for publishing: " + what)
+        }
+    }
+}
+
+tasks.register('releaseStill', Sync) {
+    group = 'oldfaithful'
+    description = 'Builds Still Faithful\'s pack, server package and mod into local/release/still-faithful-<version>/. Publishes nothing.'
+    dependsOn stillPartsCheck
+    from(packStill)
+    from(serverStill)
+    modJars(stillMods).each { from(it) }
+    // A test build goes beside the real one, so the release folder only ever holds a checked build.
+    into layout.projectDirectory.dir(still.out + (testBuild ? '-test' : ''))
+    preserve { include 'SHA256SUMS.txt' }
+    if (!testBuild) guardRelease(it, still.name, still.version, 'still_edition_version')
+    doLast {
+        def lines = destinationDir.listFiles().findAll { it.isFile() && it.name != 'SHA256SUMS.txt' }.sort { it.name }
+                .collect { "${sha256(it)}  ${it.name}" }
+        new File(destinationDir, 'SHA256SUMS.txt').setText(lines.join('\n') + '\n', 'UTF-8')
+        logger.lifecycle("Still Faithful ${still.version}: ${destinationDir}")
+        lines.each { logger.lifecycle("  ${it}") }
+    }
+}
+
+// The dev instance for client checks, beside the Fixed one: the same SDL dev instance with every edition mod.
+tasks.register('prismStillInstance', Zip) {
+    group = 'oldfaithful'
+    description = 'Builds local/prism/StillFaithful-dev.zip: the SDL dev instance with Old Faithful\'s and Still Faithful\'s mods.'
+    def sdl = tasks.named('prismSdlInstance')
+    dependsOn sdl
+    from({ zipTree(sdl.get().archiveFile) }) {
+        filesMatching('instance.cfg') {
+            filter { String line ->
+                line == 'name=Old Faithful (SDL dev)' ? 'name=Still Faithful (dev)' :
+                line == 'iconKey=default' ? 'iconKey=stillfaithful' : line
+            }
+        }
+    }
+    from('prism/release/icons/final/stillfaithful-128.png') { rename { 'stillfaithful.png' } }
+    ((fixed.mods - releaseEditions.pure.mods) + stillMods).each { name -> from(project(":$name").tasks.named('remapJar')) { into '.minecraft/mods' } }
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    destinationDirectory = layout.projectDirectory.dir('local/prism')
+    archiveFileName = 'StillFaithful-dev.zip'
+}
+
+// -Pstill.saves: the saves mod's real-server test (damaged chunks, and the server killed outright during bursts of
+// save-all, every chunk read back with vanilla's reader after each kill) with this edition's mod beside it, so its
+// background autosave runs through all of it (docs/still-faithful.md > Background autosave).
+if (providers.gradleProperty('still.saves').isPresent()) {
+    project(':oldfaithful-saves').afterEvaluate { saves ->
+        saves.tasks.named('serverSaveTest') {
+            def polishJar = stillProject.tasks.named('remapJar')
+            dependsOn polishJar
+            doFirst { systemProperty 'oldfaithful.saves.extraMods', polishJar.get().output.get().asFile.absolutePath }
+        }
+    }
+}

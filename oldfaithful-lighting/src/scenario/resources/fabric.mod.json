@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-lighting-scenario",
+  "version": "0",
+  "name": "Old Faithful lighting test scenario (test only)",
+  "environment": "server",
+  "mixins": ["oldfaithful-lighting-scenario.mixins.json"],
+  "depends": { "minecraft": "1.0.0-beta.7.3" }
+}

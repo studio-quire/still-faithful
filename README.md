@@ -1,0 +1,109 @@
+# Still Faithful
+
+**beta 1.7.3 as it might have been**
+
+Minecraft beta 1.7.3 with the polish later versions brought while the game stayed beta in content. Still Faithful is
+[Old Faithful](https://github.com/studio-quire/old-faithful) (beta as it was meant to work, on
+[Pure Faithful](https://github.com/studio-quire/pure-faithful): safe online, faster, and unable to lose your world)
+plus the improvements that came after beta, each on a switch. Nothing new to collect or craft; beta's world, made
+kinder to live in. Open source, from [Studio Quire](https://studioquire.org/).
+
+Still Faithful is mods, not a modified game: your launcher downloads Minecraft itself from Mojang, with your own
+account. Nothing of Mojang's is in this repository or in our downloads. For Windows now; macOS and Linux follow.
+
+## What it changes
+
+Every change has its own switch, all on: in the game under **Options > Still Faithful... > Polish**, or in
+`config/stillfaithful-polish.properties`. Switch one off to have beta's behaviour back (after a restart).
+
+- **Dusk and dawn without the steps.** Beta darkens the world in eleven steps, and at each one the chunks around you
+  are redrawn in a wave across the landscape. Here the light is applied as the world is drawn, so nothing is
+  redrawn: dusk and dawn glide smoothly, the fog with them. Dusk can also be **Stepped** (beta's own eleven pictures,
+  each changing the whole view at once) or **Beta** (beta's way exactly). Smooth and Stepped switch at once; Beta
+  takes a restart.
+- **Stairs** drop themselves, not a plank or a cobblestone.
+- **Leaves you place** never decay; leaves on trees still do.
+- **Glowstone** drops its dust when broken by hand or with any tool, and breaks at the speed it had from 1.0.
+- **Lava** cut off from its source thins out instead of lingering for good. **Water** between two sources becomes a
+  source over still water too, not only over solid ground.
+- **Boats** break only in a real crash: scraping along a shore or bumping a floating item no longer shatters them,
+  and items no longer stop them. A boat nobody is paddling slows to a stop in a few blocks and rides the water
+  steadily; top speed and turning are beta's.
+- **Minecarts** meet on every track as they did on east-west track: on north-south and curved track a cart no longer
+  stops dead against another, so bumping, furnace trains and boosters work there too. Carts on parallel tracks still
+  leave each other alone.
+- **Animals you've looked after stay**: sheared, milked, saddled, dyed, ridden, carried in a minecart, or hatched
+  from an egg you threw. Wild animals still come and go as in beta, and hitting one doesn't keep it.
+- **Saving without the pause.** The game's save every couple of seconds is compressed and written in the background:
+  the same saves at the same moments, crash-safe as Pure Faithful's (it needs Pure Faithful's saves mod).
+- **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
+  skeletons hold a bow like a bow.
+
+Smooth and stepped dusk need OpenGL 2.0 and have so far been tested only on NVIDIA graphics. If the sky or the
+landscape looks wrong, set **Dusk** to **Beta** (after a restart it's beta's own way), and please tell us in an issue.
+Smooth dusk doesn't combine with mods that build chunks off the main thread or change how they're built (SmoothBeta,
+for one): set Dusk to Beta with those.
+
+Everything else is Old Faithful's and Pure Faithful's: beta's own mistakes fixed, lighting as beta's rule says it
+should be, a field-of-view slider, a settings screen for every switch, a resizable window and borderless fullscreen,
+speed with the same picture, safe logins, and saves that survive crashes. What players built their game around
+(the fence hitbox behind "smart farms", world generation, the closing-the-window undo) stays as beta had it.
+
+Worlds stay in beta's own format and open in the original game, Pure Faithful and Old Faithful too; there, placed
+leaves can decay again and kept animals can despawn.
+
+## Download and play
+
+You need a Minecraft account that owns the game, and [Prism Launcher](https://prismlauncher.org/).
+
+1. Download **StillFaithful-&lt;version&gt;.zip** from [the latest release](https://github.com/studio-quire/still-faithful/releases).
+2. In Prism Launcher: **Add Instance > Import**, choose the zip (or paste the download link), **OK**.
+3. Launch it. Prism downloads beta 1.7.3 and its sounds from Mojang, and, if you let it, a Java 21 runtime.
+
+Everything else is inside the zip; nothing else is downloaded, from us or anyone. The title screen shows "Still
+Faithful" and its version under beta's own version line.
+
+## For existing instances
+
+Already playing b1.7.3 on Fabric (Babric) in Prism? **stillfaithful-polish** (client and server) works on its own:
+drop the jar from the release into the instance's `.minecraft/mods`. Without Old Faithful's options mod its switches
+are only in the config file, and its background saving needs Pure Faithful's saves mod; everything else works
+anywhere.
+
+The whole of Still Faithful on its own is this mod plus Old Faithful's three and Pure Faithful's four mods and its
+LWJGL, from the Old Faithful and Pure Faithful releases the Still Faithful release names;
+[Pure Faithful's README](https://github.com/studio-quire/pure-faithful#for-existing-instances) says how to install
+its LWJGL.
+
+## Servers
+
+`StillFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening and saves mods, Old
+Faithful's fixes and lighting, and Still Faithful's polish mod: bring Mojang's server jar (the scripts check it's
+genuine) and run `start.bat` or `start.sh`. Players can join with vanilla beta 1.7.3 or any of the three editions; the
+server's changes (drops, leaves, water, lava, boats, carts, animals, saving) work for everyone, and faster glowstone
+mining needs Still Faithful on both sides.
+
+## Problems
+
+Please [open an issue](https://github.com/studio-quire/still-faithful/issues) and attach
+`.minecraft/logs/purefaithful/latest.log` from the instance folder. It never contains your access token. If a change
+clashes with another mod, its switch turns it off completely.
+
+## Building
+
+This repository holds all of Still Faithful's source, Old Faithful's and Pure Faithful's included. `./gw releaseStill`
+builds everything a Still Faithful release contains into `local/release/still-faithful-<version>/` (and `./gw
+releaseFixed` and `./gw release` the other two editions'). [docs/building.md](docs/building.md) and
+[docs/release.md](docs/release.md) say how; the changes are described in [docs/still-faithful.md](docs/still-faithful.md),
+with every bug's cause in [docs/bugs.md](docs/bugs.md). Inside, the project is called by its working name,
+`oldfaithful`.
+
+## Credits and licence
+
+Made by Claude Opus 5.5, an AI model by Anthropic, at Studio Quire. Idea, direction and play-testing: Shoalstone.
+
+Still Faithful's code is under the [MIT licence](LICENSE). It builds on Fabric Loader, Mixin, ASM, Babric's mappings,
+LWJGL, SDL and OpenAL Soft, each under its own licence; the downloads carry their notices and licence texts, and the
+source code their licences ask for.
+
+Not an official Minecraft product. Not approved by or associated with Mojang or Microsoft.

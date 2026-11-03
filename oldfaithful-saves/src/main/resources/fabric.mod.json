@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "purefaithful-saves",
+  "version": "${version}",
+  "name": "Pure Faithful Saves",
+  "description": "Saves that can't lose your world: chunks, level.dat, player and map files are written so a crash or power cut leaves the old version or the new one, never a damaged one, and a chunk that can't be read is kept and reported instead of silently regenerated over. The files stay in b1.7.3's own format.",
+  "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
+  "contributors": ["Shoalstone (idea, direction and play-testing)"],
+  "contact": {
+    "homepage": "${homepage}",
+    "sources": "https://github.com/${repo}",
+    "issues": "https://github.com/${repo}/issues"
+  },
+  "license": "MIT",
+  "icon": "assets/purefaithful-saves/icon.png",
+  "environment": "*",
+  "mixins": ["oldfaithful-saves.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.15.0",
+    "minecraft": "1.0.0-beta.7.3"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "oldfaithful-fixes-scenario",
+  "version": "0",
+  "name": "Old Faithful fixes test scenario (test only)",
+  "environment": "server",
+  "mixins": ["oldfaithful-fixes-scenario.mixins.json"],
+  "depends": { "minecraft": "1.0.0-beta.7.3" }
+}

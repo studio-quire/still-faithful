@@ -1,0 +1,25 @@
+{
+    "formatVersion": 1,
+    "name": "LWJGL 2 (Old Faithful's build)",
+    "uid": "org.lwjgl",
+    "version": "@LWJGL_VERSION@",
+    "type": "release",
+    "order": -1,
+    "conflicts": [{"uid": "org.lwjgl3"}],
+    "libraries": [
+        {"name": "org.studioquire.oldfaithful.natives:lwjgl:@LWJGL_VERSION@", "MMC-hint": "local"},
+        {"name": "org.studioquire.oldfaithful.natives:lwjgl_util:@LWJGL_VERSION@", "MMC-hint": "local"},
+        {
+            "name": "org.studioquire.oldfaithful.natives:lwjgl-platform:@LWJGL_VERSION@",
+            "MMC-hint": "local",
+            "natives": {"windows": "natives-windows"},
+            "extract": {"exclude": ["META-INF/"]}
+        },
+        {
+            "name": "org.studioquire.oldfaithful.natives:openal-soft:@OPENAL_VERSION@",
+            "MMC-hint": "local",
+            "natives": {"windows": "natives-windows"},
+            "extract": {"exclude": ["META-INF/"]}
+        }
+    ]
+}

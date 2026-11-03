@@ -1,0 +1,28 @@
+{
+    "components": [
+        {
+            "uid": "org.lwjgl",
+            "version": "@LWJGL_VERSION@",
+            "cachedName": "LWJGL (Old Faithful: the LWJGL 2 API on LWJGL 3 and SDL3)",
+            "dependencyOnly": true
+        },
+        {
+            "uid": "net.minecraft",
+            "version": "b1.7.3",
+            "cachedName": "Minecraft (Old Faithful's launch settings)",
+            "important": true
+        },
+        {
+            "uid": "net.fabricmc.intermediary",
+            "version": "b1.7.3",
+            "cachedName": "Intermediary Mappings (Babric)",
+            "dependencyOnly": true
+        },
+        {
+            "uid": "net.fabricmc.fabric-loader",
+            "version": "@FABRIC_LOADER_VERSION@",
+            "cachedName": "Fabric Loader"
+        }
+    ],
+    "formatVersion": 1
+}
