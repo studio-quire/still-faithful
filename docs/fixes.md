@@ -69,6 +69,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 64 | `spawning.besideWater` | world | The fluid-in-a-box test reads only the box's own blocks west and north of 0, 0 too |
 | 66 | `spawning.squidInWater` | world | A water creature's place must be water, not any fluid |
 | 67 | `blocks.fallingSandKeepsKind` | world | Falling sand clears a block of its kind on its first tick only; a server sends kept blocks again |
+| 68 | `world.rejoinTerrain` | client (single player) | Opening a saved world, the terrain is prepared around where the player was saved, not the world spawn |
 
 "World" means wherever the world runs: the server in multiplayer, the client in single player (beta has no
 integrated server). In multiplayer a server without the mod keeps beta's behaviour for those whatever the client has.

@@ -30,7 +30,7 @@ we can't bundle, we write ourselves; spending long on the lower layers is fine.
 6. **Multiplayer.** A matching server package; networking hardened (packet limits, safe handling of what servers
    send); LAN. Started 2026-11-02 (`docs/multiplayer.md`): the survey, the Purist fixes, the package and its test. LAN isn't part of b1.7.3, so not Purist.
 7. **Release.** The finished pack (one download, import into Prism or a compatible launcher), our mods on their own,
-   on Modrinth and GitHub (studio-quire), a page on studioquire.org. A small installer of our own later
+   on GitHub (studio-quire) and Modrinth (link-only), a page on studioquire.org. A small installer of our own later
    if launchers fall short.
 8. **Later:** transformative mods on top, optional and separate.
 

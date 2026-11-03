@@ -154,6 +154,9 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"blocks.fallingSandKeepsKind", "fallingsand",
 					"# #67: falling sand or gravel deleted any block of its own kind it passed into (pushed by a piston into a\n"
 					+ "# column, or sand placed in its path).\n"},
+			{"world.rejoinTerrain", "rejoin",
+					"# #68: rejoining a single-player world far from its spawn, the terrain around you wasn't loaded yet, so\n"
+					+ "# for a moment the walls weren't solid: you could walk into one and suffocate until pushed out.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

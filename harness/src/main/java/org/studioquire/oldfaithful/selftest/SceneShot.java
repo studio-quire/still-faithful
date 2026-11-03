@@ -33,7 +33,11 @@ import org.lwjgl.opengl.GL11;
  * no search. For each, the player is held with the eye at x+0.5, y, z+0.5 (x and z a block, y the eye's height),
  * facing yaw and pitch, the time of day held at {@code time}, at the Far render distance; after
  * {@code oldfaithful.selftest.sceneViewTicks} (default 900, for the far view to fill in) the frame is saved as
- * {@code view-<n>.png}, with the view in {@code view-<n>.txt}.
+ * {@code view-<n>.png}, with the view in {@code view-<n>.txt}. Optionally after the time: the render distance (0 Far,
+ * the default, to 3 Tiny), then {@code rain} for weather.
+ *
+ * <p>With {@code -Doldfaithful.selftest.sceneSurvey="x0 z0 x1 z1"}: no pictures, a map of the world's surface over
+ * that area for choosing views ({@link Survey}).
  */
 public final class SceneShot {
 	public static final String OUT = System.getProperty("oldfaithful.selftest.scene");
@@ -41,7 +45,9 @@ public final class SceneShot {
 	public static final long SEED = Long.getLong("oldfaithful.selftest.sceneSeed", 7373L);
 	private static final int RADIUS = Integer.getInteger("oldfaithful.selftest.sceneRadius", 96);
 	private static final int SHOTS = Integer.getInteger("oldfaithful.selftest.sceneShots", 6);
-	private static final String VIEWS = System.getProperty("oldfaithful.selftest.sceneViews");
+	private static final String VIEWS = given("oldfaithful.selftest.sceneViews");
+	private static final String SURVEY = given("oldfaithful.selftest.sceneSurvey");
+	private Survey survey;
 	private static final int VIEW_TICKS = Integer.getInteger("oldfaithful.selftest.sceneViewTicks", 900);
 	private static final int SETTLE_TICKS = 100, HOLD_TICKS = 200;
 	private static final int LAVA = Block.LAVA.id, FLOWING_LAVA = Block.FLOWING_LAVA.id;
@@ -73,6 +79,11 @@ public final class SceneShot {
 		}
 	}
 
+	private static String given(String property) {
+		String v = System.getProperty(property);
+		return v == null || v.trim().isEmpty() ? null : v;
+	}
+
 	SceneShot(SelfTest results) {
 		this.results = results;
 	}
@@ -82,6 +93,7 @@ public final class SceneShot {
 		mc.options.hideHud = true;
 		mc.options.difficulty = 0;
 		ticks++;
+		if (SURVEY != null) return survey == null ? (survey = new Survey(SURVEY, OUT)).tick(mc, results) : survey.tick(mc, results);
 		if (VIEWS != null) return view(mc);
 		if (site < 0) {
 			if (ticks < SETTLE_TICKS) return false;
@@ -124,7 +136,8 @@ public final class SceneShot {
 		double x = Integer.parseInt(v[0]) + 0.5, y = Double.parseDouble(v[1]), z = Integer.parseInt(v[2]) + 0.5;
 		float yaw = Float.parseFloat(v[3]), pitch = Float.parseFloat(v[4]);
 		long time = Long.parseLong(v[5]);
-		mc.options.viewDistance = 0;
+		mc.options.viewDistance = v.length > 6 ? Integer.parseInt(v[6]) : 0;
+		boolean rain = v.length > 7 && v[7].equals("rain");
 		mc.world.setTime(time);
 		ClientPlayerEntity p = mc.player;
 		p.noClip = true;
@@ -133,12 +146,14 @@ public final class SceneShot {
 		p.health = 20;
 		p.setPositionAndAngles(x, y, z, yaw, pitch);
 		held++;
+		mc.world.getProperties().setRaining(rain);
+		mc.world.getProperties().setRainTime(Integer.MAX_VALUE / 2);
 		if (held == VIEW_TICKS) {
 			taken = false;
 			pending = new File(OUT, "view-" + view + ".png");
 		} else if (held > VIEW_TICKS && taken) {
-			String where = String.format(Locale.ROOT, "seed %d, camera at %d %.2f %d, yaw %.0f, pitch %.0f, time %d",
-					SEED, (int) Math.floor(x), y, (int) Math.floor(z), yaw, pitch, time);
+			String where = String.format(Locale.ROOT, "seed %d, camera at %d %.2f %d, yaw %.0f, pitch %.0f, time %d, render distance %d%s",
+					SEED, (int) Math.floor(x), y, (int) Math.floor(z), yaw, pitch, time, mc.options.viewDistance, rain ? ", raining" : "");
 			results.pass("scene: view-" + view + ".png, " + where);
 			try {
 				java.nio.file.Files.write(new File(OUT, "view-" + view + ".txt").toPath(), (where + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));

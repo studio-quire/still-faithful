@@ -11,6 +11,8 @@ content. Nothing new to collect or craft; beta's world, made kinder to live in.
 Still Faithful's own, each on its own switch:
 - Stairs drop themselves, not a plank or a cobblestone.
 - Leaves you place never decay; leaves on trees still do.
+- Chests face you when you place them, and a second chest beside one joins its facing (chests placed before keep
+  beta's rule).
 - Glowstone drops by hand or with any tool, as from 1.0.
 - Lava cut off from its source thins out instead of lingering for good, and water between two sources becomes a
   source over still water too.

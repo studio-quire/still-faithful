@@ -93,6 +93,11 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# chunks unloading), a hitch while building or exploring. With this, the same saves, of the same moment,\n"
 					+ "# are compressed and written on a thread of their own, starting at once. Needs Pure Faithful's saves mod\n"
 					+ "# (purefaithful-saves), whose crash-safe writes it relies on; without it, saves stay as beta's.\n"},
+			{"blocks.chestsFaceYou", "chests",
+					"# #69: a chest's front was worked out from the blocks around it: away from a block behind it, south when it\n"
+					+ "# stood free, sideways in a corner; you couldn't choose. With this, a chest you place faces you (a second\n"
+					+ "# chest beside it joins its facing). Chests placed before keep beta's rule, and a vanilla game draws every\n"
+					+ "# chest by it. In multiplayer, placed chests face you only on a server that has this change too.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

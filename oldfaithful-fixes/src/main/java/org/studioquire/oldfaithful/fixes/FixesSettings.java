@@ -59,6 +59,8 @@ public final class FixesSettings implements SettingsProvider {
 			{"spawning.besideWater", "mobs", WORLD, "Spawning by Water",
 					"West and north of 0, 0, mobs didn't spawn beside water or lava on their west or north side."},
 			{"spawning.squidInWater", "mobs", WORLD, "Squid in Lava", "Squid could spawn in lava, and burn."},
+			{"world.rejoinTerrain", "mobs", CLIENT, "Rejoining Worlds",
+					"Rejoining far from spawn, the walls around you weren't solid for a moment: you could walk in and suffocate."},
 
 			{"redstone.repeaterUpdates", "redstone", WORLD, "Repeaters",
 					"Doors, note blocks, dispensers, TNT and rails ignored a repeater beside them. Beta keeps circuits built on that."},

@@ -338,11 +338,11 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
                         "-Doldfaithful.selftest.stallMs=${(duskFull ? 860 : 390) * 1000}".toString(),
                         "-Doldfaithful.selftest.duskFull=${duskFull}".toString()]
-        // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead.
+        // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead. A new switch joins this list.
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -374,7 +374,8 @@ if (!fixedMods.isEmpty()) {
     }
 }
 // Landscapes with Still Faithful's mods (its dusk), for its site page: -PsceneViews="x y z yaw pitch time;..." (SceneShot's
-// view mode) in a world of -PsceneSeed, shots in local/run/scene-shot-still/shots/.
+// view mode) in a world of -PsceneSeed, shots in local/run/scene-shot-still/shots/. -PsceneSurvey="x0 z0 x1 z1" instead
+// maps that area's surface there (survey.bin, for choosing views).
 if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
     tasks.register('sceneShotStill', oldfaithful.gradle.ClientStartupTask) {
         group = 'oldfaithful'
@@ -399,6 +400,7 @@ if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
                         "-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
                         "-Doldfaithful.selftest.scene=${runDirectory.dir('shots').asFile.absolutePath}".toString(),
                         "-Doldfaithful.selftest.sceneViews=${views}".toString(),
+                        "-Doldfaithful.selftest.sceneSurvey=${providers.gradleProperty('sceneSurvey').getOrElse('')}".toString(),
                         "-Doldfaithful.selftest.sceneSeed=${providers.gradleProperty('sceneSeed').getOrElse('31337')}".toString()]
         if (gameJava.isPresent()) javaExecutable = gameJava
     }

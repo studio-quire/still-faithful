@@ -266,19 +266,38 @@ Still Faithful (0.1.0 went out this way with Old Faithful 0.1.2, 2026-11-03, fro
 4. A GitHub pre-release `v<version>` with every file in `local/release/still-faithful-<version>/`, notes from its
    changelog entry, the Old Faithful and Pure Faithful releases it carries (with links), and `SHA256SUMS.txt`.
 5. Modrinth: `python tools/modrinth.py release <version> --edition still-faithful`.
-6. studioquire.org: `/get/still-faithful` follows the newest release. Its cover and link preview are a real frame of
-   dusk with smooth dusk on, taken unseen by `./gw :harness:sceneShotStill -PsceneViews=...` (SceneShot's view mode).
+6. studioquire.org: `/get/still-faithful` follows the newest release. Its cover and link preview are a real frame,
+   snow falling on the taiga at dusk with smooth dusk on (the covers workshop's s7, the user's pick, 2026-11-03; the
+   seal in the middle of the card, where Pure's is left and Old's right), taken unseen by `./gw :harness:sceneShotStill -PsceneViews=...` (SceneShot's view mode;
+   a view may add a render distance and `rain`). To choose places, `-PsceneSurvey="x0 z0 x1 z1"` maps a seed's
+   surface into `survey.bin` in half a minute; `tools/cover_card.py` puts a seal on a frame as the site's cards have
+   it, into the covers workshop.
 
 ## Modrinth
 
 Since 2026-11-02 the four Pure Faithful mods are Modrinth projects in the **Studio Quire** organisation
-(modrinth.com/organization/studio-quire; its icon is the site's mark, rendered from quire-site's `mark.svg`), which
-the user asked the studio to manage: `pure-faithful-hardening`, `-saves`, `-speed`, `-display`, texts from
-`release/drafts/modrinth.md`, the β seal, MIT, source and issues on GitHub. Old Faithful's three were made the
-same way on 2026-11-02: `old-faithful-fixes`, `-lighting`, `-options`, texts in `release/drafts/old-faithful-modrinth.md`,
-the green seal, source and issues on `studio-quire/old-faithful`. Still Faithful's one, `still-faithful-polish`, on
-2026-11-03: texts in `release/drafts/still-faithful-modrinth.md`, the violet seal, `studio-quire/still-faithful`. The token (the user's account, Shoalstone) is in
-`local/modrinth-token.txt`, git-ignored; never print it.
+(modrinth.com/organization/studio-quire), which the user asked the studio to manage: `pure-faithful-hardening`,
+`-saves`, `-speed`, `-display`, texts from `release/drafts/modrinth.md`, MIT, source and issues on GitHub. Old
+Faithful's three were made the same way on 2026-11-02: `old-faithful-fixes`, `-lighting`, `-options`, texts in
+`release/drafts/old-faithful-modrinth.md`, source and issues on `studio-quire/old-faithful`. Still Faithful's one,
+`still-faithful-polish`, on 2026-11-03: texts in `release/drafts/still-faithful-modrinth.md`,
+`studio-quire/still-faithful`. The token (the user's account, Shoalstone) is in `local/modrinth-token.txt`,
+git-ignored; never print it.
+
+**Link-only** (the user's call, 2026-11-03). Modrinth's rules (modrinth.com/legal/rules section 6, since 2026-08-13)
+say projects "may not be published publicly if the contents are primarily or entirely a product of AI output", that
+the "Contains AI-generated content" disclosure is required, and that no image on a project page may be AI-made. Ours
+are made by Claude and say so, and we don't reword that to get through. So, on all eight:
+
+- Requested status `unlisted` (what approval gives: reachable by link, not in search or launchers' browsers). Only
+  moderators move a project out of review; an owner can only submit it and set the requested status.
+- The `ai_content` disclosure, uses code, assets and text, with a note on who made what (v3
+  `PATCH /project/{id}/disclosures`, `{"set": [...], "remove": []}`).
+- No icon, gallery or description images, and none on the organisation (its icon was the site's mark, also ours):
+  the seals and the mark stay everywhere else.
+- A note in each review thread (2026-11-03) saying the above and asking for unlisted, or rejection if that isn't
+  allowed either. If a project is rejected, record it here; don't resubmit reworded.
+- Not linked from the READMEs, release notes or studioquire.org: GitHub releases and the site are where players go.
 
 - A release: `python tools/modrinth.py release <version> [--edition old-faithful] [--type beta|release]` uploads each
   jar from the edition's release folder and checks it against `SHA256SUMS.txt` (`verify` alone re-checks).

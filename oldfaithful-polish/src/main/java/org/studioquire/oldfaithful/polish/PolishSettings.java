@@ -31,6 +31,7 @@ public final class PolishSettings implements SettingsProvider {
 			{"minecarts.cartCollisions", WORLD, "Cart Collisions", "On north-south and curved track, carts stopped dead against each other."},
 			{"animals.keepTended", WORLD, "Kept Animals", "Animals you'd sheared, saddled or ridden despawned when you went away."},
 			{"saves.backgroundAutosave", WORLD, "Autosave", "Every 2 seconds the game paused to write the chunks that had changed."},
+			{"blocks.chestsFaceYou", WORLD, "Chest Facing", "A chest faced away from the block behind it, or south; never the way you chose."},
 			{"render.droppedItemSize", CLIENT, "Dropped Blocks", "Dropped stairs, fences and other part-blocks lay at twice the size."},
 			{"render.bowPose", CLIENT, "Bow Pose", "Players and skeletons held a bow out flat, like any item."},
 			{PolishConfig.DUSK_KEY, CLIENT, "Dusk",

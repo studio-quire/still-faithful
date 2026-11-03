@@ -44,6 +44,7 @@
     "names.DyeItemMixin",
     "names.SlabBlockItemMixin",
     "pick.MinecraftMixin",
+    "rejoin.MinecraftMixin",
     "ridingmodels.PlayerEntityRendererMixin",
     "sky.WorldRendererMixin",
     "slabs.ClientNetworkHandlerMixin",

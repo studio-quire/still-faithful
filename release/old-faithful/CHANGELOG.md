@@ -5,6 +5,13 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.1.3 (2026-11-03)
+
+Released with Still Faithful 0.1.1, which carries it; still on Pure Faithful 0.1.3. A new fix, on its own switch:
+
+- Rejoining a single-player world far from its spawn, the walls around you are solid from the first moment (beta
+  loaded the land around the spawn first, so for a moment you could walk into a wall and suffocate).
+
 ## 0.1.2 (2026-11-03)
 
 Released with the first Still Faithful, which carries it; still on Pure Faithful 0.1.3. Nothing changes for Old

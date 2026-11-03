@@ -65,6 +65,7 @@ public final class StillCheck implements WorldCheck {
 		loadCartChunks();
 		stairs();
 		leaves(mc);
+		chests(mc);
 		glowstone(mc);
 		lava();
 		water();
@@ -185,6 +186,52 @@ public final class StillCheck implements WorldCheck {
 			results.check("still #13: " + Block.BLOCKS[kinds[i][0]].getTranslationKey() + " dropped " + dropped(x, y, z) + " (expected "
 					+ want + ")", droppedOnly(x, y, z, want));
 		}
+	}
+
+	/** #69: chests placed with the item at a set yaw, alone and in pairs, and a chest of beta's beside a wall. */
+	private void chests(Minecraft mc) {
+		boolean on = PolishConfig.applied("blocks.chestsFaceYou");
+		int y = Y, x0 = bx + 20, z0 = bz + 20, tex = Block.CHEST.textureId;
+		float yaw = mc.player.yaw;
+		// Alone, the player looking west: faces east (5); beta: south (3), data 0.
+		int x = x0, z = z0;
+		placeChest(mc, x, y, z, 90.0F);
+		int meta = world.getBlockMeta(x, y, z);
+		int east = Block.CHEST.getTextureId(world, x, y, z, 5), south = Block.CHEST.getTextureId(world, x, y, z, 3);
+		results.check("still #69: a chest placed looking west: data " + meta + ", front " + (east == tex + 1 ? "east" : south == tex + 1 ? "south" : "?")
+				+ " (" + (on ? "5, east, toward the player" : "beta: 0, south") + ")",
+				on ? meta == 5 && east == tex + 1 && south == tex : meta == 0 && south == tex + 1 && east == tex);
+		// A pair: the first looking south faces north (2); the second, placed looking west along the pair, joins it.
+		x = x0 + 4;
+		placeChest(mc, x, y, z, 0.0F);
+		placeChest(mc, x + 1, y, z, 90.0F);
+		int a = world.getBlockMeta(x, y, z), b = world.getBlockMeta(x + 1, y, z);
+		int an = Block.CHEST.getTextureId(world, x, y, z, 2), bn = Block.CHEST.getTextureId(world, x + 1, y, z, 2);
+		int as = Block.CHEST.getTextureId(world, x, y, z, 3);
+		results.check("still #69: a double chest, the second half placed looking along it: data " + a + " and " + b + ", north faces "
+				+ an + " and " + bn + " (" + (on ? "2 and 2, the double front on the north" : "beta: 0 and 0, the front on the south") + ")",
+				on ? a == 2 && b == 2 && an == tex + 16 && bn == tex + 15 && as == tex + 31
+						: a == 0 && b == 0 && as == tex + 15 && an == tex + 32);
+		// Beta's chest (data 0) against a wall on the south: beta's rule turns it north, either way.
+		x = x0 + 8;
+		world.setBlock(x, y, z + 1, Block.STONE.id);
+		world.setBlock(x, y, z, Block.CHEST.id);
+		results.check("still #69: a chest from before (data 0) against a wall on the south still faces north by beta's rule",
+				world.getBlockMeta(x, y, z) == 0 && Block.CHEST.getTextureId(world, x, y, z, 2) == tex + 1 && Block.CHEST.getTextureId(world, x, y, z, 3) == tex);
+		// A chest placed beside that one, looking along the pair (yaw 80, a little south of west): the old half has no
+		// facing to join, so both turn to the side across the pair the player is on, north.
+		placeChest(mc, x + 1, y, z, 80.0F);
+		a = world.getBlockMeta(x, y, z);
+		b = world.getBlockMeta(x + 1, y, z);
+		results.check("still #69: a chest placed beside one from before: data " + a + " and " + b + " (" + (on ? "2 and 2" : "beta: 0 and 0") + ")",
+				on ? a == 2 && b == 2 : a == 0 && b == 0);
+		mc.player.yaw = yaw;
+	}
+
+	private void placeChest(Minecraft mc, int x, int y, int z, float yaw) {
+		world.setBlock(x, y - 1, z, Block.STONE.id);
+		mc.player.yaw = yaw;
+		new ItemStack(Block.CHEST, 1).useOnBlock(mc.player, world, x, y - 1, z, 1);
 	}
 
 	/** #24: leaves placed with the item, no log near, ticked as a random tick would; natural ones beside them. */

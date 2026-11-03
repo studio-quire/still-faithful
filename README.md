@@ -23,6 +23,9 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   takes a restart.
 - **Stairs** drop themselves, not a plank or a cobblestone.
 - **Leaves you place** never decay; leaves on trees still do.
+- **Chests** face you when you place them, and a second chest beside one joins its facing. Beta worked a chest's
+  front out from the blocks around it (south when standing free, sideways in a corner); chests placed before keep
+  that.
 - **Glowstone** drops its dust when broken by hand or with any tool, and breaks at the speed it had from 1.0.
 - **Lava** cut off from its source thins out instead of lingering for good. **Water** between two sources becomes a
   source over still water too, not only over solid ground.

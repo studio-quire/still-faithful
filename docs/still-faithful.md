@@ -4,7 +4,7 @@ The third edition (CLAUDE.md > Editions): beta with polish, as it might have bee
 versions improved, still beta in content. Entry numbers are `docs/bugs.md`'s. Decisions are the user's (2026-11-02)
 unless marked open. Built from 2026-11-02 by Claude Opus 5.5. Public since 0.1.0 (2026-11-03, on Old Faithful 0.1.2
 and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.org/still-faithful/, and the mod on
-Modrinth as `still-faithful-polish`.
+Modrinth as `still-faithful-polish` (link-only, `docs/release.md` > Modrinth).
 
 ## Shape
 
@@ -43,6 +43,7 @@ Modrinth as `still-faithful-polish`.
 | 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). At the surface, vertical speed × 0.8 a tick (rides steadily instead of bobbing). Paddling is beta's: same top speed, acceleration, turning |
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
 | 4 | `animals.keepTended` | world | Animals a player has dealt with never despawn (`KeptAnimals`, below) |
+| 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
 
@@ -212,6 +213,8 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 - Multiplayer: the mining click tempo (#36), other players' 11° turning steps (#50), not holding a player still
   after a teleport (#16b).
 - Closing the window without saving: players use it to undo item loss.
+- The vignette's banding at night (user, 2026-11-03): beta's own. Its texture is a smooth fade, but it multiplies a
+  dark 8-bit frame, which has only a few levels to step through, so the fade shows as rings.
 
 ## Open (traced 2026-11-02)
 

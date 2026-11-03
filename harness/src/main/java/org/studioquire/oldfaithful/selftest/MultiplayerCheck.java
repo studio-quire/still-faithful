@@ -48,7 +48,8 @@ public final class MultiplayerCheck {
 
 	// #15
 	private double pigDeviation;
-	private int pigSamples;
+	private static final int PIG_SAMPLES = 20;
+	private int pigSamples, pigExtraTicks;
 	// #36
 	private int mined;
 	private final int[] mineTicks = new int[3];
@@ -105,17 +106,22 @@ public final class MultiplayerCheck {
 				return false;
 			case 3: { // #50, with #15 sampled meanwhile
 				samplePigs(mc);
+				if (turn == TURNS.length) {
+					// Turns done. A pig counts only on a tick it has reached the server's position, and how many those are
+					// varies a lot with the pigs' wandering (14 to 45 over the same stages), so sample on until there are
+					// enough to judge, up to a minute more.
+					if (pigSamples <= PIG_SAMPLES && ++pigExtraTicks < 1200) return false;
+					pigResults();
+					next();
+					return false;
+				}
 				OtherPlayerEntity turner = turner(mc);
 				if (turner == null) return timeout(mc, 200, "SkyTurner in view");
 				if (ticks == 1) mc.player.sendChatMessage("!oftest turn SkyTurner " + TURNS[turn]);
 				if (ticks < 40) return false;
 				turnErrors.add(degreesOff(turner.yaw, TURNS[turn]));
 				ticks = 0;
-				if (++turn == TURNS.length) {
-					turnResults();
-					pigResults();
-					next();
-				}
+				if (++turn == TURNS.length) turnResults();
 				return false;
 			}
 			case 4: { // #49: die
@@ -195,10 +201,10 @@ public final class MultiplayerCheck {
 	private void pigResults() {
 		String seen = String.format(Locale.ROOT, "%d samples, farthest %.4f blocks from the server's position", pigSamples, pigDeviation);
 		if (fixedClient) {
-			results.check("#15 (" + label + "): penned pigs stay where the server puts them (" + seen + ")", pigSamples > 20 && pigDeviation < 1e-6);
+			results.check("#15 (" + label + "): penned pigs stay where the server puts them (" + seen + ")", pigSamples > PIG_SAMPLES && pigDeviation < 1e-6);
 		} else {
 			results.check("#15 control (" + label + "): beta's own physics moves them off the server's position (" + seen + ")",
-					pigSamples > 20 && pigDeviation > 0.01);
+					pigSamples > PIG_SAMPLES && pigDeviation > 0.01);
 		}
 	}
 

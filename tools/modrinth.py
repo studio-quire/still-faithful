@@ -8,6 +8,9 @@ and still-faithful (local/release/still-faithful-<version>/).
 
 The token is read from local/modrinth-token.txt (git-ignored) and never printed. The projects belong to the Studio
 Quire organisation; creating them was a one-off, done by hand through the same API.
+
+The projects are link-only (docs/release.md > Modrinth): unlisted, the AI-content disclosure, no icon or images. This
+only adds versions and never touches those; both commands say if a project has drifted from them.
 """
 import argparse
 import hashlib
@@ -67,6 +70,24 @@ def ok(r, what):
     return r.json() if r.content else None
 
 
+def listing_problems(s, slug, project):
+    """How a project differs from link-only, as a list of words (empty when it's as it should be)."""
+    problems = []
+    if "unlisted" not in (project["status"], project["requested_status"]):
+        problems.append(f"status {project['status']}, requested {project['requested_status']} (want unlisted)")
+    if project["icon_url"] or project["gallery"]:
+        problems.append("has an icon or gallery images")
+    disclosures = ok(s.get(f"{API}/v3/project/{slug}/disclosures"), slug + " disclosures")["disclosures"]
+    if not any(d["type"] == "ai_content" for d in disclosures):
+        problems.append("no ai_content disclosure")
+    return problems
+
+
+def warn_listing(s, slug, project):
+    for p in listing_problems(s, slug, project):
+        print(f"{slug}: WARNING, not link-only: {p}")
+
+
 def folder_of(ed, version):
     return ROOT / "local" / "release" / ed["folder"].format(v=version)
 
@@ -77,6 +98,7 @@ def release(ed, version, kind):
     for mod, (slug, env, deps) in ed["mods"].items():
         jar = folder / f"{mod}-{version}.jar"
         project = ok(s.get(f"{API}/v2/project/{slug}"), slug)
+        warn_listing(s, slug, project)
         if any(v["version_number"] == version for v in ok(s.get(f"{API}/v2/project/{slug}/version"), slug)):
             print(f"{slug} {version}: already there")
             continue
@@ -103,6 +125,7 @@ def verify(ed, version):
         sums[name] = digest
     bad = 0
     for mod, (slug, _, _) in ed["mods"].items():
+        warn_listing(s, slug, ok(s.get(f"{API}/v2/project/{slug}"), slug))
         v = next((v for v in ok(s.get(f"{API}/v2/project/{slug}/version"), slug) if v["version_number"] == version), None)
         if v is None:
             print(f"{slug}: no {version}"); bad += 1; continue

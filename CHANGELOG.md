@@ -7,6 +7,14 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.1.1 (2026-11-03)
+
+On Old Faithful 0.1.3 (walls solid from the first moment when you rejoin a world far from its spawn) and Pure
+Faithful 0.1.3.
+
+- Chests face you when you place them, and a second chest beside one joins its facing, on its own switch (Chest
+  Facing, under Polish). Chests placed before keep beta's rule, which worked the front out from the blocks around.
+
 ## 0.1.0 (2026-11-03)
 
 The first release of Still Faithful, for Windows, on Old Faithful 0.1.2 and Pure Faithful 0.1.3. Each change on its

@@ -107,6 +107,8 @@ Key:
 | 65 | A spawner set to a thing that isn't a mob (an edited world) crashes the game every tick a player is near | bug | Pure | low (edited worlds) | fixed |
 | 66 | Small spawning and generation slips: squid in lava, Nether chunks without a heightmap, the Nether's decoration unseeded, clay beside the water it tested | bug, ask | OF / SF / none | low | squid fixed (OF); the Nether's heightmap T |
 | 67 | Falling sand or gravel deletes any block of its own kind it passes into (a piston pushing it into a column, say) | bug | OF | low | fixed (OF) |
+| 68 | Single player: rejoining a world far from its spawn, the walls around you aren't solid for a moment; you can walk into one and suffocate | bug | OF | mid | fixed (OF) |
+| 69 | Chests can't be turned: the front is worked out from the blocks around (south when free-standing, sideways in a corner) | ask | SF | mid | built (SF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -952,6 +954,30 @@ vanilla client on a fixed server still clears such a block in its own copy of th
 falling block), so the server sends each kept block again as it's passed and when the falling block lands. Checked on
 the real server (`ServerWorldFixesTest`): a falling sand some ticks into its fall in a cell of sand leaves two sand
 (one dropped as an item); beta, one.
+
+### 68. Rejoining far from spawn: walls not solid at first (T, seen)
+Found by the user playing Still Faithful (2026-11-03): on a rejoin they walked a little into a wall, took suffocation
+damage and were pushed out. `Minecraft.setWorld` (single player) runs `prepareWorld`, which loads the chunks 128 blocks
+around, before the saved player is read (`World.addPlayer` reads it afterwards; `getPlayerForProxy` always returns
+null), so `prepareWorld`'s own "around the player if there is one" never applies on a rejoin and it centres on the
+world spawn. Farther than that from spawn (the user's: about 230 blocks) the player stands in chunks nobody has
+loaded, and `World.getEntityCollisions` skips columns whose chunk isn't loaded (`LegacyChunkCache.isChunkLoaded` is
+true only for chunks already in it): no collisions until something loads them (the renderer's chunk builds, the
+push-out's own block reads, `loadChunksNearEntity` every 30 ticks). Respawns and portals prepare after the player is
+placed and are fine. OF, mid (anyone living away from spawn). **Fixed in Old Faithful** (2026-11-03,
+`world.rejoinTerrain`, client): `prepareWorld` centres on the saved player's position when no player exists yet (the
+world is already the saved player's dimension). Its mixin applies in `clientStartupTestFixed`; the rejoin itself is the
+user's check in their world.
+
+### 69. Chests can't be turned (T, ask)
+Asked by the user (2026-11-03). Beta stores no facing for a chest (data always 0); `ChestBlock.getTextureId` works the
+front out every time it's drawn: away from an opaque block behind it, south when free-standing, and its east-west test
+runs after the north-south one, so in a corner a chest turns sideways; a double chest faces across its length the same
+way. Later versions keep a facing chosen at placement. SF. **Built in Still Faithful** (2026-11-03,
+`blocks.chestsFaceYou`): a placed chest faces the placer, in its data as furnaces keep theirs (`Chests`); a chest
+placed beside one with a facing joins it, otherwise both halves take the placer's, turned across the pair if they
+looked along it. Data 0 (every chest placed before) keeps beta's rule, so nothing in an existing world turns; vanilla
+draws every chest by beta's rule, and the dropped item has data 0 as before. Checked in `clientStartupTestStill`.
 
 ## The piston hunt
 
