@@ -80,7 +80,8 @@ after the release script learned editions). Text files go in as checked out, so 
 endings: build from an LF checkout (this tree's working files are mostly LF, but edits leave some CRLF; a fresh
 checkout on Windows is CRLF unless told otherwise). 0.1.1 was cut in a detached worktree checked out with
 `git -c core.autocrlf=false -c core.eol=lf`, `local/` folders junctioned in, and a clone of the public snapshot
-rebuilt it byte for byte.
+rebuilt it byte for byte. Every later checkout in such a worktree needs the same `-c` flags (a plain one rewrites the
+files it changes as CRLF, and the guard then stops the rebuild); `git ls-files --eol | grep w/crlf` shows strays.
 
 **A release folder never changes silently.** It's the record of what was published (and what Old Faithful's check
 compares against), so `release` and `releaseFixed` stop before writing into a folder whose `SHA256SUMS.txt` this

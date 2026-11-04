@@ -23,7 +23,7 @@ Old Faithful's own:
   that need a pickaxe; axes, pickaxes and shovels slow on blocks of their own material; the furnace eating the lava
   bucket; water washing away torches and rails without dropping them; repeaters that don't work doors, note blocks,
   dispensers, TNT or rail junctions; repeater clocks that stop when the world is reloaded; footsteps saved up on the
-  way down stairs; pick block selecting nothing; and more, in single player and multiplayer.
+  way down stairs; pick block selecting nothing; dots of sky along block edges; and more, in single player and multiplayer.
 - Lighting as beta's own rule says it should be: no dark patches under overhangs or at chunk edges, and lava from
   world generation lights its surroundings. Existing worlds heal as you play.
 - A field-of-view slider (Options, beside Difficulty), the GUI at Normal size on a first start, Quit Game on the

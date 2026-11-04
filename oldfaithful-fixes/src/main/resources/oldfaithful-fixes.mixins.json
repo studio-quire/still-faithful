@@ -45,6 +45,9 @@
     "names.SlabBlockItemMixin",
     "pick.MinecraftMixin",
     "rejoin.MinecraftMixin",
+    "seams.ChunkBuilderMixin",
+    "seams.ChunkRendererMixin",
+    "seams.WorldRendererMixin",
     "ridingmodels.PlayerEntityRendererMixin",
     "sky.WorldRendererMixin",
     "slabs.ClientNetworkHandlerMixin",
@@ -53,6 +56,8 @@
     "sliders.SliderWidgetMixin",
     "sneak.EntityMixin",
     "spawners.ClientNetworkHandlerMixin",
+    "textureedges.ChunkBuilderMixin",
+    "textureedges.TessellatorMixin",
     "tools.ClientNetworkHandlerMixin",
     "tools.MultiplayerInteractionManagerMixin",
     "undersides.BlockRenderManagerMixin"

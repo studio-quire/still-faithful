@@ -39,7 +39,8 @@ back (after a restart).
 - **On screen.** The sky keeps its colour with a chest or inventory open. The item on the cursor is drawn in front
   of the player figure and labels. Fence bars' undersides are lit. The hotbar after block cracks, riding poses and
   the death screen's score are drawn right. Option sliders reach every percentage. Footsteps aren't saved up on the
-  way down stairs and played in a burst.
+  way down stairs and played in a burst. No dots of sky flicker along block edges, where the world's chunks meet or
+  at the edges of grass, stone and other blocks' textures.
 - **Multiplayer.** A break the server refuses is put back at once, not 4 seconds later. Mobs don't jitter. Players
   who teleport or come through a portal are seen by those already there. Chunks arrive nearest first after a fast
   move. The pause after breaking a block clears when you let go. Signs edited beside other changes show their text.

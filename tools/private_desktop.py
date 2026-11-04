@@ -17,6 +17,10 @@ keep the game from grabbing (the harness's HandsOff), and this script guards the
 runs: if the clip rectangle changes, it stops the command at once, puts the clip back (exit code 125); if the cursor
 moves three times within two seconds with no mouse input in the 100 ms before (a SetCursorPos while the user's
 mouse is still), it stops it too (exit code 126).
+A clip the user's own app sets isn't the command's: when the user's desktop's foreground window belongs to a process
+outside the command's job and the new clip lies within that window, the guard takes it as the user's, adopts it as the
+new baseline and carries on (before 2026-11-03 it stopped the test and "restored" the old clip, which released the
+user's game's mouse mid-play).
 With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (the user's call, 2026-11-03: their own game grabbing the cursor
 stopped tests; the harness's HandsOff still keeps the test game from grabbing).
 
@@ -113,6 +117,13 @@ user32.GetClipCursor.argtypes = [ctypes.POINTER(RECT)]
 user32.ClipCursor.argtypes = [ctypes.c_void_p]
 user32.GetCursorPos.argtypes = [ctypes.POINTER(wintypes.POINT)]
 user32.GetLastInputInfo.argtypes = [ctypes.POINTER(LASTINPUTINFO)]
+user32.GetForegroundWindow.restype = wintypes.HWND
+user32.GetWindowThreadProcessId.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.DWORD)]
+user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(RECT)]
+kernel32.OpenProcess.restype = wintypes.HANDLE
+kernel32.OpenProcess.argtypes = [wintypes.DWORD, wintypes.BOOL, wintypes.DWORD]
+kernel32.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POINTER(wintypes.BOOL)]
+PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 76, 77, 78, 79
 GUARD_SLICE_MS = 10
 
@@ -120,11 +131,13 @@ GUARD_SLICE_MS = 10
 class CursorGuard:
     """Watches the session's cursor (clip and programmatic moves) from the user's desktop while the command runs."""
 
-    def __init__(self):
+    def __init__(self, job):
+        self.job = job
         self.clip = self.read_clip()
         self.pos = self.read_pos()
         self.input = self.read_input()
         self.unexplained = []
+        self.clip_was_users = False
 
     @staticmethod
     def read_clip():
@@ -151,10 +164,40 @@ class CursorGuard:
         else:
             user32.ClipCursor(ctypes.byref(RECT(*self.clip)))
 
+    def users_own(self, clip):
+        """True when the user's foreground window, outside the command's job, holds the new clip."""
+        hwnd = user32.GetForegroundWindow()
+        if not hwnd:
+            return False
+        pid = wintypes.DWORD()
+        user32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        proc = kernel32.OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, False, pid.value)
+        if not proc:
+            return False
+        try:
+            inside = wintypes.BOOL()
+            if not kernel32.IsProcessInJob(proc, self.job, ctypes.byref(inside)) or inside.value:
+                return False
+        finally:
+            kernel32.CloseHandle(proc)
+        r = RECT()
+        if not user32.GetWindowRect(hwnd, ctypes.byref(r)):
+            return False
+        if clip is None:  # released: fine if the user's app had it
+            return True
+        left, top, right, bottom = clip
+        return r.left <= left and r.top <= top and right <= r.right and bottom <= r.bottom
+
     def problem(self):
         """None while the cursor is untouched; otherwise (exit code, what happened)."""
         clip = self.read_clip()
         if clip is not None and self.clip is not None and clip != self.clip:
+            if self.users_own(clip) or self.users_own(None) and self.clip_was_users:
+                print(f"[private_desktop] cursor clip {self.clip} -> {clip}: the user's own app; carrying on",
+                      file=sys.stderr, flush=True)
+                self.clip_was_users = self.users_own(clip)
+                self.clip = clip
+                return None
             return 125, f"the cursor's clip rectangle changed from {self.clip} to {clip}"
         pos, inp = self.read_pos(), self.read_input()
         # GetLastInputInfo ticks at the system timer (about 15 ms), so a move counts as the user's if any input came in
@@ -205,7 +248,7 @@ def run(command, timeout):
         if not kernel32.AssignProcessToJobObject(job, pi.hProcess):
             kernel32.TerminateProcess(pi.hProcess, 1)
             check(False, "AssignProcessToJobObject")
-        guard = None if os.environ.get("PRIVATE_DESKTOP_NO_GUARD") == "1" else CursorGuard()
+        guard = None if os.environ.get("PRIVATE_DESKTOP_NO_GUARD") == "1" else CursorGuard(job)
         if guard:
             print(f"[private_desktop] cursor guard on: clip {guard.clip}, checked every {GUARD_SLICE_MS} ms", file=sys.stderr, flush=True)
         else:

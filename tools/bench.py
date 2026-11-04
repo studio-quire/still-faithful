@@ -124,6 +124,9 @@ def run_one(spec, config, distance, run_dir, args):
     out.mkdir()
     for m in cfg["mods"]:
         shutil.copy2(m, game / "mods")
+    for name, text in cfg.get("configFiles", {}).items():
+        (game / "config").mkdir(exist_ok=True)
+        (game / "config" / name).write_text(text)
     if Path(spec["sounds"]).is_dir():
         shutil.copytree(spec["sounds"], game / "resources")
     # Max FPS, so frame times measure the work; the rest at b1.7.3's defaults (fancy, smooth lighting, sound on).

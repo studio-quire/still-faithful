@@ -89,9 +89,15 @@ decides when it's given.
 - Shift (sneak) to leave a vehicle, a later version's addition: beta's right-click on the vehicle stays the only way
   (user, 2026-11-02).
 - Antialiasing (multisampling the game's window, 2026-11-03): built and checked, then removed after the user's
-  play-test showed light blue (the sky) through the seams between blocks at 4x/8x. Multisampling reads the cracks
-  between beta's adjacent faces that single-sample rendering never lands on. Not important to the user, so dropped
-  rather than chased (the commit and its revert are in git if it's ever wanted).
+  play-test showed light blue (the sky) through the seams between blocks at 4x/8x. Not important to the user, so
+  dropped rather than chased (the commit and its revert are in git if it's ever wanted). Since measured
+  (2026-11-03, `docs/bugs.md` #70): single-sample rendering shows the same sky through the seams between render
+  chunks, only more rarely; multisampling tests several points per pixel, so it finds the cracks more often, and it
+  takes a pixel's texture at the pixel's centre even when only an edge of the face covers it, so a face's edge can read
+  the transparent texels beside its tile in the atlas and drop out (#72 is the single-sample form of that; reasoned,
+  not measured with multisampling). #70's fix closes the first; the second reaches up to half a pixel outside the
+  face, beyond what #72's fix would cover, so multisampling would need its texture sampled inside the covered part
+  (centroid sampling, a shader) to come back.
 
 ## Tests
 

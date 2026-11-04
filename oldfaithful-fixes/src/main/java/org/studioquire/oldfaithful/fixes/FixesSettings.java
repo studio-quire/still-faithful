@@ -73,6 +73,8 @@ public final class FixesSettings implements SettingsProvider {
 
 			{"sky.afterContainer", "looks", CLIENT, "Sky Behind Chests", "The sky turned grey while a chest, furnace or inventory was open."},
 			{"render.undersides", "looks", CLIENT, "Fence Undersides", "The undersides of fence bars drew black."},
+			{"render.seams", "looks", CLIENT, "Chunk Seams", "Dots of sky flickered along block edges where the chunks meet."},
+			{"render.textureEdges", "looks", CLIENT, "Texture Edges", "Dots of sky flickered along the edges of grass, stone, dirt and others."},
 			{"render.hotbarAfterCracks", "looks", CLIENT, "White Hotbar",
 					"With Fast graphics in the Nether, aiming at a mob turned the hotbar white."},
 			{"render.ridingPoses", "looks", CLIENT, "Riding Poses",

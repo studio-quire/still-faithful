@@ -27,7 +27,8 @@
     "MinecraftMouseDriveMixin",
     "ButtonWidgetAccessor",
     "GameRendererScreenCaptureMixin",
-    "GameRendererSceneMixin"
+    "GameRendererSceneMixin",
+    "GameRendererSeamMixin"
   ],
   "server": [
     "PlayerManagerRideMixin",

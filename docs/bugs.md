@@ -4,7 +4,7 @@ Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves al
 says it may be the user's call to take into Purist. Old Faithful (Fixed) is narrow (user, 2026-11-02): beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
-not to Fixed. Fixed so far: forty-one entries in `oldfaithful-fixes` (`docs/fixes.md`), each with its
+not to Fixed. Fixed so far: forty-three entries in `oldfaithful-fixes` (`docs/fixes.md`), each with its
 own switch in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
 
 Sources:
@@ -109,6 +109,9 @@ Key:
 | 67 | Falling sand or gravel deletes any block of its own kind it passes into (a piston pushing it into a column, say) | bug | OF | low | fixed (OF) |
 | 68 | Single player: rejoining a world far from its spawn, the walls around you aren't solid for a moment; you can walk into one and suffocate | bug | OF | mid | fixed (OF) |
 | 69 | Chests can't be turned: the front is worked out from the blocks around (south when free-standing, sideways in a corner) | ask | SF | mid | built (SF) |
+| 70 | Dots of sky flicker along block edges where render chunks meet: each chunk is placed with a rounding error bigger than beta's overlap | bug | OF | mid | fixed (OF) |
+| 71 | Screen-aligned lines flicker over the block-breaking cracks (seen by the user); the cracks never lose depth to their block in measurement | ? | ? | low-mid | not reproduced; set aside (user) |
+| 72 | Dots of sky along some edges of grass, stone, dirt, planks, bricks, wool and others: a face's texture starts exactly on its tile's edge, and a hair of rounding reads the transparent tile beside it in the atlas | bug | OF | mid | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -978,6 +981,73 @@ way. Later versions keep a facing chosen at placement. SF. **Built in Still Fait
 placed beside one with a facing joins it, otherwise both halves take the placer's, turned across the pair if they
 looked along it. Data 0 (every chest placed before) keeps beta's rule, so nothing in an existing world turns; vanilla
 draws every chest by beta's rule, and the dropped item has data 0 as before. Checked in `clientStartupTestStill`.
+
+### 70. Sky through the seams between chunks (T, measured)
+Reported by the user playing Still Faithful (2026-11-03): dots of sky colour along block edges, worse when moving.
+Beta builds each render chunk (16 blocks a side) as a display list of vertices relative to its corner, exact, and
+places it in two translations that nearly cancel: `ChunkRenderer.render` by (the chunk's 1024-block region - the
+camera, the camera cast to a float), then the list's own `translateToRenderPosition` by the chunk's place in that
+region (`x & 1023`), then a scale of 1.000001 about the chunk's middle (beta's own guard against cracks: an overlap of
+8 millionths of a block at each side). The driver adds the translations in single precision at magnitudes up to
+1023, so each chunk lands off by its own rounding, up to about 0.0001 blocks: several times the overlap. Where two
+chunks meet, the faces either side then miss by a hair, and a pixel centre landing in the gap shows what's behind:
+inside solid ground nothing is drawn, so the sky or fog colour. Faces within a chunk share exact vertices under one
+matrix and never part. Worst where the chunks' places in their region are large: anywhere at negative x or z (`x &
+1023` is near 1023 there) and toward the far side of each 1024-block region. A float32 model of the matrix stack
+(Claude Opus 5.5, 2026-11-03) has 28% of chunk joins open, by up to 0.0001 blocks, at negative or far coordinates,
+2% near the origin's positive side.
+
+Measured with `:harness:seamCheck` (`docs/fixes.md` > Tests; Still Faithful's mods, 1600x900, five views of a sealed
+room held for 32 frames each while the camera creeps, holes counted from the depth), hole pixels a frame, beta /
+fixed: near 20, 20: 0.18 / 0.06; at -76, -76: 1.51 / 0.06; at 708, 708: 1.10 / 0.06. On chunk joins: 21, 221 and
+157 holes over 160 frames in beta, 0 with the fix at every place. The 0.06 left is #72 (with the atlas made opaque
+it drops to one stray pixel in 160 frames, the same with or without the fix). OF, mid (everyone sees it, a dot at a
+time). **Fixed in Old Faithful** (2026-11-03, `render.seams`, client): the list keeps only the scale about its
+middle, and each chunk is translated once, by its corner minus the camera worked out in double precision
+(`ChunkTransform`), so the rounding is that of the distance to the chunk, inside the overlap (the model: no join open
+at any place). Not bit-identical elsewhere: moving each chunk by its old rounding error (under 0.0001 blocks) changes
+which texel some pixels on a texel boundary land on, 0.01 to 0.26% of a frame's pixels, by a neighbouring texel's
+colour (almost all under 12 levels of 255); beta's own picture changes the same way whenever the camera moves.
+Cost (`tools/bench.py` configurations `fixes` and `fixesbeta`, Far, Max FPS, 854x480, 3 runs each, the PC in use;
+`local/bench/seams-cost/`): median frame 1.54 against 1.34 ms standing, 1.38 against 1.29 turning, 2.02 against 1.93
+flying, so 0.1 to 0.2 ms a frame for the per-chunk matrix calls (a push, a translation and a pop for each chunk drawn,
+instead of one for each 1024-block region); nothing under vsync.
+
+### 71. Lines over the block-breaking cracks (seen, not reproduced; set aside)
+Reported by the user playing Still Faithful (2026-11-03), in their words or close to them: looking down, breaking the
+top of a block, with the camera facing a diagonal direction, flickering lines flash over the breaking animation. It
+looked like z-fighting (they first said "as if aliasing"), but it wasn't the cracks going behind their block and it
+wasn't fighting with its block; it was across the whole crack, not at the block's edges, in bands parallel with the
+screen (straight screen-aligned stripes). What was ruled out (`:harness:seamCheck -Pseams.crack`, the crack tiles
+made opaque, each camera position drawn without and with the cracks): over nine views from diagonal to almost
+straight down, standing on the block or two blocks off, at 20, 20, at 4100, 4100 and at -9000, -9000, with smooth and
+with beta's dusk, the cracks never lost depth to their block (0 of 7.4 million crack pixels at each place), so a fix
+for that (drawing the cracks through the block's own chunk transform) was dropped. Not yet tried: the user's real
+settings in a hidden run (window size, the visible window's depth bits), the real crack textures and blending in
+motion. **Set aside by the user** (2026-11-03); open. Next step if it returns: a screenshot or short recording of the
+bands, ideally with F3 showing the position and the window's size.
+
+### 72. Sky through the edges of some blocks' textures (T, measured)
+Found measuring #70 (2026-11-03). A face's texture coordinates start exactly on its tile's edge in the terrain atlas
+(`(tile + min * 16) / 256` in `BlockRenderManager`'s face methods) and end 0.01 texel short of the far edge. With
+nearest sampling, a pixel just inside the starting edge can come out a hair below it in the graphics card's
+interpolation and read the last texel of the tile before it. Where that texel is transparent, the terrain pass's
+alpha test drops the pixel and the sky shows: a dot of sky as #70's, along the edge. Which faces: the atlas wraps
+(`GL_REPEAT`), so the first row's tiles (grass top, stone, dirt, grass side, planks, slabs, bricks, TNT) read the
+last row (the cracking stages and empty tiles, all transparent) along the top edge of their sides and one edge of
+their tops and bottoms; grass tops also read the sapling beside them along another edge; wool, lapis blocks,
+snowy grass sides and diamond ore read partly transparent neighbours. Measured with `seamCheck`: 8 to 21 hole pixels
+over 160 frames in the test room with beta's drawing and 10 with #70's fix (0.06 a frame), on block edges of grass
+tops and stone bottoms (plus one stray pixel at a pillar's corner); none once the atlas's transparent texels are made
+opaque. Where the neighbouring texel is opaque the same slip gives a pixel of the neighbour's colour instead (atlas
+bleeding), not measured. OF (a clear mistake), mid. **Fixed in Old Faithful** (2026-11-03, the user's go,
+`render.textureEdges`, client): while a chunk is built, each finished quad's texture coordinates that lie exactly on a
+tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`); quads whose range crosses a
+tile edge, and beta's own 0.01-texel end, are left alone. Measured with #70's fix on both ways: 10 hole pixels over 160
+frames at each of the three places without it, 0 with it (the stray pixel went too). Elsewhere 0.06% of a frame's
+pixels change (875 to 963 of 1.44 million in each view's first frame), nearly all by under 25 levels of 255: pixels
+on a texel boundary inside a face taking the neighbouring texel. Its cost is a few comparisons per quad while chunks
+are built (reasoned, not benchmarked).
 
 ## The piston hunt
 

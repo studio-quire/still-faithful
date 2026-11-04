@@ -48,6 +48,7 @@ public final class SceneShot {
 	private static final String VIEWS = given("oldfaithful.selftest.sceneViews");
 	private static final String SURVEY = given("oldfaithful.selftest.sceneSurvey");
 	private Survey survey;
+	private SeamCheck seams;
 	private static final int VIEW_TICKS = Integer.getInteger("oldfaithful.selftest.sceneViewTicks", 900);
 	private static final int SETTLE_TICKS = 100, HOLD_TICKS = 200;
 	private static final int LAVA = Block.LAVA.id, FLOWING_LAVA = Block.FLOWING_LAVA.id;
@@ -93,6 +94,7 @@ public final class SceneShot {
 		mc.options.hideHud = true;
 		mc.options.difficulty = 0;
 		ticks++;
+		if (SeamCheck.ENABLED) return (seams == null ? seams = new SeamCheck(OUT, results) : seams).tick(mc);
 		if (SURVEY != null) return survey == null ? (survey = new Survey(SURVEY, OUT)).tick(mc, results) : survey.tick(mc, results);
 		if (VIEWS != null) return view(mc);
 		if (site < 0) {

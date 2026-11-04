@@ -157,6 +157,14 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"world.rejoinTerrain", "rejoin",
 					"# #68: rejoining a single-player world far from its spawn, the terrain around you wasn't loaded yet, so\n"
 					+ "# for a moment the walls weren't solid: you could walk into one and suffocate until pushed out.\n"},
+			{"render.seams", "seams",
+					"# #70: dots of sky flickered along the edges of blocks, every 16 blocks (where the chunks the world is drawn\n"
+					+ "# in meet): each chunk was placed with a rounding error bigger than the overlap meant to hide the join.\n"
+					+ "# With this, each chunk is placed from the camera in one step, and the joins stay closed.\n"},
+			{"render.textureEdges", "textureedges",
+					"# #72: dots of sky flickered along some edges of grass, stone, dirt, planks and other blocks: a face's\n"
+					+ "# texture started exactly on the edge of its picture in the texture sheet and could read the transparent\n"
+					+ "# picture beside it. With this, it starts a thousandth of a texel inside.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

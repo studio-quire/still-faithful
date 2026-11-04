@@ -7,6 +7,13 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.1.2 (2026-11-03)
+
+On Old Faithful 0.1.4 and Pure Faithful 0.1.3. Still Faithful's own mod is unchanged.
+
+- From Old Faithful 0.1.4: dots of sky no longer flicker along block edges, where the chunks the world is drawn in
+  meet or at the edges of some blocks' textures (Chunk Seams and Texture Edges, under Looks and Sounds).
+
 ## 0.1.1 (2026-11-03)
 
 On Old Faithful 0.1.3 (walls solid from the first moment when you rejoin a world far from its spawn) and Pure

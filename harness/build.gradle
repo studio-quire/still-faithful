@@ -405,6 +405,49 @@ if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
+// Holes in the terrain, and the cracks against their block, measured (SeamCheck; docs/fixes.md > Tests): sealed rooms built
+// in a new world, each view held while the camera moves by fractions of a pixel, holes counted from the depth.
+// -Pseams.mods=pure|fixed|still (default still), -Pseams.at="x z;...", -Pseams.opaque (transparent atlas texels made
+// opaque first), -Pseams.crack (the cracks instead), -Pseams.fixes="switch=value ..." into oldfaithful-fixes.properties,
+// -Pseams.polish="sky.dusk=beta" the same into stillfaithful-polish.properties, -Pseams.label. Results appended to
+// local/run/seam-results/seams.txt, with each view's worst frame (holes magenta).
+if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
+    tasks.register('seamCheck', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Measures holes in the terrain, or the block-breaking cracks against their block, unseen.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        def which = providers.gradleProperty('seams.mods').getOrElse('still')
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+        if (which != 'pure') mods.from(fixedMods)
+        if (which == 'still') mods.from(stillMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/seam-check')
+        runDir = runDirectory
+        oldFaithful = which != 'pure' && findProject(':oldfaithful-options') != null
+        windowRuns = false
+        timeoutSeconds = 900
+        def fixes = providers.gradleProperty('seams.fixes').getOrElse('')
+        if (!fixes.isEmpty()) configs.put('oldfaithful-fixes.properties', fixes.split(' ').join('\n') + '\n')
+        def polish = providers.gradleProperty('seams.polish').getOrElse('')
+        if (!polish.isEmpty()) configs.put('stillfaithful-polish.properties', polish.split(' ').join('\n') + '\n')
+        extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1600x900', '-Doldfaithful.selftest.expectSize=1600x900',
+                        "-Doldfaithful.selftest.stallMs=${870 * 1000}".toString(),
+                        "-Doldfaithful.selftest.scene=${rootProject.layout.projectDirectory.dir('local/run/seam-results').asFile.absolutePath}".toString(),
+                        '-Doldfaithful.selftest.seams=true',
+                        "-Doldfaithful.selftest.seamsAt=${providers.gradleProperty('seams.at').getOrElse('20 20;-76 -76;708 708')}".toString(),
+                        "-Doldfaithful.selftest.seamsOpaque=${providers.gradleProperty('seams.opaque').isPresent()}".toString(),
+                        "-Doldfaithful.selftest.seamsCrack=${providers.gradleProperty('seams.crack').isPresent()}".toString(),
+                        "-Doldfaithful.selftest.seamsFrames=${providers.gradleProperty('seams.frames').getOrElse('32')}".toString(),
+                        "-Doldfaithful.selftest.seamsLabel=${providers.gradleProperty('seams.label').getOrElse(which)}".toString()]
+        if (which == 'still') extraJvmArgs.add("-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString())
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
 // Old Faithful's multiplayer fixes in every mix of sides (docs/fixes.md): the server package with and without the fix
 // mod, each joined by the real client (hidden) with and without it, and raw-packet clients for the server-side ones.
 if (findProject(':oldfaithful-fixes') != null) {
@@ -504,8 +547,10 @@ tasks.register('benchSetup') {
     description = 'Writes local/bench/launch.json for tools/bench.py: how to launch each benchmark configuration.'
     def display = project(':oldfaithful-display').tasks.named('remapJar')
     def lightingMod = findProject(':oldfaithful-lighting')?.tasks?.named('remapJar')
+    def fixesMod = findProject(':oldfaithful-fixes')?.tasks?.named('remapJar')
     dependsOn extractLwjgl3Natives, extractNatives, bakedLwjgl, benchMods, display, speedMod
     if (lightingMod != null) dependsOn lightingMod
+    if (fixesMod != null) dependsOn fixesMod
     inputs.file(mc.clientJar)
     inputs.file(mc.intermediaryMappings)
     def out = rootProject.file('local/bench/launch.json')
@@ -535,6 +580,13 @@ tasks.register('benchSetup') {
         // Old Faithful's lighting (docs/lighting.md) on top of speed, where the mod is in the build.
         if (lightingMod != null) spec.configs.lighting = [classpath: spec.configs.speed.classpath, natives: spec.configs.speed.natives,
                                                           mods: spec.configs.speed.mods + [jar(lightingMod)]]
+        // Old Faithful's fix mod on top of speed, with every fix (`fixes`) and with #70's chunk drawing off
+        // (`fixesbeta`, beta's), to weigh that drawing's cost (docs/fixes.md > #70).
+        if (fixesMod != null) {
+            spec.configs.fixes = [classpath: spec.configs.speed.classpath, natives: spec.configs.speed.natives,
+                                  mods: spec.configs.speed.mods + [jar(fixesMod)]]
+            spec.configs.fixesbeta = spec.configs.fixes + [configFiles: ['oldfaithful-fixes.properties': 'render.seams=false\n']]
+        }
         out.parentFile.mkdirs()
         out.text = groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(spec))
         logger.lifecycle("Wrote ${out}")

@@ -5,6 +5,16 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.1.4 (2026-11-03)
+
+Released with Still Faithful 0.1.2, which carries it; still on Pure Faithful 0.1.3. Two new fixes, each on its own
+switch (Chunk Seams and Texture Edges, under Looks and Sounds):
+
+- Dots of sky no longer flicker along block edges every 16 blocks, where the chunks the world is drawn in meet (beta
+  placed each chunk a hair off; most visible west and north of 0, 0 and far from it).
+- Dots of sky no longer flicker along some edges of grass, stone, dirt, planks, bricks, wool and other blocks, where
+  a face's texture read the transparent picture beside it.
+
 ## 0.1.3 (2026-11-03)
 
 Released with Still Faithful 0.1.1, which carries it; still on Pure Faithful 0.1.3. A new fix, on its own switch:

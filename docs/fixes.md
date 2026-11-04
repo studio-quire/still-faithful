@@ -70,6 +70,8 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 66 | `spawning.squidInWater` | world | A water creature's place must be water, not any fluid |
 | 67 | `blocks.fallingSandKeepsKind` | world | Falling sand clears a block of its kind on its first tick only; a server sends kept blocks again |
 | 68 | `world.rejoinTerrain` | client (single player) | Opening a saved world, the terrain is prepared around where the player was saved, not the world spawn |
+| 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
+| 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 
 "World" means wherever the world runs: the server in multiplayer, the client in single player (beta has no
 integrated server). In multiplayer a server without the mod keeps beta's behaviour for those whatever the client has.
@@ -151,6 +153,20 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   dead ticks, turns 15 to 30 degrees short, the pig left frozen, no block, no spawn, the west edge first, no sign
   text). About 6 minutes; `-Pfixesmp.rawOnly=true` runs only the raw-client part (about 3 minutes). Runs in
   `local/run/fixes-multiplayer-test/`.
+- `./gw :harness:seamCheck` (#70, #71, #72; Claude Opus 5.5, 2026-11-03): a measurement, not a pass/fail test (`SeamCheck`).
+  The hidden client (Still Faithful's mods by default; `-Pseams.mods=pure|fixed`) builds a sealed room high in the air
+  at each of three places (`-Pseams.at`, default x and z 20, -76 and 708: near the origin, west and north of it, and
+  far into a 1024-block region), walls two thick, pillars inside, chunk seams across every surface. Five views, each
+  held for 32 frames while the camera creeps (about 1/80 block and 1/20 degree a frame); each frame's depth is read
+  back before the hand and unprojected through the camera's matrices: a pixel lying outside the room (or on the far
+  plane) is a hole, placed on the wall its ray crossed and classed as on a chunk seam, on another block edge (by
+  surface and direction) or inside a face. `-Pseams.opaque` makes the atlas's transparent texels opaque first;
+  `-Pseams.crack` measures the cracks against their block instead (#71): a floor block looked down at from nine
+  places, diagonal to almost straight down, each camera position drawn without and with the cracks (their tiles made
+  opaque), counting top-face pixels whose depth the cracks didn't change (lost to the block).
+  `-Pseams.fixes="render.seams=false"` and `-Pseams.polish="sky.dusk=beta"` write switches. Results are appended to
+  `local/run/seam-results/seams.txt`, with each view's worst frame (holes magenta) and first frame (for comparing runs
+  pixel by pixel). About 6 minutes.
 - Not checked by a test: #7, #39, #38, #30 and #34's hotbar, riding poses and death screen, and how #59's heads look
   (what's seen and heard: the user's check), #67's resending of kept blocks to a vanilla client (reasoned: a vanilla
   client's copy of the falling block clears them; not played), #40's mouse (the logic is the unit test), #26 (needs a sleeping player and a monster's path; reasoned in the mixin's comment), #8 on a real
