@@ -14,9 +14,13 @@
   "license": "MIT",
   "icon": "assets/oldfaithful-options/icon.png",
   "environment": "client",
+  "entrypoints": {
+    "oldfaithful-options:settings": ["org.studioquire.oldfaithful.options.settings.OwnSettings"]
+  },
   "mixins": ["oldfaithful-options.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15.0",
+    "oldfaithful-settings": "*",
     "minecraft": "1.0.0-beta.7.3"
   },
   "custom": {

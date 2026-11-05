@@ -43,11 +43,24 @@ public final class StartupCheck {
 	/** host:port of a test server to join instead of making a world (MultiplayerCheck). */
 	private static final String JOIN = System.getProperty("oldfaithful.selftest.joinServer");
 	private static final long STALL_MS = Long.getLong("oldfaithful.selftest.stallMs", 150_000L);
+	/** The world checks of other mods alone: no edition's own checks, which expect its switches as they ship (`:harness:libraryTest`). */
+	private static final boolean WORLD_CHECKS_ONLY = Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks") || Boolean.getBoolean("oldfaithful.selftest.worldChecksOnly");
+	/** The settings screen's checks alone, past the edition's own (`clientStartupTestLibrary`). */
+	private static final boolean SETTINGS_ONLY = Boolean.getBoolean("oldfaithful.selftest.settingsOnly");
+	/** The conflict harness: a world that's missing this mod, whose warning screen is checked and gone through. */
+	private static final String EXPECT_MISSING = System.getProperty("oldfaithful.selftest.expectMissing");
+	/** The conflict harness: host:port of a server to try, reporting what screen it ends on instead of playing. */
+	private static final String TRY_SERVER = System.getProperty("oldfaithful.selftest.tryServer");
+	/** The conflict harness: host:port of a hostile server, joined again and again until its kick says it's done. */
+	private static final String HOSTILE = System.getProperty("oldfaithful.selftest.hostile");
 	/** "<name>:<mod id>" for an edition beyond Old Faithful: its title line, and the name its settings button carries. */
 	static final String EDITION = System.getProperty("oldfaithful.selftest.edition");
 	/** Other mods' test-only checks in the running world, after the Fixed edition's ({@link WorldCheck}). */
 	private static java.util.List<WorldCheck> worldChecks;
 	private static int worldCheck;
+	private static final long JOIN_LIMIT_MS = 90_000L;
+	private static long joinStarted;
+	private static int refusedTicks;
 
 	private static final SelfTest results = new SelfTest();
 	private static int phase;
@@ -59,6 +72,8 @@ public final class StartupCheck {
 	private static MultiplayerCheck multiplayer;
 	private static SceneShot scene;
 	private static long startedAt;
+	private static long framesReadAt;
+	private static int frameSeconds, frameTotal, worldSeconds, worldFrames, fewestFrames = Integer.MAX_VALUE;
 	private static String clipboard;
 	/** Rows of beta's version-line grey in the title screen's corner, counted as separate lines; -1 until drawn. */
 	private static volatile int titleLines = -1;
@@ -68,6 +83,7 @@ public final class StartupCheck {
 
 	public static void tick(Minecraft mc) {
 		if (startedAt == 0) startedAt = System.currentTimeMillis();
+		readFrames(mc);
 		if (phase < 99 && System.currentTimeMillis() - startedAt > STALL_MS) {
 			results.fail("start-up test stalled in phase " + phase + " (screen " + mc.currentScreen + ")", new AssertionError());
 			finish(mc);
@@ -133,18 +149,29 @@ public final class StartupCheck {
 				results.check("window created and never shown, never active", Display.isCreated() && !Display.isVisible() && !Display.isActive());
 				results.check("mouse: system pointer speed and acceleration (the display mod's default)", !Settings.rawMouse
 						&& "1".equals(SDLHints.SDL_GetHint(SDLHints.SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE)));
-				vsyncCheck();
+				if (!WORLD_CHECKS_ONLY) vsyncCheck();
+				// Hidden clients waiting on the refresh stall the user's display (root docs/gpu-resets.md), so vsync is off from here on; the
+				// settings check turns it on for its own VSync button only, after vsyncCheck has seen it as it ships.
+				org.lwjgl.opengl.Display.setSwapInterval(0);
 				windowChecks(mc);
 				fullscreenChecks(mc);
-				if (OptionsCheck.loaded()) OptionsCheck.titleScreen(results, mc.currentScreen);
+				if (OptionsCheck.loaded() && !WORLD_CHECKS_ONLY) OptionsCheck.titleScreen(results, mc.currentScreen);
 				if (FIRST_START) OptionsCheck.firstStart(results, mc);
 				System.out.println("[oldfaithful-selftest] GL: " + GL11.glGetString(GL11.GL_VERSION) + " / " + GL11.glGetString(GL11.GL_RENDERER));
 				if (REARRANGE != null) {
 					phase = 10;
+				} else if (TRY_SERVER != null || HOSTILE != null) {
+					connect(mc, TRY_SERVER != null ? TRY_SERVER : HOSTILE);
+					phase = TRY_SERVER != null ? 41 : 42;
 				} else if (JOIN != null) {
 					// `:harness:fixesMultiplayerTest`: the multiplayer fixes, on a test server.
 					String[] hostPort = JOIN.split(":");
 					mc.setScreen(new net.minecraft.client.gui.screen.ConnectScreen(mc, hostPort[0], Integer.parseInt(hostPort[1])));
+					if (Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks")) {
+						// `:harness:libraryRulesTest`: another mod's world checks, as a client on a server.
+						phase = 21;
+						return;
+					}
 					multiplayer = new MultiplayerCheck(results);
 					phase = 20;
 				} else if (MENU_ONLY) {
@@ -180,10 +207,71 @@ public final class StartupCheck {
 				if (!(mc.currentScreen instanceof TitleScreen)) return;
 				results.pass("back at the main menu");
 				// As the Create World screen does.
+				if (EXPECT_MISSING != null) {
+					// Through the world list, as a player gets there: it clears the screen on either side of asking for the world.
+					net.minecraft.client.gui.screen.world.SelectWorldScreen list = new net.minecraft.client.gui.screen.world.SelectWorldScreen(mc.currentScreen);
+					mc.setScreen(list);
+					list.selectWorld(0);
+					phase = 40;
+					return;
+				}
 				mc.interactionManager = new SingleplayerInteractionManager(mc);
 				mc.startGame(WORLD, "Old Faithful start-up test", SceneShot.ENABLED ? SceneShot.SEED : 7373L);
 				mc.setScreen(null);
 				phase = 4;
+				return;
+			case 40:
+				// The core's screen, as a player meets it: drawn, then gone through.
+				if (mc.currentScreen == null || !mc.currentScreen.getClass().getSimpleName().equals("MissingContentScreen")) return;
+				if (++wait < 10) return;
+				wait = 0;
+				String shown = LibraryScreens.text();
+				results.check("missing content screen: drawn, naming " + EXPECT_MISSING + " (" + shown + ")", shown.contains(EXPECT_MISSING) && shown.contains("aren't here"));
+				LibraryScreens.shot("missing-content");
+				phase = 43;
+				return;
+			case 43:
+				if (++wait < 3) return;
+				wait = 0;
+				results.check("missing content screen: Make a Backup and Play", LibraryScreens.click(mc.currentScreen, "Make a Backup and Play"));
+				phase = 4;
+				return;
+			case 41:
+				// The harness's refusals: what a player ends up looking at.
+				if (mc.world != null && mc.currentScreen == null) {
+					if (++wait < 40) return;
+					System.out.println("[library-harness] SCREEN admitted");
+					finish(mc);
+					return;
+				}
+				if (!refusal(mc)) return;
+				if (wait == 0) LibraryScreens.clear();
+				if (++wait < 15) return;
+				wait = 0;
+				System.out.println("[library-harness] SCREEN " + mc.currentScreen.getClass().getSimpleName() + " | " + LibraryScreens.text());
+				results.pass("the refusal was drawn");
+				LibraryScreens.shot("refusal");
+				phase = 44;
+				return;
+			case 44:
+				if (++wait < 3) return;
+				finish(mc);
+				return;
+			case 42:
+				// A hostile server: each attack must end in a screen, and the next connection follows.
+				if (!refusal(mc)) return;
+				if (wait == 0) LibraryScreens.clear();
+				if (++wait < 4) return;
+				wait = 0;
+				String said = LibraryScreens.text();
+				LibraryScreens.clear();
+				System.out.println("[library-harness] SCREEN " + mc.currentScreen.getClass().getSimpleName() + " | " + said);
+				if (said.contains("harness-done")) {
+					results.pass("the hostile server's attacks all ended in a screen");
+					finish(mc);
+				} else {
+					connect(mc, HOSTILE);
+				}
 				return;
 			case 4:
 				if (mc.world == null || mc.player == null) return;
@@ -197,7 +285,11 @@ public final class StartupCheck {
 					phase = 30;
 					return;
 				}
-				if (net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("oldfaithful-fixes")) {
+				if (SETTINGS_ONLY) {
+					settingsOrFinish(mc);
+					return;
+				}
+				if (!WORLD_CHECKS_ONLY && net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("oldfaithful-fixes")) {
 					fixes = new FixesCheck(results);
 					fixes.start(mc);
 					phase = 5;
@@ -210,6 +302,7 @@ public final class StartupCheck {
 				if (fixes.tick(mc)) optionsOrFinish(mc);
 				return;
 			case 8:
+				if (refused(mc)) return;
 				// Another edition's checks (WorldCheck), one after another.
 				if (worldChecks.get(worldCheck).tick(mc)) {
 					if (++worldCheck < worldChecks.size()) worldChecks.get(worldCheck).start(mc, results);
@@ -226,6 +319,18 @@ public final class StartupCheck {
 				return;
 			case 20:
 				if (multiplayer.tick(mc)) finish(mc);
+				return;
+			case 21:
+				if (refused(mc)) return;
+				if (joinStarted == 0) joinStarted = System.currentTimeMillis();
+				if (System.currentTimeMillis() - joinStarted > JOIN_LIMIT_MS) {
+					results.fail("never got into the server's world, on screen " + mc.currentScreen, new AssertionError());
+					finish(mc);
+					return;
+				}
+				if (mc.world == null || mc.player == null || mc.currentScreen != null) return;
+				if (++worldTicks < 20) return;
+				optionsOrFinish(mc);
 				return;
 			case 30:
 				if (scene.tick(mc)) finish(mc);
@@ -258,6 +363,17 @@ public final class StartupCheck {
 				return;
 			default:
 		}
+	}
+
+	private static void connect(Minecraft mc, String hostPort) {
+		String[] parts = hostPort.split(":");
+		mc.setScreen(new net.minecraft.client.gui.screen.ConnectScreen(mc, parts[0], Integer.parseInt(parts[1])));
+	}
+
+	/** Whether the game has come to rest on a screen that isn't on the way into a world. */
+	private static boolean refusal(Minecraft mc) {
+		return mc.currentScreen != null && !(mc.currentScreen instanceof net.minecraft.client.gui.screen.ConnectScreen)
+				&& !(mc.currentScreen instanceof net.minecraft.client.gui.screen.DownloadingTerrainScreen);
 	}
 
 	private static boolean maximized() {
@@ -354,6 +470,18 @@ public final class StartupCheck {
 		titleLines = lines;
 	}
 
+	/** A client that's been turned away or dropped has nothing to wait for: the run fails now, and says why. */
+	private static boolean refused(Minecraft mc) {
+		if (JOIN == null || mc.currentScreen == null) return false;
+		String screen = mc.currentScreen.getClass().getSimpleName();
+		if (!screen.equals("MismatchScreen") && !(mc.currentScreen instanceof net.minecraft.client.gui.screen.DisconnectedScreen)) return false;
+		// Its text is read from what's been drawn.
+		if (++refusedTicks < 10) return true;
+		results.fail("refused by the server, on " + screen + ": " + LibraryScreens.text(), new AssertionError());
+		finish(mc);
+		return true;
+	}
+
 	private static void optionsOrFinish(Minecraft mc) throws ReflectiveOperationException {
 		if (worldChecks == null) {
 			worldChecks = FabricLoader.getInstance().getEntrypoints(WorldCheck.ENTRYPOINT, WorldCheck.class);
@@ -363,7 +491,7 @@ public final class StartupCheck {
 				return;
 			}
 		}
-		if (!OptionsCheck.loaded()) {
+		if (!OptionsCheck.loaded() || WORLD_CHECKS_ONLY) {
 			finish(mc);
 			return;
 		}
@@ -382,7 +510,27 @@ public final class StartupCheck {
 		phase = 7;
 	}
 
+	/** The game's own count, once a second: how the run really went, since a check may lean on what a frame rate gets done. */
+	private static void readFrames(Minecraft mc) {
+		long now = System.currentTimeMillis();
+		if (now - framesReadAt < 1000L || mc.debugText.isEmpty()) return;
+		framesReadAt = now;
+		System.out.println("[selftest-frames] " + mc.debugText + ", phase " + phase);
+		int frames = Integer.parseInt(mc.debugText.substring(0, mc.debugText.indexOf(' ')));
+		frameSeconds++;
+		frameTotal += frames;
+		if (mc.world != null) {
+			worldSeconds++;
+			worldFrames += frames;
+			fewestFrames = Math.min(fewestFrames, frames);
+		}
+	}
+
 	private static void finish(Minecraft mc) {
+		if (frameSeconds > 0) {
+			results.pass("frame rate: " + frameTotal / frameSeconds + " fps over " + frameSeconds + " s"
+					+ (worldSeconds > 0 ? ", in a world " + worldFrames / worldSeconds + " over " + worldSeconds + " s, lowest " + fewestFrames : ""));
+		}
 		phase = 99;
 		results.done();
 		if (FIRST_START && OptionsCheck.quit(mc)) return;
@@ -390,7 +538,7 @@ public final class StartupCheck {
 		mc.scheduleStop();
 	}
 
-	private static void pushKey(int scancode, int mod, boolean down) {
+	public static void pushKey(int scancode, int mod, boolean down) {
 		SDL_Event ev = SDL_Event.calloc();
 		try {
 			ev.key().type(down ? SDLEvents.SDL_EVENT_KEY_DOWN : SDLEvents.SDL_EVENT_KEY_UP).timestamp(SDLTimer.SDL_GetTicksNS())

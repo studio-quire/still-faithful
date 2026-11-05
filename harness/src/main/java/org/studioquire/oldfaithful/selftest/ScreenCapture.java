@@ -14,8 +14,8 @@ import org.lwjgl.opengl.GL11;
 
 /**
  * One screen's pixels, read back from the hidden window right after the screen is drawn (in the frame, before it's
- * shown), with the mouse at a chosen place in the screen's units. For looking at a screen's layout without a window
- * anyone can see.
+ * shown), with the mouse at a chosen place in the screen's units. For looking at a screen's layout, or with no screen open
+ * the world, without a window anyone can see.
  */
 public final class ScreenCapture {
 	public static volatile ScreenCapture pending;
@@ -32,13 +32,13 @@ public final class ScreenCapture {
 	}
 
 	/** Asks for the next frame's screen; {@link #done} once saved. Mouse -1,-1: pointing at nothing. */
-	static ScreenCapture request(File file, int mouseX, int mouseY) {
+	public static ScreenCapture request(File file, int mouseX, int mouseY) {
 		ScreenCapture c = new ScreenCapture(file, mouseX, mouseY);
 		pending = c;
 		return c;
 	}
 
-	boolean done() {
+	public boolean done() {
 		return done;
 	}
 
@@ -55,7 +55,7 @@ public final class ScreenCapture {
 			}
 		}
 		try {
-			file.getParentFile().mkdirs();
+			file.getAbsoluteFile().getParentFile().mkdirs();
 			ImageIO.write(img, "png", file);
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);

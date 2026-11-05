@@ -11,7 +11,7 @@ import org.studioquire.oldfaithful.options.settings.SettingsRegistry;
 
 /**
  * The fixes' switches on Old Faithful's settings screen (oldfaithful-options, docs/options.md > The settings screen):
- * a short name and a hint for each, in groups. Every fix waits for a restart, since a fix that's off has no mixins in
+ * a short name and a hint for each, in sections of the Fixes menu. Every fix waits for a restart, since a fix that's off has no mixins in
  * the game at all (FixesConfig). Only loaded by the options mod, on the client.
  * <p>
  * A new fix gets a row here (or a place in {@link #SERVER_ONLY}); until it has one it shows under "More" by its key.
@@ -24,7 +24,7 @@ public final class FixesSettings implements SettingsProvider {
 	/** On this game, wherever it plays. */
 	private static final String CLIENT = "client";
 
-	/** Key, group, side, name on the button, hint (what beta did; at most two lines under the buttons). */
+	/** Key, section, side, name on the button, hint (what beta did; at most two lines under the buttons). */
 	static final String[][] ROWS = {
 			{"tools.lastUse", "blocks", WORLD, "Tool's Last Use", "The block broken by a tool's last use dropped nothing."},
 			{"slabs.wooden", "blocks", CLIENT, "Wooden Slabs",
@@ -47,19 +47,19 @@ public final class FixesSettings implements SettingsProvider {
 			{"pigs.saddleDrop", "mobs", WORLD, "Saddled Pigs", "A saddled pig lost its saddle when killed."},
 			{"sleep.wakeThroughWalls", "mobs", WORLD, "Waking in Bed",
 					"A monster could wake you from the far side of the wall behind your bed."},
-			{"vehicles.dismountOnTop", "mobs", CLIENT, "Leaving Boats", "Getting out of a boat could drop you through it."},
-			{"minecarts.passItems", "mobs", WORLD, "Minecarts", "A dropped item or an arrow on the track stopped a minecart dead."},
-			{"fishing.catchToFeet", "mobs", WORLD, "Fishing Catch",
+			{"vehicles.dismountOnTop", "players", CLIENT, "Leaving Boats", "Getting out of a boat could drop you through it."},
+			{"minecarts.passItems", "players", WORLD, "Minecarts", "A dropped item or an arrow on the track stopped a minecart dead."},
+			{"fishing.catchToFeet", "players", WORLD, "Fishing Catch",
 					"A catch flew at your eyes and over your head from far out, unlike on a server."},
-			{"falls.waterLandings", "mobs", WORLD, "Water Landings",
+			{"falls.waterLandings", "players", WORLD, "Water Landings",
 					"Falling into water one block deep hurt as on stone from about half of all heights."},
-			{"controls.sneakCorners", "mobs", CLIENT, "Sneaking at Corners",
+			{"controls.sneakCorners", "players", CLIENT, "Sneaking at Corners",
 					"Sneaking didn't stop a diagonal step off an inside corner."},
 			{"mobs.headNod", "mobs", WORLD, "Mobs Nodding", "Mobs looking up or down at you nodded their heads every tick."},
 			{"spawning.besideWater", "mobs", WORLD, "Spawning by Water",
 					"West and north of 0, 0, mobs didn't spawn beside water or lava on their west or north side."},
 			{"spawning.squidInWater", "mobs", WORLD, "Squid in Lava", "Squid could spawn in lava, and burn."},
-			{"world.rejoinTerrain", "mobs", CLIENT, "Rejoining Worlds",
+			{"world.rejoinTerrain", "players", CLIENT, "Rejoining Worlds",
 					"Rejoining far from spawn, the walls around you weren't solid for a moment: you could walk in and suffocate."},
 
 			{"redstone.repeaterUpdates", "redstone", WORLD, "Repeaters",
@@ -71,6 +71,7 @@ public final class FixesSettings implements SettingsProvider {
 			{"doors.loneTop", "redstone", WORLD, "Lone Door Tops",
 					"A door's top half on its own deleted the block below when redstone changed beside it."},
 
+			{"screens.worldTitle", "screens", CLIENT, "World Screen Titles", "In a big window, the Create New World title came down among the fields."},
 			{"sky.afterContainer", "looks", CLIENT, "Sky Behind Chests", "The sky turned grey while a chest, furnace or inventory was open."},
 			{"render.undersides", "looks", CLIENT, "Fence Undersides", "The undersides of fence bars drew black."},
 			{"render.seams", "looks", CLIENT, "Chunk Seams", "Dots of sky flickered along block edges where the chunks meet."},
@@ -79,10 +80,10 @@ public final class FixesSettings implements SettingsProvider {
 					"With Fast graphics in the Nether, aiming at a mob turned the hotbar white."},
 			{"render.ridingPoses", "looks", CLIENT, "Riding Poses",
 					"A seated player's leggings stood upright, and the empty hand could tilt as if riding."},
-			{"gui.cursorItemOnTop", "looks", CLIENT, "Cursor Item",
+			{"gui.cursorItemOnTop", "screens", CLIENT, "Cursor Item",
 					"The item on the cursor in an inventory was drawn behind the player figure and labels."},
-			{"gui.deathScore", "looks", CLIENT, "Death Screen Score", "The death screen read \"Score: &e0\"."},
-			{"gui.sliderSteps", "looks", CLIENT, "Slider Steps", "The volume and sensitivity sliders skipped some percentages."},
+			{"gui.deathScore", "screens", CLIENT, "Death Screen Score", "The death screen read \"Score: &e0\"."},
+			{"gui.sliderSteps", "screens", CLIENT, "Slider Steps", "The volume and sensitivity sliders skipped some percentages."},
 			{"sound.stepsAfterFalls", "looks", CLIENT, "Footsteps", "Footsteps owed in the air all played at once on landing."},
 
 			{"multiplayer.mobPhysics", "multiplayer", CLIENT, "Mob Movement",
@@ -104,20 +105,23 @@ public final class FixesSettings implements SettingsProvider {
 
 	@Override
 	public void register(SettingsRegistry r) {
-		r.group("blocks", "Blocks and Items", 10);
-		r.group("mobs", "Mobs and Vehicles", 20);
-		r.group("redstone", "Redstone and Lighting", 30);
-		r.group("looks", "Looks and Sounds", 40);
-		r.group("multiplayer", "Multiplayer", 50, "Fixes that run on a server are set in the server's own config/" + FILE + ".");
+		r.fixes("blocks", "Blocks and Items", 10);
+		r.fixes("mobs", "Mobs", 20);
+		r.fixes("players", "Players and Vehicles", 25);
+		r.fixes("redstone", "Redstone and Lighting", 30);
+		r.fixes("looks", "Looks and Sounds", 40);
+		r.fixes("screens", "Screens", 45);
+		r.fixes("multiplayer", "Multiplayer", 50, "Fixes that run on a server are set in the server's own config/" + FILE + ".");
+		r.fixes("more", "More", 1000);
 		List<String> keys = FixesConfig.keys();
 		for (String[] row : ROWS) {
 			if (!keys.contains(row[0])) continue;
-			Setting s = Setting.fix(row[1], FILE, row[0], row[3], row[4]).running(() -> String.valueOf(FixesConfig.applied(row[0])));
-			r.add(WORLD.equals(row[2]) ? s.serverDecides() : s);
+			Setting s = Setting.fix(FILE, row[0], row[3], row[4]).running(() -> String.valueOf(FixesConfig.applied(row[0])));
+			r.add(row[1], WORLD.equals(row[2]) ? s.serverDecides() : s);
 		}
 		for (String key : keys) {
 			if (SERVER_ONLY.contains(key) || described(key)) continue;
-			r.add(Setting.fix("more", FILE, key, key, "Described in config/" + FILE + ".")
+			r.add("more", Setting.fix(FILE, key, key, "Described in config/" + FILE + ".")
 					.running(() -> String.valueOf(FixesConfig.applied(key))));
 		}
 	}

@@ -46,11 +46,14 @@ public class ModPlugin implements Plugin<Project> {
 		Object edition = project.findProperty("oldfaithful_edition");
 		boolean fixedEdition = "fixed".equals(edition);
 		boolean stillEdition = "still".equals(edition);
-		String publicName = fixedEdition ? "oldfaithful" : stillEdition ? "stillfaithful" : "purefaithful";
+		// The Faithful Library's (`oldfaithful_edition=library`, docs/library.md): faithful-*, or the mod's own folder name.
+		boolean library = "library".equals(edition);
+		String publicName = fixedEdition ? "oldfaithful" : stillEdition ? "stillfaithful" : library ? "faithful" : "purefaithful";
 		String modId = project.getName().replaceFirst("^oldfaithful-", publicName + "-");
-		String props = fixedEdition ? "fixed_" : stillEdition ? "still_" : "";
+		String props = fixedEdition ? "fixed_" : stillEdition ? "still_" : library ? "library_" : "";
 
-		project.setVersion(editionProp(project, fixedEdition ? "fixed_edition_version" : stillEdition ? "still_edition_version" : "oldfaithful_version"));
+		project.setVersion(editionProp(project, fixedEdition ? "fixed_edition_version" : stillEdition ? "still_edition_version"
+				: library ? "library_version" : "oldfaithful_version"));
 
 		DependencyHandler deps = project.getDependencies();
 		deps.add("compileOnly", project.files(mc.getNamedJar()));
@@ -102,5 +105,32 @@ public class ModPlugin implements Plugin<Project> {
 					.file("libs/" + modId + "-" + project.getVersion() + ".jar"));
 		});
 		project.getTasks().named(LifecycleBasePlugin.ASSEMBLE_TASK_NAME, t -> t.dependsOn(remapJar));
+
+		// A library mod's own test (docs/library-authoring.md > Testing), a mod of its own that's never shipped: `harness`'s librarySelftest runs it.
+		if (library && project.file("src/selftest").isDirectory()) selftest(project, java, main, mc, modId);
+	}
+
+	private static void selftest(Project project, JavaPluginExtension java, SourceSet main, MinecraftFiles mc, String modId) {
+		SourceSet selftest = java.getSourceSets().create("selftest");
+		project.getConfigurations().getByName(selftest.getCompileOnlyConfigurationName()).extendsFrom(project.getConfigurations().getByName("compileOnly"));
+		DependencyHandler deps = project.getDependencies();
+		deps.add(selftest.getCompileOnlyConfigurationName(), main.getOutput());
+		deps.add(selftest.getCompileOnlyConfigurationName(), deps.project(Map.of("path", ":harness")));
+		deps.add(selftest.getCompileOnlyConfigurationName(), deps.project(Map.of("path", ":library:harness-probe")));
+		project.getTasks().named(selftest.getCompileJavaTaskName(), JavaCompile.class, t -> {
+			t.getOptions().getRelease().set(8);
+			t.getOptions().setEncoding("UTF-8");
+			t.getOptions().getCompilerArgs().add("-Xlint:-options");
+		});
+		TaskProvider<Jar> jar = project.getTasks().register("selftestJar", Jar.class, t -> {
+			t.from(selftest.getOutput());
+			t.getArchiveClassifier().set("selftest-dev");
+		});
+		project.getTasks().register("selftestRemapJar", RemapJarTask.class, t -> {
+			t.getInput().set(jar.flatMap(Jar::getArchiveFile));
+			t.getNamedMappings().set(mc.getNamedMappings());
+			t.getClasspath().from(selftest.getCompileClasspath());
+			t.getOutput().set(project.getLayout().getBuildDirectory().file("libs/" + modId + "-selftest.jar"));
+		});
 	}
 }

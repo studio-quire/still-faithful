@@ -14,4 +14,9 @@ public interface WorldCheck {
 
 	/** Called every game tick; true when done. */
 	boolean tick(Minecraft mc);
+
+	/** A library mod's test: whether it has something to check in the same world after a restart too. */
+	default boolean afterRestart() {
+		return false;
+	}
 }

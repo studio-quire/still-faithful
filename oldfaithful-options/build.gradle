@@ -9,5 +9,7 @@ def bakedLwjgl = project(':oldfaithful-lwjgl').tasks.named('bakeLwjgl').flatMap 
 dependencies {
     compileOnly files(bakedLwjgl)
     compileOnly project(':oldfaithful-display')
+    compileOnly project(':oldfaithful-settings')
+    testImplementation project(':oldfaithful-settings')
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
 }

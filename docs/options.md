@@ -15,31 +15,49 @@ the fix mod has them.
 
 ## The settings screen
 
+The screen and config editing live in `oldfaithful-settings` since 2026-11-04 (same package, so the mods using them didn't change): the library's mods need them on any edition
+(`docs/library.md`). Options > "Old Faithful..." with this mod installed, "Mods..." without it; this mod's own switches are a provider like any other's, listed first; `options.screen` is still
+read from this mod's file.
+
 Claude Opus 5.5, 2026-11-02. So players needn't edit config files: **Options > Old Faithful...**, a 200-wide button
 above Video Settings and Controls on their 24-pixel pitch, in the gap beta leaves under its options (left out if
 another mod has put something there). Beta's own look throughout: its buttons, font, background and layout.
 
-- **Layout**: the top screen has a button per group, two columns of 150-wide buttons from a sixth of the way down, Done
-  at `height/6 + 168`, as beta's Video Settings. Each group is a page of the same shape, "Name: Value" buttons that step
-  on a click (fixes read **Fixed / Beta**, the rest ON / OFF or their choices). Under the buttons, two lines at most:
-  the hint for the button pointed at (what beta did, in a sentence), or the group's note. A page past five rows goes
-  over pages with arrows beside Done (none needs it yet). Groups: Blocks and Items, Mobs and Vehicles, Redstone and
-  Lighting, Looks and Sounds, Multiplayer, Window and Mouse.
-- **What's there**: only what's installed. Each mod lists its switches through a small API in this mod
-  (`settings/`: a `SettingsProvider` registered as the `oldfaithful-options:settings` entrypoint in its
-  fabric.mod.json, so it's loaded only when this mod is present, and never on a server): `FixesSettings` (each fix's
-  name, group, hint and side), `LightingSettings` (lava). This mod adds its own Quit Game, and Pure Faithful Display's
-  settings when that mod is installed with our LWJGL component (`DisplaySettings`, here, so the display mod and Pure
-  Faithful are unchanged). Not shown: the FOV switch (its slider is in Options) and GUI Normal on a first start (no
-  first start is left once the screen can be seen); they stay in the file. A group with nothing in it isn't shown; a
-  fix without a row in `FixesSettings` shows under "More" by its key, and `FixesSettingsTest` fails until it has one.
+- **Shape** (user, 2026-11-05): wide buttons lead somewhere and switches are short, on beta's two widths. The top page
+  has a wide (200) button per menu, from a sixth of the way down, Done at `height/6 + 168`: **Fixes...**, **Changes...**
+  (the word for what isn't a fix; ours) and **Mods...**, the hint naming a menu's sections. A menu with nothing in it isn't
+  there, and with only one the top page is skipped: Options goes straight to it, which is what "Mods..." does on an
+  edition without this mod. Done goes back one level.
+- **Fixes and Changes**: pages of "Name: Value" switches, two columns of 150-wide buttons as beta's Video Settings, stepping on
+  a click (fixes read **Fixed / Beta**, the rest ON / OFF or their choices). A page is a section, titled so
+  ("Fixes: Mobs (2/6)"), turned with arrows beside Done; a section past ten switches shares itself evenly over pages.
+  Fixes: Blocks and Items, Mobs, Players and Vehicles, Redstone and Lighting (with Lava Light), Looks and Sounds,
+  Screens, Multiplayer. Changes: Polish (Still Faithful's), then Window and Mouse (the display settings and Quit Game; "Game" with
+  Quit Game alone when the display mod isn't working). Under the buttons, two lines at most: the hint for the button
+  pointed at (what beta did, in a sentence), or the section's note.
+- **Mods**: a wide button per mod with a page, by name, five to a page with the same arrows, whether the mod is on said
+  beside it ("OFF*" when a change on its page waits for a restart). Its page has **Enabled: ON** alone in the top row where
+  the mod sits in `mods-library/` (Faithful Library's switch: `docs/library.md` > Getting a combination), then the mod's own
+  settings and world rules below, eight to a page. With no line of its own the page shows the mod's description. A mod
+  that's off isn't running, so its page has only Enabled until it is; a mod in `mods/` with settings has its page without Enabled.
+  A page can have one button of its own beside Enabled (`PageButton`): the core's **Lock Rules**, on every page with world rules while
+  a world is open, pairs with it in the top row on beta's two columns; alone, either sits in the middle (`docs/library.md` > Rules and settings).
+- **What's there**: only what's installed. Each mod lists its switches through a small API
+  (`oldfaithful-settings`: a `SettingsProvider` registered as the `oldfaithful-options:settings` entrypoint in its
+  fabric.mod.json, loaded when a screen first asks and never on a server). A switch goes on its mod's own page unless the
+  provider names a section it declared with `fixes(...)` or `changes(...)`, as the editions' do: `FixesSettings` (each
+  fix's name, section, hint and side), `LightingSettings` (lava), `PolishSettings`, and this mod's own Quit Game and Pure
+  Faithful Display's settings when that mod is installed with our LWJGL component (`DisplaySettings`, here, so the display
+  mod and Pure Faithful are unchanged). Not shown: the FOV switch (its slider is in Options) and GUI Normal on a first start
+  (no first start is left once the screen can be seen); they stay in the file. A fix without a row in `FixesSettings`
+  shows in a section "More" by its key, and `FixesSettingsTest` fails until it has one.
 - **Saving**: a click writes the file at once, changing that one value in place and keeping every other byte (the
   explanations, other keys, order, line ends: `ConfigFile`), whole or not at all (a temporary file moved over it).
   Values are read as the owning mod reads them (`Boolean.parseBoolean`, "raw" or not), and the files are read again
   each time a screen opens, so hand edits show.
 - **When it takes effect**: a fix is in the game only if its switch was on at start (its mixins are skipped
   otherwise), so every fix waits for a restart: its button gets an asterisk ("Repeaters: Beta*") while the file
-  differs from what's running, with "* Takes effect after a restart" under the buttons (the top screen says "Some
+  differs from what's running, with "* Takes effect after a restart" under the buttons (the top page says "Some
   changes take effect after a restart"). A setting can be both (`applyNow` and `running`: Still Faithful's Dusk, live
   between Stepped and Smooth, after a restart to or from Beta): it's marked while what's running differs from the
   file. At once: VSync, Even Frames, Smooth Look, Mouse and Fullscreen (set where
@@ -52,7 +70,7 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   drawn, heard and predicted, and the client-side multiplayer fixes); wooden slabs and tool speeds are this game's
   switch but apply on a server only where it has the fix too (`ServerMarker`), as their hints say. Fixes that run
   only on a server (#5, #16a, #16b, #48) aren't on the screen; the Multiplayer page's note points to the server's
-  own file.
+  own file. A mod's world rules show the server's value and can't be pressed (`docs/library.md` > Rules and settings).
 
 ## FOV
 
@@ -110,17 +128,24 @@ decides when it's given.
   both window defaults into the display config, keep a maximised placement, and stop through Quit Game cleanly.
 - `./gw :oldfaithful-options:test` also: `ConfigFileTest` (a value changed in place with every other byte kept: line
   ends, separators, indents, continuations, escaped keys, comments that mention the key, duplicates, appending; the
-  file written whole) and `SettingsRegistryTest` (groups and their order, values read as the mods read them, the
-  restart mark, hand edits, settings applied at once).
+  file written whole) and `SettingsRegistryTest` (sections and their order, what goes on a mod's page, values read as the
+  mods read them, the restart mark, hand edits, settings applied at once).
 - `clientStartupTestFixed` with this mod (`SettingsCheck`, after the FOV): Old Faithful... in place with beta's
-  buttons where they were; the groups of the installed mods; every label fitting its button with any value and the
+  buttons where they were; a wide button for each menu; each menu's pages turned by real clicks to the end and back, every fix
+  on one; every label fitting its button with any value and the
   restart mark (in the game's own font), every hint in two lines; Repeaters pressed (the file changed in that line
   only, "Beta*") and back (the file byte for byte as before); Lava Light, VSync (the swap interval), Smooth Look and
   Mouse (SDL's hint) taking effect at once; Remember Window marked for a restart; with the world marked remote, the
   world's switches reading "Server" and refusing a press while the game's own stay live. Then Options, the top
-  screen and two pages at GUI scales Small, Normal and Large in 640x480, 854x480 and 1920x1080 windows (resized
+  page and two others at GUI scales Small, Normal and Large in 640x480, 854x480 and 1920x1080 windows (resized
   unseen), checked for buttons off the screen, over each other or overflowing, and saved as pictures in
-  `local/run/client-startup-fixed/settings-shots/` (drawn with the mouse placed, so a hint shows). Not run on a real
-  server: multiplayer there is the world's `isRemote` flag, set while the screen is built.
+  `local/run/client-startup-fixed/settings-shots/` (drawn with the mouse placed, so a hint shows), with every level and page
+  in `levels/` there. Not run on a real server: multiplayer there is the world's `isRemote` flag, set while the screen is
+  built.
+- `./gw :harness:clientStartupTestLibrary`: the same `SettingsCheck` alone, on Still Faithful with World Rules, Plain F3 and
+  No Toasts in `mods-library/`, in about half a minute: also the Mods menu, Enabled against the list, a rule on the mod's
+  page, Done back to the menu, a mod with only Enabled, and a hundred made-up mods for the arrows. Its pictures, in
+  `local/run/client-startup-library/settings-shots/`, are the ones with every level. What's on a server and Options going
+  straight to Mods on an edition without this mod: `libraryRulesTest`.
 - The user's to look at: the slider's feel, the hand at wide settings, Quit Game in fullscreen; the settings screen
-  (the wording, the groups, the asterisk).
+  (the wording, the sections, the asterisk).

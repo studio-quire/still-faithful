@@ -107,9 +107,15 @@ public abstract class GameTestTask extends DefaultTask {
 	 * injections are require 0 and report one that didn't apply this way), Mixin errors
 	 * and stack frames in our code.
 	 */
+	/** A skin Mojang's server didn't send because the network didn't answer: the house's wifi, not the game. Any other skin failure still counts. */
+	protected static boolean offline(String line) {
+		return (line.contains("Skin or cape not loaded") || line.contains("Sounds not checked or downloaded")) && (line.contains("SocketTimeoutException") || line.contains("ConnectException") || line.contains("UnknownHostException"));
+	}
+
 	protected static List<String> problems(List<String> lines) {
 		List<String> problems = new ArrayList<>();
 		for (String line : lines) {
+			if (offline(line)) continue;
 			String l = line.toLowerCase(Locale.ROOT);
 			boolean mixinError = l.contains("mixin") && (l.contains("error") || l.contains("exception") || l.contains("failed")
 					|| l.contains("could not") || l.contains("critical"));

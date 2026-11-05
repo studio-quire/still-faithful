@@ -15,17 +15,17 @@ import java.util.Properties;
  * other settings, the order, the line ends) kept as it was. The files are java.util.Properties files in ISO-8859-1,
  * as the mods read them, so the text is read as ISO-8859-1 too and nothing is lost whatever it holds.
  */
-final class ConfigFile {
+public final class ConfigFile {
 	private ConfigFile() {
 	}
 
 	/** The file's text, or "" if it doesn't exist. */
-	static String read(Path file) throws IOException {
+	public static String read(Path file) throws IOException {
 		return Files.isRegularFile(file) ? new String(Files.readAllBytes(file), StandardCharsets.ISO_8859_1) : "";
 	}
 
 	/** Written whole or not at all: to a file beside it, then moved over it. */
-	static void write(Path file, String text) throws IOException {
+	public static void write(Path file, String text) throws IOException {
 		Files.createDirectories(file.toAbsolutePath().getParent());
 		Path temp = file.resolveSibling(file.getFileName() + ".tmp");
 		Files.write(temp, text.getBytes(StandardCharsets.ISO_8859_1));
@@ -37,7 +37,7 @@ final class ConfigFile {
 	}
 
 	/** What the owning mod reads from the text (it loads it with java.util.Properties). */
-	static Properties parse(String text) {
+	public static Properties parse(String text) {
 		Properties p = new Properties();
 		try {
 			p.load(new StringReader(text));
@@ -52,7 +52,7 @@ final class ConfigFile {
 	 * sets the key is rewritten (Properties takes the last), keeping its own indentation, key and separator; a key the
 	 * text lacks is appended on a line of its own, with the file's own line end.
 	 */
-	static String set(String text, String key, String value) {
+	public static String set(String text, String key, String value) {
 		StringBuilder out = new StringBuilder(text.length() + key.length() + value.length() + 2);
 		boolean found = false;
 		int i = 0, n = text.length();

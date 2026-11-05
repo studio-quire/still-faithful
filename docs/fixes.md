@@ -13,7 +13,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
   modded setup can switch one off to clear a clash with another mod, not just its effect. Each fix's mixins live in
   their own package under `mixin/`, named in `FixesConfig.FIXES`; a mixin outside them is an error.
 - On Old Faithful's settings screen (Options > Old Faithful..., `docs/options.md` > The settings screen) through
-  `FixesSettings`: each fix's name on its button, its group, a one-line hint of what beta did, and whether the world
+  `FixesSettings`: each fix's name on its button, its section of the Fixes menu, a one-line hint of what beta did, and whether the world
   decides it (the server's switch in multiplayer). A new fix adds a row there, or joins `SERVER_ONLY` if it runs only
   on a server; `FixesSettingsTest` fails until it does. Every fix waits for a restart there, since its mixins are in
   the game only if it was on at start.
@@ -37,6 +37,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 29 | `pigs.saddleDrop` | world | A saddled pig drops the saddle with its pork |
 | 30 | `render.undersides` | client | An underside above the block's floor (fence bars) is lit from the block's own space, in flat and smooth lighting |
 | 31 | `minecarts.passItems` | world | Items and arrows aren't solid to minecarts |
+| 73 | `screens.worldTitle` | client | Create New World and Rename World keep their title at the top: its height went by the window while the fields stayed where they are |
 | 33 | `items.badDataNames` | client | Slab and dye names read out-of-range data as the first kind instead of crashing |
 | 34 | `render.hotbarAfterCracks` | client | The usual blending put back after the block cracks are drawn |
 | 34 | `render.ridingPoses` | client | Both armour models get the riding pose and swing; the first-person hand is drawn unseated |

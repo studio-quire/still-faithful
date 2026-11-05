@@ -4,7 +4,7 @@
   "package": "org.studioquire.oldfaithful.polish.selftest.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": ["ChunkCacheStorage", "LivingEntityInvoker"],
-  "client": ["DuskChunkBuilderMixin", "DuskGameRendererMixin", "DuskParticleManagerMixin", "DuskTextureManagerMixin", "DuskWorldRendererMixin"],
+  "client": ["DuskChunkBuilderMixin", "DuskGameRendererMixin", "DuskParticleManagerMixin", "DuskTextureManagerMixin", "DuskWorldRendererMixin", "SkinDownloads", "SkinHttpsMixin", "SkinRendererMixin"],
   "injectors": {
     "defaultRequire": 1
   }

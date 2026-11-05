@@ -13,8 +13,8 @@ import org.studioquire.oldfaithful.options.settings.SettingsRegistry;
 public final class LightingSettings implements SettingsProvider {
 	@Override
 	public void register(SettingsRegistry r) {
-		r.group("redstone", "Redstone and Lighting", 30);
-		r.add(Setting.fix("redstone", LightingConfig.FILE, LightingConfig.LAVA_KEY, "Lava Light",
+		r.fixes("redstone", "Redstone and Lighting", 30);
+		r.add("redstone", Setting.fix(LightingConfig.FILE, LightingConfig.LAVA_KEY, "Lava Light",
 						"Lava that came with new land gave no light until disturbed. Changes land as it loads.")
 				.serverDecides()
 				.applyNow(v -> LightingConfig.setLightGeneratedLava(Boolean.parseBoolean(v))));

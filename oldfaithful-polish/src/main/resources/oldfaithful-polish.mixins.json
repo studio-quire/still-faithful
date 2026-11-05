@@ -39,7 +39,14 @@
     "edition.OptionsScreenMixin",
     "edition.SettingsScreenMixin",
     "glowstone.ClientNetworkHandlerMixin",
-    "itemsize.ItemRendererMixin"
+    "itemsize.ItemRendererMixin",
+    "skins.HeldItemRendererMixin",
+    "skins.ModelPartAccessor",
+    "skins.PlayerEntityRendererMixin",
+    "skins.SkinsMixin",
+    "skins.TextureManagerAccessor",
+    "skins.WorldRendererMixin",
+    "texturepacks.TitleScreenMixin"
   ],
   "server": [
     "autosave.ServerChunkCacheMixin",

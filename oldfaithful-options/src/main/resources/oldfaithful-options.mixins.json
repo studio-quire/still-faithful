@@ -9,8 +9,7 @@
     "fov.GameRendererMixin",
     "fov.OptionsScreenMixin",
     "gui.GameOptionsMixin",
-    "quit.TitleScreenMixin",
-    "screen.OptionsScreenMixin"
+    "quit.TitleScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

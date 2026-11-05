@@ -22,7 +22,7 @@ Still Faithful's own, each on its own switch:
   stops dead against another, so furnace trains, bumping and boosters work there too. Carts on parallel tracks still
   leave each other alone.
 - Dusk and dawn glide smoothly, fog included, without beta's eleven steps and the wave of chunks redrawing across
-  the landscape at each one (Options > Still Faithful... > Polish > Dusk: Stepped keeps beta's steps, each changing
+  the landscape at each one (Options > Still Faithful... > Changes > Polish > Dusk: Stepped keeps beta's steps, each changing
   the whole view at once). Smooth and Stepped need OpenGL 2.0 and have so far been tested only on NVIDIA graphics:
   if the sky or the landscape looks wrong, set Dusk to Beta, beta's own way, after a restart.
 - Animals you've dealt with stay: sheared, milked, saddled, dyed, ridden, carried in a minecart or hatched from
@@ -31,10 +31,13 @@ Still Faithful's own, each on its own switch:
   saves at the same moments, crash-safe as Pure Faithful's.
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
+- Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the
+  skin has them. Older skins look as they did in beta.
+- The title screen's Mods and Texture Packs button reads Texture Packs, which is all it ever held.
 - The title screen says "Still Faithful @VERSION@" under beta's own version line.
 
 From Old Faithful: fixes for beta's own clear mistakes, lighting as beta's own rule says it should be, a field-of-view
-slider, and Options > Still Faithful... with every switch in the game. From Pure Faithful: its own resizable window,
+slider, and Options > Still Faithful... with every switch in the game, in menus of Fixes and Changes. From Pure Faithful: its own resizable window,
 borderless fullscreen (F11), speed with the same picture, safe logins, skins and sounds, and saves that survive
 crashes and power cuts.
 
@@ -42,7 +45,7 @@ Your worlds are in .minecraft/saves, in beta 1.7.3's own format: they open in th
 Old Faithful too (there, placed leaves can decay again and kept animals can despawn).
 
 Settings: in the game, Options > Still Faithful... has every switch, in beta's own style; Still Faithful's are under
-Polish. Most changes take effect after a restart (the screen marks one that's waiting); Dusk's Smooth and Stepped
+Changes > Polish. Most changes take effect after a restart (the screen marks one that's waiting); Dusk's Smooth and Stepped
 switch at once. The same settings are files in .minecraft/config:
 - stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on.
 - oldfaithful-fixes.properties, oldfaithful-lighting.properties, oldfaithful-options.properties: Old Faithful's.

@@ -34,7 +34,8 @@ import org.lwjgl.opengl.GL11;
  * facing yaw and pitch, the time of day held at {@code time}, at the Far render distance; after
  * {@code oldfaithful.selftest.sceneViewTicks} (default 900, for the far view to fill in) the frame is saved as
  * {@code view-<n>.png}, with the view in {@code view-<n>.txt}. Optionally after the time: the render distance (0 Far,
- * the default, to 3 Tiny), then {@code rain} for weather.
+ * the default, to 3 Tiny), then {@code rain} for weather. With {@code -Doldfaithful.selftest.sceneBright=true} every level of light shows as full daylight, for
+ * looking at what's built underground.
  *
  * <p>With {@code -Doldfaithful.selftest.sceneSurvey="x0 z0 x1 z1"}: no pictures, a map of the world's surface over
  * that area for choosing views ({@link Survey}).
@@ -50,6 +51,7 @@ public final class SceneShot {
 	private Survey survey;
 	private SeamCheck seams;
 	private static final int VIEW_TICKS = Integer.getInteger("oldfaithful.selftest.sceneViewTicks", 900);
+	private static final boolean BRIGHT = Boolean.getBoolean("oldfaithful.selftest.sceneBright");
 	private static final int SETTLE_TICKS = 100, HOLD_TICKS = 200;
 	private static final int LAVA = Block.LAVA.id, FLOWING_LAVA = Block.FLOWING_LAVA.id;
 
@@ -134,6 +136,10 @@ public final class SceneShot {
 	private boolean view(Minecraft mc) {
 		String[] views = VIEWS.split(";");
 		if (view >= views.length) return true;
+		if (BRIGHT && mc.world.dimension.lightLevelToLuminance[0] < 1.0F) {
+			java.util.Arrays.fill(mc.world.dimension.lightLevelToLuminance, 1.0F);
+			mc.worldRenderer.reload();
+		}
 		String[] v = views[view].trim().split("\\s+");
 		double x = Integer.parseInt(v[0]) + 0.5, y = Double.parseDouble(v[1]), z = Integer.parseInt(v[2]) + 0.5;
 		float yaw = Float.parseFloat(v[3]), pitch = Float.parseFloat(v[4]);

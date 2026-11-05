@@ -10,8 +10,8 @@ sourceSets { scenario }
 dependencies {
     compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
     // FixesSettings, the switches on Old Faithful's settings screen: loaded only by the options mod, when present.
-    compileOnly project(':oldfaithful-options')
-    testImplementation project(':oldfaithful-options')
+    compileOnly project(':oldfaithful-settings')
+    testImplementation project(':oldfaithful-settings')
     testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     scenarioCompileOnly files(mc.namedJar)

@@ -20,6 +20,7 @@ import java.util.zip.ZipOutputStream;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 
@@ -32,6 +33,8 @@ import org.objectweb.asm.tree.ClassNode;
 final class JarMerger {
 	private static final String ENVIRONMENT = "Lnet/fabricmc/api/Environment;";
 	private static final String ENV_TYPE = "Lnet/fabricmc/api/EnvType;";
+	private static final String ENV_INTERFACE = "Lnet/fabricmc/api/EnvironmentInterface;";
+	private static final String ENV_INTERFACES = "Lnet/fabricmc/api/EnvironmentInterfaces;";
 	private static final FileTime EPOCH = FileTime.fromMillis(0);
 
 	private JarMerger() {
@@ -76,10 +79,33 @@ final class JarMerger {
 		client.methods = mergeMembers(client.methods, server.methods, m -> m.name + m.desc,
 				(m, side) -> m.invisibleAnnotations = withSide(m.invisibleAnnotations, side));
 
+		// An interface on one side only is marked too, or Fabric would leave it on a class whose other side lacks it
+		// (the server-only SpawnableEntity on AnimalEntity crashed a dev-mode client loading the named jar).
+		List<AnnotationNode> sided = new ArrayList<>();
+		for (String itf : client.interfaces) if (!server.interfaces.contains(itf)) sided.add(interfaceSide(itf, "CLIENT"));
+		for (String itf : server.interfaces) if (!client.interfaces.contains(itf)) sided.add(interfaceSide(itf, "SERVER"));
+		if (!sided.isEmpty()) {
+			if (client.invisibleAnnotations == null) client.invisibleAnnotations = new ArrayList<>();
+			if (sided.size() == 1) {
+				client.invisibleAnnotations.add(sided.get(0));
+			} else {
+				AnnotationNode container = new AnnotationNode(ENV_INTERFACES);
+				container.values = new ArrayList<>(List.of("value", sided));
+				client.invisibleAnnotations.add(container);
+			}
+		}
+
 		Set<String> interfaces = new LinkedHashSet<>(client.interfaces);
 		interfaces.addAll(server.interfaces);
 		client.interfaces = new ArrayList<>(interfaces);
 		return client;
+	}
+
+	private static AnnotationNode interfaceSide(String itf, String side) {
+		AnnotationNode env = new AnnotationNode(ENV_INTERFACE);
+		env.visitEnum("value", ENV_TYPE, side);
+		env.visit("itf", Type.getObjectType(itf));
+		return env;
 	}
 
 	private interface Marker<T> {

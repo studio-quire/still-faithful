@@ -67,6 +67,8 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"gui.sliderSteps", "sliders",
 					"# #40: the volume and sensitivity sliders couldn't reach every percentage. With this, they follow the\n"
 					+ "# mouse to the pixel and land on whole percentages (every one from GUI scale Normal up).\n"},
+			{"screens.worldTitle", "worldtitle",
+					"# #73: in a big window, the Create New World and Rename World titles came down among the fields.\n"},
 			{"items.badDataNames", "names",
 					"# #33: a slab or dye item with an impossible data value crashed the game when its name was shown.\n"},
 			{"redstone.repeaterUpdates", "repeaters",

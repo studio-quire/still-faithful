@@ -74,6 +74,14 @@ public abstract class ClientStartupTask extends GameTestTask {
 	public abstract Property<Boolean> getWindowRuns();
 
 	/**
+	 * With the window runs, ask a hidden window for fullscreen and back. Off everywhere but
+	 * {@code clientStartupTestFullscreen}. On a hidden window SDL only records the request and nothing changes at the
+	 * OS level (every log shows 950x550), so this checks our kept state and proves nothing about real fullscreen.
+	 */
+	@Input
+	public abstract Property<Boolean> getFullscreenRuns();
+
+	/**
 	 * Old Faithful's mods are among the mods (oldfaithful-options asks the display mod to remember the window and
 	 * start maximised): the main launch must keep its placement, and with the window runs comes a first start, in a
 	 * game folder with no options.txt or config, that must open maximised with the GUI at Normal and stop by its
@@ -86,9 +94,14 @@ public abstract class ClientStartupTask extends GameTestTask {
 	@Input
 	public abstract MapProperty<String, String> getConfigs();
 
+	/** Laid out as a library pack has them, all on: in {@code mods-library/} without their versions, on the list the launch is told of. */
+	@org.gradle.api.tasks.InputFiles
+	public abstract org.gradle.api.file.ConfigurableFileCollection getLibraryMods();
+
 	public ClientStartupTask() {
 		getPython().convention("python");
 		getTimeoutSeconds().convention(180);
+		getFullscreenRuns().convention(false);
 		getPlatform().convention("windows");
 		getWindowRuns().convention(getPlatform().map(p -> p.equals("windows")));
 		getOldFaithful().convention(false);
@@ -111,9 +124,21 @@ public abstract class ClientStartupTask extends GameTestTask {
 			Files.writeString(run.resolve("config").resolve(c.getKey()), c.getValue(), StandardCharsets.ISO_8859_1);
 		}
 
+		List<String> launchArgs = new ArrayList<>(List.of(PRISM_WINDOW + "1000x600", "-Doldfaithful.selftest.expectSize=1000x600", "-Doldfaithful.selftest.expectMaximized=false"));
+		if (!getLibraryMods().isEmpty()) {
+			Path folder = Files.createDirectories(run.resolve("mods-library"));
+			List<String> selection = new ArrayList<>();
+			for (java.io.File mod : getLibraryMods().getFiles()) {
+				String name = mod.getName().replaceFirst("-\\d.*\\.jar$", ".jar");
+				Files.copy(mod.toPath(), folder.resolve(name));
+				selection.add("mods-library/" + name);
+			}
+			Files.write(folder.resolve("selection.txt"), selection);
+			launchArgs.add("-Dfabric.addMods=@mods-library/selection.txt");
+		}
+
 		List<String> failures = new ArrayList<>();
-		List<String> lines = launch(run, linux, List.of(PRISM_WINDOW + "1000x600",
-				"-Doldfaithful.selftest.expectSize=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
+		List<String> lines = launch(run, linux, launchArgs, failures);
 		if (lines.stream().noneMatch(l -> l.contains("OpenAL initialized"))) failures.add("the sound system didn't start (no \"OpenAL initialized\")");
 		if (!Files.isRegularFile(run.resolve("saves/oldfaithful-startup/level.dat"))) failures.add("the test world wasn't saved");
 		boolean oldFaithful = getOldFaithful().get();
@@ -149,17 +174,20 @@ public abstract class ClientStartupTask extends GameTestTask {
 			List<String> where = List.of("-Doldfaithful.selftest.expectSize=950x550", "-Doldfaithful.selftest.expectAt=100,120",
 					"-Doldfaithful.selftest.expectMaximized=true");
 			second.addAll(where);
-			second.add("-Doldfaithful.selftest.fullscreenAtStop=true");
-			lines.add("--- window run 2: Prism unchanged; opens where it was, then goes fullscreen (borderless) and stops so");
+			boolean fullscreen = getFullscreenRuns().get();
+			if (fullscreen) second.add("-Doldfaithful.selftest.fullscreenAtStop=true");
+			lines.add("--- window run 2: Prism unchanged; opens where it was" + (fullscreen ? ", then goes fullscreen (borderless) and stops so" : ""));
 			lines.addAll(launch(game, linux, second, failures));
-			checkKept(game, "after window run 2", true, failures);
+			checkKept(game, "after window run 2", fullscreen, failures);
 
-			List<String> third = new ArrayList<>(menuOnly);
-			third.addAll(where);
-			third.addAll(List.of("-Doldfaithful.selftest.expectFullscreen=true", "-Doldfaithful.selftest.leaveFullscreen=true"));
-			lines.add("--- window run 3: opens fullscreen over the kept window; F11 brings that window back");
-			lines.addAll(launch(game, linux, third, failures));
-			checkKept(game, "after window run 3", false, failures);
+			if (fullscreen) {
+				List<String> third = new ArrayList<>(menuOnly);
+				third.addAll(where);
+				third.addAll(List.of("-Doldfaithful.selftest.expectFullscreen=true", "-Doldfaithful.selftest.leaveFullscreen=true"));
+				lines.add("--- window run 3: opens fullscreen over the kept window; F11 brings that window back");
+				lines.addAll(launch(game, linux, third, failures));
+				checkKept(game, "after window run 3", false, failures);
+			}
 
 			if (oldFaithful) {
 				Path fresh = run.resolve("first-start");
@@ -234,7 +262,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 		jvm.addAll(extraJvmArgs);
 		List<String> javaCommand = javaCommand("net.fabricmc.loader.impl.launch.knot.KnotClient", jvm,
 				List.of("--username", "OldFaithfulTest", "--gameDir", game.toAbsolutePath().toString()));
-		int timeout = getTimeoutSeconds().get();
+		int timeout = launchTimeout();
 		Map<String, String> soundToFile = Map.of("ALSOFT_DRIVERS", "wave", "ALSOFT_CONF", game.resolve("alsoft.ini").toAbsolutePath().toString());
 		List<String> command;
 		if (linux) {
@@ -251,18 +279,25 @@ public abstract class ClientStartupTask extends GameTestTask {
 		command.addAll(javaCommand);
 
 		List<String> lines;
+		long started = System.currentTimeMillis();
 		try (GameProcess client = new GameProcess(command, game, game.resolve("harness-output.log"), linux ? Map.of() : soundToFile)) {
 			Integer exit = client.waitFor(timeout + 30);
 			if (exit == null) failures.add("the game didn't stop within " + (timeout + 30) + " s");
 			else if (exit == 124) failures.add("the game didn't stop within " + timeout + " s and was stopped");
-			else if (exit != 0) failures.add("the game exited with " + exit);
+			else if (exit != 0) failures.add("the game exited with " + GameProcess.describeExit(exit));
 			lines = new ArrayList<>(client.lines());
 		}
+		failures.addAll(GameProcess.crashReports(game, started));
 		checkSelfTest(lines, failures);
 		for (String p : problems(lines)) failures.add("log: " + p);
 		for (String e : errors(lines)) failures.add("error in the output: " + e);
 		if (lines.stream().noneMatch(l -> l.equals("Stopping!"))) failures.add("the game didn't stop cleanly (no \"Stopping!\")");
 		return lines;
+	}
+
+	/** How long one launch may take. */
+	protected int launchTimeout() {
+		return getTimeoutSeconds().get();
 	}
 
 	/** A path under the project as tools/in_linux.py mounts it (the project at /of). */
@@ -275,6 +310,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 	private static List<String> errors(List<String> lines) {
 		List<String> errors = new ArrayList<>();
 		for (String line : lines) {
+			if (offline(line)) continue;
 			String l = line.toLowerCase(Locale.ROOT);
 			if (l.contains("exception") || l.contains("[error]") || l.contains("severe") || l.contains("fatal")
 					|| line.contains("GL ERROR") || line.startsWith("Caused by") || line.startsWith("\tat ")) {

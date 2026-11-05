@@ -60,6 +60,8 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			{"render.droppedItemSize", "itemsize",
 					"# #34: dropped stairs, fences, cactus, pressure plates and other blocks that aren't full cubes lay on the\n"
 					+ "# ground at twice the size of other dropped blocks.\n"},
+			{"menu.texturePacks", "texturepacks",
+					"# The title screen's Mods and Texture Packs button only ever held texture packs. With this, it says so.\n"},
 			{"render.bowPose", "bow",
 					"# #34: players and skeletons held a bow out flat, like any item. With this, it's held upright, like a bow.\n"},
 			{DUSK_KEY, "dusk",
@@ -98,6 +100,10 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# stood free, sideways in a corner; you couldn't choose. With this, a chest you place faces you (a second\n"
 					+ "# chest beside it joins its facing). Chests placed before keep beta's rule, and a vanilla game draws every\n"
 					+ "# chest by it. In multiplayer, placed chests face you only on a server that has this change too.\n"},
+			{"skins.modern", "skins",
+					"# Beta read only the top half of a skin. With this, skins made for later versions show whole: jacket, sleeves\n"
+					+ "# and trousers, a left arm and leg of their own, and slim arms where the player's profile asks for them.\n"
+					+ "# Older skins look as they did in beta. Yours and other players', on any server: a server needs nothing.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();
@@ -178,9 +184,9 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
 		String pkg = mixinClassName.substring(0, mixinClassName.lastIndexOf('.'));
 		pkg = pkg.substring(pkg.lastIndexOf('.') + 1);
+		// What reaches into other mods goes in only where they're installed.
+		if (targetClassName.startsWith("org.studioquire.oldfaithful.hardening.") && !FabricLoader.getInstance().isModLoaded("purefaithful-hardening")) return false;
 		if (ALWAYS.equals(pkg)) {
-			// The edition's name goes into other mods' screens: only where they're installed.
-			if (targetClassName.startsWith("org.studioquire.oldfaithful.hardening.")) return FabricLoader.getInstance().isModLoaded("purefaithful-hardening");
 			if (targetClassName.startsWith("org.studioquire.oldfaithful.options.")) return FabricLoader.getInstance().isModLoaded("oldfaithful-options");
 			return true;
 		}

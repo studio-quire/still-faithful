@@ -49,9 +49,11 @@ EDITIONS = {
         "name": "Still Faithful", "repo": "https://github.com/studio-quire/still-faithful", "folder": "still-faithful-{v}",
         "mods": {
             # World changes where the world runs, what you see on the client; glowstone's speed needs both.
-            # Its settings appear on Old Faithful Options' screen; background saving needs Pure Faithful Saves.
+            # Its settings appear on Old Faithful's settings screen; background saving needs Pure Faithful Saves, and
+            # modern skins Pure Faithful Hardening, which fetches skins.
             "stillfaithful-polish": ("still-faithful-polish", "client_or_server_prefers_both",
-                                     {"old-faithful-options": "optional", "pure-faithful-saves": "optional"}),
+                                     {"old-faithful-options": "optional", "pure-faithful-saves": "optional",
+                                      "pure-faithful-hardening": "optional"}),
         },
     },
 }

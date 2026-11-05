@@ -42,9 +42,125 @@ final class RawClient implements AutoCloseable {
 	record Received(long at, int id, int a, int b, int c, int d, String text) {
 	}
 
+	/** "FAITH", in the login packet's seed: says this client has Faithful Core, and is answered with a hello. */
+	static final long CORE_MAGIC = 0x4641495448000000L;
+	static final int CORE_PREFIX = 0x46514C31;
+	private long seed;
+	/** Whether a hello is answered as agreeing, and with every channel. */
+	private boolean agree = true;
+	private volatile java.util.Map<Integer, String> channels;
+	private volatile boolean serverMustMatch;
+	private volatile boolean serverHasContent;
+	private volatile byte[] helloBytes;
+	private volatile java.util.function.UnaryOperator<byte[]> replyShape;
+	private final java.util.List<Integer> inventory = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+	/** From now on this client logs in as one with the core. */
+	RawClient core(boolean agree) {
+		seed = CORE_MAGIC;
+		this.agree = agree;
+		return this;
+	}
+
+	/** The channels the server's hello listed, by number; null with no hello. */
+	java.util.Map<Integer, String> helloChannels() {
+		return channels;
+	}
+
+	boolean serverMustMatch() {
+		return serverMustMatch;
+	}
+
+	boolean serverHasContent() {
+		return serverHasContent;
+	}
+
+	/** The hello as it came. */
+	byte[] helloBytes() {
+		return helloBytes;
+	}
+
+	/** What the reply to a hello turns into on its way out. */
+	void replyShape(java.util.function.UnaryOperator<byte[]> shape) {
+		replyShape = shape;
+	}
+
+	/** Reads nothing and waits, for a connection that never logged in. */
+	void stand0(long millis) throws InterruptedException {
+		Thread.sleep(millis);
+	}
+
+	/** The item ids of the last whole inventory the server sent. */
+	java.util.List<Integer> inventory() {
+		return inventory;
+	}
+
+	/** Sends bytes as they are: a hostile peer's. */
+	void sendRaw(byte[] bytes) throws IOException {
+		synchronized (out) {
+			out.write(bytes);
+			out.flush();
+		}
+	}
+
+	/** A 250 packet: as a well-behaved client sends one, unless the arguments say otherwise. */
+	void sendChannel(int prefix, int channel, int claimedLength, byte[] data) throws IOException {
+		synchronized (out) {
+			out.write(250);
+			out.writeInt(prefix);
+			out.writeShort(channel);
+			out.writeInt(claimedLength);
+			out.write(data);
+			out.flush();
+		}
+	}
+
+	private void hello(byte[] data) throws IOException {
+		helloBytes = data;
+		DataInputStream h = new DataInputStream(new java.io.ByteArrayInputStream(data));
+		h.readUnsignedByte();
+		h.readUnsignedShort();
+		h.readBoolean();
+		java.util.Map<Integer, String> seen = new java.util.LinkedHashMap<>();
+		int section;
+		while ((section = h.read()) >= 0) {
+			byte[] body = new byte[h.readInt()];
+			h.readFully(body);
+			DataInputStream s = new DataInputStream(new java.io.ByteArrayInputStream(body));
+			if (section == 2) {
+				for (int n = s.readUnsignedShort(); n > 0; n--) {
+					int number = s.readUnsignedShort();
+					seen.put(number, s.readUTF());
+					s.readInt();
+				}
+			} else if (section == 3) {
+				serverMustMatch = s.readBoolean();
+				serverHasContent = s.readBoolean();
+			}
+		}
+		channels = seen;
+		java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+		DataOutputStream r = new DataOutputStream(bytes);
+		r.writeByte(2);
+		r.writeShort(1);
+		r.writeBoolean(agree);
+		r.writeByte(4);
+		r.writeInt(2 + 2 * seen.size());
+		r.writeShort(seen.size());
+		for (int number : seen.keySet()) r.writeShort(number);
+		byte[] reply = replyShape != null ? replyShape.apply(bytes.toByteArray()) : bytes.toByteArray();
+		sendChannel(CORE_PREFIX, 0, reply.length, reply);
+	}
+
 	RawClient(int port, String name) throws IOException {
+		this(port, name, null);
+	}
+
+	/** {@code from}: a loopback address of its own, as each address has its own five seconds between logins. */
+	RawClient(int port, String name, String from) throws IOException {
 		this.name = name;
 		socket = new Socket();
+		if (from != null) socket.bind(new InetSocketAddress(from, 0));
 		socket.connect(new InetSocketAddress("127.0.0.1", port), 10_000);
 		socket.setTcpNoDelay(true);
 		out = new DataOutputStream(new BufferedOutputStream(socket.getOutputStream()));
@@ -68,7 +184,7 @@ final class RawClient implements AutoCloseable {
 			out.write(1);
 			out.writeInt(14);
 			writeString(out, name);
-			out.writeLong(0);
+			out.writeLong(seed);
 			out.writeByte(0);
 			out.flush();
 		}
@@ -435,7 +551,19 @@ final class RawClient implements AutoCloseable {
 			case 104: {
 				in.readByte();
 				int n = in.readShort();
-				for (int i = 0; i < n; i++) skipStack();
+				java.util.List<Integer> ids = new java.util.ArrayList<>();
+				for (int i = 0; i < n; i++) ids.add(readStack());
+				inventory.clear();
+				inventory.addAll(ids);
+				break;
+			}
+			case 250: {
+				if (in.readInt() != CORE_PREFIX) throw new IOException("a 250 packet that isn't Faithful Core's");
+				int channel = in.readUnsignedShort();
+				byte[] data = new byte[in.readInt()];
+				in.readFully(data);
+				note(250, channel, data.length, 0, 0, null);
+				if (channel == 0) hello(data);
 				break;
 			}
 			case 105: skip(5); break;
@@ -459,6 +587,13 @@ final class RawClient implements AutoCloseable {
 			}
 			default: throw new IOException(name + ": unknown packet " + id + " from the server");
 		}
+	}
+
+	/** A stack's item id, or -1 for an empty slot. */
+	private int readStack() throws IOException {
+		short id = in.readShort();
+		if (id >= 0) skip(3);
+		return id;
 	}
 
 	private void skipStack() throws IOException {

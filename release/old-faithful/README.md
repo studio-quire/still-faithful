@@ -40,7 +40,8 @@ back (after a restart).
   of the player figure and labels. Fence bars' undersides are lit. The hotbar after block cracks, riding poses and
   the death screen's score are drawn right. Option sliders reach every percentage. Footsteps aren't saved up on the
   way down stairs and played in a burst. No dots of sky flicker along block edges, where the world's chunks meet or
-  at the edges of grass, stone and other blocks' textures.
+  at the edges of grass, stone and other blocks' textures. In a big window, the Create New World and Rename World
+  titles stay at the top.
 - **Multiplayer.** A break the server refuses is put back at once, not 4 seconds later. Mobs don't jitter. Players
   who teleport or come through a portal are seen by those already there. Chunks arrive nearest first after a fast
   move. The pause after breaking a block clears when you let go. Signs edited beside other changes show their text.
@@ -51,7 +52,7 @@ back (after a restart).
 And a few options: a field-of-view slider (Options, beside Difficulty), the GUI at Normal size on a first start,
 Quit Game on the title screen, and a window that opens maximised the first time and where you left it after
 (`config/oldfaithful-options.properties`), and the settings screen itself: every switch of the installed mods,
-Pure Faithful's display settings included, in beta's own style.
+Pure Faithful's display settings included, in menus of fixes and changes, in beta's own style.
 
 ## What stays beta
 
@@ -63,7 +64,8 @@ and open in the original game.
 
 **[Still Faithful](https://github.com/studio-quire/still-faithful)** is Old Faithful plus the polish later versions
 brought while the game stayed beta: animals you've looked after stay, boats break only in a real crash, stairs drop
-themselves, cut-off lava thins out, placed leaves stay, and dusk falls smoothly, each on a switch.
+themselves, cut-off lava thins out, placed leaves stay, modern skins show whole, and dusk falls smoothly, each on a
+switch.
 
 ## Download and play
 
@@ -79,12 +81,14 @@ Faithful" and its version under beta's own version line.
 ## For existing instances
 
 Already playing b1.7.3 on Fabric (Babric) in Prism? Old Faithful's mods work on their own: drop the jars from the
-release into the instance's `.minecraft/mods`. Each works without the others and without Pure Faithful.
+release into the instance's `.minecraft/mods`. They work without Pure Faithful.
 
-- **oldfaithful-fixes** (client and server) and **oldfaithful-lighting** (client and server).
-- **oldfaithful-options** (client). Its window settings need Pure Faithful's display mod; the rest works anywhere.
+- **oldfaithful-fixes** (client and server) and **oldfaithful-lighting** (client and server), each on its own.
+- **oldfaithful-settings** (client), the settings screen: with it, the other mods' switches are in the game.
+- **oldfaithful-options** (client), with oldfaithful-settings beside it. Its window settings need Pure Faithful's
+  display mod; the rest works anywhere.
 
-The whole of Old Faithful on its own is these three plus Pure Faithful's four mods and its LWJGL, from the Pure
+The whole of Old Faithful on its own is these four plus Pure Faithful's four mods and its LWJGL, from the Pure
 Faithful release the Old Faithful release names; [Pure Faithful's README](https://github.com/studio-quire/pure-faithful#for-existing-instances)
 says how to install them.
 

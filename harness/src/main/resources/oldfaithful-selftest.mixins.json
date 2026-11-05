@@ -4,9 +4,10 @@
   "package": "org.studioquire.oldfaithful.selftest.mixin",
   "compatibilityLevel": "JAVA_8",
   "mixins": [
-    "ConnectionAccessor"
+    "ConnectionAccessor",
+    "WorldFixedSpawnMixin"
   ],
-  "client": [
+  "client": ["TextureManagerStillMixin", "ParticleManagerStillMixin", 
     "ChunkBuilderBenchMixin",
     "ChunkCacheBenchMixin",
     "GameRendererBenchMixin",
@@ -28,11 +29,13 @@
     "ButtonWidgetAccessor",
     "GameRendererScreenCaptureMixin",
     "GameRendererSceneMixin",
-    "GameRendererSeamMixin"
+    "GameRendererSeamMixin",
+    "TextRendererRecordMixin"
   ],
   "server": [
     "PlayerManagerRideMixin",
-    "MultiplayerScenesMixin"
+    "MultiplayerScenesMixin",
+    "ServerStopAtStartMixin"
   ],
   "injectors": {
     "defaultRequire": 1

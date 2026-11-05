@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 /** A game process whose combined output is captured line by line, logged to a file, and can be waited on. */
 final class GameProcess implements AutoCloseable {
@@ -86,6 +87,31 @@ final class GameProcess implements AutoCloseable {
 		if (!process.waitFor(timeoutSeconds, TimeUnit.SECONDS)) return null;
 		reader.join(5000);
 		return process.exitValue();
+	}
+
+	/** An exit code as a person wants it: a Windows status, which is what a native crash leaves, by name. */
+	static String describeExit(int exit) {
+		if (exit >= 0) return String.valueOf(exit);
+		String status = String.format("0x%08X", exit);
+		return status + switch (exit) {
+			case 0xC0000005 -> " (access violation)";
+			case 0xC0000374 -> " (heap corruption, found long after whatever overran)";
+			case 0xC0000409 -> " (stack overrun or fail-fast)";
+			default -> "";
+		};
+	}
+
+	/** What the JVM said about crashing in this folder since {@code since}: the file and its summary. */
+	static List<String> crashReports(Path dir, long since) throws IOException {
+		List<String> reports = new ArrayList<>();
+		try (Stream<Path> files = Files.list(dir)) {
+			for (Path file : files.filter(p -> p.getFileName().toString().startsWith("hs_err_pid")).toList()) {
+				if (Files.getLastModifiedTime(file).toMillis() < since) continue;
+				List<String> summary = Files.readAllLines(file, StandardCharsets.ISO_8859_1).stream().filter(l -> l.startsWith("#  ") || l.startsWith("# Problematic")).limit(6).toList();
+				reports.add("the JVM crashed, " + file + ": " + String.join(" ", summary).replaceAll("\\s+", " "));
+			}
+		}
+		return reports;
 	}
 
 	int lineCount() {

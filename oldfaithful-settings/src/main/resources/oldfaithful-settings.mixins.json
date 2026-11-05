@@ -1,0 +1,14 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.studioquire.oldfaithful.settings.mixin",
+  "plugin": "org.studioquire.oldfaithful.settings.SettingsMixins",
+  "compatibilityLevel": "JAVA_8",
+  "client": [
+    "OptionsScreenMixin",
+    "TitleScreenMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

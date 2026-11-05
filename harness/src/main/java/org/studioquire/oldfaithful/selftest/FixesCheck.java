@@ -129,6 +129,7 @@ final class FixesCheck {
 		// (beta's lists plus every block of the tool's material, obsidian and redstone ore left slow).
 		String wrong = "";
 		for (Block block : Block.BLOCKS) {
+			if (block != null && block.id >= 256) continue; // a library mod's
 			if (block == null) continue;
 			wrong += fastWrong(block, Item.GOLDEN_PICKAXE, PICKAXE_FAST) + fastWrong(block, Item.GOLDEN_AXE, AXE_FAST)
 					+ fastWrong(block, Item.GOLDEN_SHOVEL, SHOVEL_FAST);
@@ -342,7 +343,8 @@ final class FixesCheck {
 		results.check("fixes #11: the furnace leaves the empty bucket (fuel slot: " + fuel + ")", fuel != null && fuel.itemId == Item.BUCKET.id);
 		int smaller = 0;
 		for (Object e : world.entities) {
-			if (e instanceof SlimeEntity && ((SlimeEntity) e).getSize() == 2 && near((Entity) e, bx, bz + 12)) smaller++;
+			// `near` goes by x and z: slimes born in a slime chunk under the platform aren't these.
+			if (e instanceof SlimeEntity && ((SlimeEntity) e).getSize() == 2 && near((Entity) e, bx, bz + 12) && Math.abs(((Entity) e).y - Y) < 6) smaller++;
 		}
 		results.check("fixes #25: the overkilled big slime split (" + smaller + " smaller slimes)", smaller == 4);
 		results.check("fixes #29: the saddled pig dropped its saddle", dropped(world, bx, bz - 12, Item.SADDLE.id, -1));

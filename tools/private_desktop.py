@@ -23,6 +23,9 @@ new baseline and carries on (before 2026-11-03 it stopped the test and "restored
 user's game's mouse mid-play).
 With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (the user's call, 2026-11-03: their own game grabbing the cursor
 stopped tests; the harness's HandsOff still keeps the test game from grabbing).
+A display mode change isn't the command's either: it moves the cursor and the screen's edges, so the guard stands
+aside for a few seconds (2026-11-05: a test started during tools/vblank.ps1's flip took 1600x900 as the clip to keep,
+and put the user's cursor back in it).
 
 Windows only. Claude Opus 5.5, 2026-11-01.
 """
@@ -111,6 +114,7 @@ kernel32.TerminateProcess.argtypes = [wintypes.HANDLE, wintypes.UINT]
 kernel32.WaitForSingleObject.restype = wintypes.DWORD
 kernel32.WaitForSingleObject.argtypes = [wintypes.HANDLE, wintypes.DWORD]
 kernel32.GetExitCodeProcess.argtypes = [wintypes.HANDLE, ctypes.POINTER(wintypes.DWORD)]
+kernel32.ExitProcess.argtypes = [wintypes.UINT]
 kernel32.CloseHandle.argtypes = [wintypes.HANDLE]
 kernel32.GetTickCount.restype = wintypes.DWORD
 user32.GetClipCursor.argtypes = [ctypes.POINTER(RECT)]
@@ -126,6 +130,7 @@ kernel32.IsProcessInJob.argtypes = [wintypes.HANDLE, wintypes.HANDLE, ctypes.POI
 PROCESS_QUERY_LIMITED_INFORMATION = 0x1000
 SM_XVIRTUALSCREEN, SM_YVIRTUALSCREEN, SM_CXVIRTUALSCREEN, SM_CYVIRTUALSCREEN = 76, 77, 78, 79
 GUARD_SLICE_MS = 10
+MODE_CHANGE_SECONDS = 3
 
 
 class CursorGuard:
@@ -133,6 +138,8 @@ class CursorGuard:
 
     def __init__(self, job):
         self.job = job
+        self.screen = self.whole_screen()
+        self.settling = 0.0
         self.clip = self.read_clip()
         self.pos = self.read_pos()
         self.input = self.read_input()
@@ -140,9 +147,19 @@ class CursorGuard:
         self.clip_was_users = False
 
     @staticmethod
-    def read_clip():
+    def whole_screen():
+        g = user32.GetSystemMetrics
+        return (g(SM_XVIRTUALSCREEN), g(SM_YVIRTUALSCREEN), g(SM_XVIRTUALSCREEN) + g(SM_CXVIRTUALSCREEN),
+                g(SM_YVIRTUALSCREEN) + g(SM_CYVIRTUALSCREEN))
+
+    @classmethod
+    def read_clip(cls):
+        """None with no clip: the whole screen, whatever size that is just now, as a mode change moves it."""
         r = RECT()
-        return (r.left, r.top, r.right, r.bottom) if user32.GetClipCursor(ctypes.byref(r)) else None
+        if not user32.GetClipCursor(ctypes.byref(r)):
+            return None
+        clip = (r.left, r.top, r.right, r.bottom)
+        return None if clip == cls.whole_screen() else clip
 
     @staticmethod
     def read_pos():
@@ -156,10 +173,7 @@ class CursorGuard:
         return info.dwTime if user32.GetLastInputInfo(ctypes.byref(info)) else None
 
     def restore_clip(self):
-        g = user32.GetSystemMetrics
-        whole = (g(SM_XVIRTUALSCREEN), g(SM_YVIRTUALSCREEN), g(SM_XVIRTUALSCREEN) + g(SM_CXVIRTUALSCREEN),
-                 g(SM_YVIRTUALSCREEN) + g(SM_CYVIRTUALSCREEN))
-        if self.clip is None or self.clip == whole:
+        if self.clip is None:
             user32.ClipCursor(None)
         else:
             user32.ClipCursor(ctypes.byref(RECT(*self.clip)))
@@ -190,12 +204,22 @@ class CursorGuard:
 
     def problem(self):
         """None while the cursor is untouched; otherwise (exit code, what happened)."""
+        # A display mode change (tools/vblank.ps1 fix) moves the cursor and the screen's edges, and the game didn't.
+        screen = self.whole_screen()
+        if screen != self.screen:
+            self.screen, self.settling = screen, time.monotonic() + MODE_CHANGE_SECONDS
+            print(f"[private_desktop] the screen is now {screen}: not the game's doing", file=sys.stderr, flush=True)
+        if time.monotonic() < self.settling:
+            self.clip, self.pos, self.input = self.read_clip(), self.read_pos(), self.read_input()
+            self.unexplained = []
+            return None
         clip = self.read_clip()
-        if clip is not None and self.clip is not None and clip != self.clip:
-            if self.users_own(clip) or self.users_own(None) and self.clip_was_users:
+        if clip != self.clip:
+            held = clip is not None and self.users_own(clip)
+            if held or self.users_own(None) and self.clip_was_users:
                 print(f"[private_desktop] cursor clip {self.clip} -> {clip}: the user's own app; carrying on",
                       file=sys.stderr, flush=True)
-                self.clip_was_users = self.users_own(clip)
+                self.clip_was_users = held
                 self.clip = clip
                 return None
             return 125, f"the cursor's clip rectangle changed from {self.clip} to {clip}"
@@ -272,6 +296,8 @@ def run(command, timeout):
                 return 124
         code = wintypes.DWORD()
         check(kernel32.GetExitCodeProcess(pi.hProcess, ctypes.byref(code)), "GetExitCodeProcess")
+        if code.value >= 0x80000000:
+            print(f"[private_desktop] the command died with status 0x{code.value:08X}", file=sys.stderr, flush=True)
         return code.value
     finally:
         # Anything the command left running goes with the job.
@@ -299,4 +325,7 @@ def main(argv):
 
 
 if __name__ == "__main__":
-    sys.exit(main(sys.argv[1:]))
+    status = main(sys.argv[1:])
+    sys.stdout.flush()
+    # sys.exit loses a status past 31 bits, which is what a native crash leaves.
+    kernel32.ExitProcess(status)

@@ -10,7 +10,7 @@ evaluationDependsOn(':oldfaithful-speed')
 evaluationDependsOn(':oldfaithful-saves')
 evaluationDependsOn(':oldfaithful-lwjgl')
 // The Fixed edition's mods, where present (settings.gradle).
-def fixedModProjects = [':oldfaithful-fixes', ':oldfaithful-lighting', ':oldfaithful-options'].findAll { findProject(it) != null }
+def fixedModProjects = [':oldfaithful-fixes', ':oldfaithful-lighting', ':oldfaithful-options', ':oldfaithful-settings'].findAll { findProject(it) != null }
 fixedModProjects.each { evaluationDependsOn(it) }
 
 configurations {
@@ -294,6 +294,22 @@ tasks.register('clientStartupTest', oldfaithful.gradle.ClientStartupTask) {
     runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup')
     if (gameJava.isPresent()) javaExecutable = gameJava
 }
+// The one run that takes a hidden window into fullscreen and back: nothing else does (docs/building.md).
+tasks.register('clientStartupTestFullscreen', oldfaithful.gradle.ClientStartupTask) {
+    group = 'verification'
+    description = 'clientStartupTest with the window runs in fullscreen too. Only by decision: see docs/building.md.'
+    dependsOn extractLwjgl3Natives
+    gameJar = mc.clientJar
+    intermediaryMappings = mc.intermediaryMappings
+    loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+    mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+    natives = lwjgl3NativesDir
+    soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+    privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+    runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup-fullscreen')
+    fullscreenRuns = true
+    if (gameJava.isPresent()) javaExecutable = gameJava
+}
 // Old Faithful (the Fixed edition): the same with its own mods, whose fixes FixesCheck then sets up and checks in the
 // world (docs/fixes.md).
 if (!fixedMods.isEmpty()) {
@@ -342,7 +358,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -472,6 +488,348 @@ if (findProject(':oldfaithful-fixes') != null) {
         runDir = rootProject.layout.projectDirectory.dir('local/run/fixes-multiplayer-test')
         windowRuns = false
         rawOnly = providers.gradleProperty('fixesmp.rawOnly').map { it.toBoolean() }.orElse(false)
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// The Faithful Library (docs/library.md): World Rules on the base layer, end to end. Pure Faithful's mods under it, as the
+// lightest edition; the settings screen, the core and the mod beside them.
+if (findProject(':library:world-rules') != null) {
+    evaluationDependsOn(':library:world-rules')
+    evaluationDependsOn(':oldfaithful-core')
+    def libraryJars = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'),
+                       project(':library:world-rules').tasks.named('remapJar')]
+    def rulesSelftest = project(':library:world-rules').tasks.named('selftestRemapJar')
+    tasks.register('libraryRulesTest', oldfaithful.gradle.LibraryRulesTestTask) {
+        group = 'verification'
+        description = 'World Rules on the real server and the real client (hidden), against raw clients, vanilla and hostile.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, libraryJars, rulesSelftest.flatMap { it.output })
+        serverMods.from(libraryJars, rulesSelftest.flatMap { it.output })
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/library-rules-test')
+        windowRuns = false
+        timeoutSeconds = 120
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Faithful Core's hooks and attachments, every hook listened to by the test-only hook-check mod (docs/library.md); Pure Faithful's
+// mods under it, then Still Faithful's whole set beside it, which hooks many of the same methods.
+if (findProject(':library:hook-check') != null) {
+    evaluationDependsOn(':library:hook-check')
+    def hookCheck = project(':library:hook-check')
+    def hookJars = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'),
+                    hookCheck.tasks.named('remapJar'), hookCheck.tasks.named('secondRemapJar').flatMap { it.output }]
+    tasks.register('libraryHooksTest', oldfaithful.gradle.LibraryHooksTestTask) {
+        group = 'verification'
+        description = 'Every Faithful Core hook and attachment on the real server and the hidden client, alone and beside Still Faithful.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, hookJars)
+        serverMods.from(hookJars)
+        getStillMods().from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods, hookJars)
+        stillServerMods.from(project(':oldfaithful-saves').tasks.named('remapJar'), fixedMods, stillMods)
+        stillEdition = "${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString()
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/hooks-test')
+        windowRuns = false
+        timeoutSeconds = 180
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// The conflict harness's first stage (docs/library.md): no game launched. `-Plibrary.mods=a,b` narrows it to those library mods.
+// Named jars, so targets read as the source does. `libraryStaticBadTest` runs the rules over planted mistakes.
+if (findProject(':oldfaithful-core') != null) {
+    def libraryNames = providers.gradleProperty('library.mods').map { it.split(',') as List }.getOrElse(null)
+    def libraryProjects = [project(':oldfaithful-core')] + rootProject.subprojects.findAll {
+        it.path.startsWith(':library:') && it.file('build.gradle').isFile() && (libraryNames != null ? libraryNames.contains(it.name) : !it.file('gradle.properties').text.contains('library_test=true')) }
+    libraryProjects.each { evaluationDependsOn(it.path) }
+    def editionProjects = [':oldfaithful-hardening', ':oldfaithful-saves', ':oldfaithful-display', ':oldfaithful-speed', ':oldfaithful-settings', ':oldfaithful-fixes',
+                           ':oldfaithful-lighting', ':oldfaithful-options', ':oldfaithful-polish'].findAll { findProject(it) != null }.collect { project(it) }
+    def staticSettings = { task ->
+        task.group = 'verification'
+        task.gameJar = mc.namedJar
+        task.editions.from(editionProjects.collect { it.tasks.named('jar') })
+        task.accepted = rootProject.layout.projectDirectory.file('harness/library-accepted.txt')
+    }
+    tasks.register('libraryStatic', oldfaithful.gradle.LibraryStaticTask) {
+        description = "Reads the library's jars: what they hold, what common code reaches, every mixin target, two mods on one method."
+        staticSettings(it)
+        library.from(libraryProjects.collect { it.tasks.named('jar') })
+        selftests.from(libraryProjects.findAll { it.tasks.names.contains('selftestJar') }.collect { it.tasks.named('selftestJar') })
+        report = layout.buildDirectory.file('reports/library-static.txt')
+    }
+    if (findProject(':library:hook-check') != null) {
+        tasks.register('libraryStaticBadTest', oldfaithful.gradle.LibraryStaticTask) {
+            description = 'The static rules over a jar of planted mistakes: each must be caught.'
+            staticSettings(it)
+            library.from(project(':library:hook-check').tasks.named('staticBadJar'))
+            absent = ['MarkedMethods']
+            expected = ['static-bad: nothing outside assets/', 'static-bad: no @Overwrite', 'static-bad: common code reaches the client only', 'static-bad: client code reaches the server only',
+                        'static-bad: common code reaches the server only', 'static-bad: common code reaches LWJGL', 'static-bad: reads Chunk.blocks directly',
+                        'static-bad: compares stacks by hand', 'static-bad: a common mixin targets a client-only class', 'two @Redirects on one site',
+                        'two mods on one method']
+            report = layout.buildDirectory.file('reports/library-static-bad.txt')
+        }
+    }
+}
+if (findProject(':library:content-check') != null) {
+    evaluationDependsOn(':library:content-check')
+    def contentJars = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'),
+                       project(':library:content-check').tasks.named('remapJar')]
+    tasks.register('libraryContentTest', oldfaithful.gradle.LibraryContentTestTask) {
+        group = 'verification'
+        description = 'Content on the real server and client: names across numberings, every block packet, removal, the real unmodified server.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, contentJars)
+        serverMods.from(contentJars)
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir(providers.gradleProperty('library.contentRunDir').orElse('local/run/library-content-test'))
+        windowRuns = false
+        timeoutSeconds = 120
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+if (findProject(':library:content-check') != null && !stillMods.isEmpty() && !fixedMods.isEmpty()) {
+    // The same test with every edition's client mods beside the content: Still Faithful's dusk and the atlas gate, lighting with mod blocks.
+    def contentJars = [project(':oldfaithful-core').tasks.named('remapJar'), project(':library:content-check').tasks.named('remapJar')]
+    tasks.register('libraryContentTestStill', oldfaithful.gradle.LibraryContentTestTask) {
+        group = 'verification'
+        description = 'libraryContentTest with Still Faithful and Old Faithful mods on the client.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods, contentJars)
+        serverMods.from(project(':oldfaithful-settings').tasks.named('remapJar'), contentJars)
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/library-content-test-still')
+        extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString()]
+        windowRuns = false
+        timeoutSeconds = 180
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Still Faithful with a library folder: the settings screen's whole shape, Fixes, Changes and Mods with mods' pages, and pictures of every level.
+if (!stillMods.isEmpty() && !fixedMods.isEmpty() && findProject(':library:world-rules') != null) {
+    evaluationDependsOn(':oldfaithful-core')
+    def shipped = ['world-rules', 'plain-f3', 'no-toasts'].collect { evaluationDependsOn(":library:${it}"); project(":library:${it}").tasks.named('remapJar') }
+    tasks.register('clientStartupTestLibrary', oldfaithful.gradle.ClientStartupTask) {
+        group = 'verification'
+        description = "The settings screen on Still Faithful with the library's mods in their folder."
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods)
+        libraryMods.from(project(':oldfaithful-core').tasks.named('remapJar'), shipped)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup-library')
+        oldFaithful = findProject(':oldfaithful-options') != null
+        windowRuns = false
+        timeoutSeconds = 300
+        extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
+                        "-Doldfaithful.selftest.settingsOnly=true", "-Doldfaithful.selftest.stallMs=280000"]
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// The conflict harness, stages 2 to 8 (docs/library.md > The conflict harness). `-Plibrary.mods=a,b` for a set (any folder in library/, test mods too),
+// `-Plibrary.stages=registry,combinations`, `-Plibrary.keepGoing`, `-Plibrary.seed=N`, `-Plibrary.monkeyTicks=N`.
+if (findProject(':library:harness-probe') != null) {
+    def allLibrary = rootProject.subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() }
+    allLibrary.each { evaluationDependsOn(it.path) }
+    def libraryTestOnly = { it.file('gradle.properties').text.contains('library_test=true') }
+    def named = providers.gradleProperty('library.mods').map { it.split(',') as List }.getOrElse(null)
+    // A mod comes with what it depends on: the folder of a library mod is its id.
+    def dependsOf = { p ->
+        def json = p.file('src/main/resources/fabric.mod.json')
+        json.isFile() ? (new groovy.json.JsonSlurper().parse(json).depends ?: [:]).keySet().collect { id -> allLibrary.find { it.name == id } }.findAll { it != null } : []
+    }
+    def withDepends = { Collection<Project> set ->
+        def out = new LinkedHashSet<Project>()
+        def todo = new ArrayList<Project>(set)
+        while (!todo.isEmpty()) {
+            def p = todo.remove(todo.size() - 1)
+            if (out.add(p)) todo.addAll(dependsOf(p))
+        }
+        out as List
+    }
+    def subjects = named != null ? allLibrary.findAll { named.contains(it.name) } : allLibrary.findAll { !libraryTestOnly(it) }
+    if (named != null && subjects.size() != named.size()) throw new GradleException("-Plibrary.mods: no such folder in library/: ${named - subjects*.name}")
+    subjects = withDepends(subjects)
+    def core = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar')]
+    def serverBase = [project(':oldfaithful-hardening').tasks.named('remapJar'), project(':oldfaithful-saves').tasks.named('remapJar')]
+    def harnessSettings = { task ->
+        task.group = 'verification'
+        task.dependsOn extractLwjgl3Natives
+        task.gameJar = mc.clientJar
+        task.intermediaryMappings = mc.intermediaryMappings
+        task.loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        task.mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, core)
+        task.serverBase.from(serverBase, core)
+        task.probe.from(project(':library:harness-probe').tasks.named('remapJar'))
+        task.oldMods.from(fixedMods)
+        task.stillMods.from(stillMods)
+        task.stillEdition = "${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString()
+        task.serverJar = mc.serverJar
+        task.natives = lwjgl3NativesDir
+        task.soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        task.privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        task.windowRuns = false
+        // The monkey's budget at 20 ticks a second, and time to start and stop.
+        def monkeyTicks = providers.gradleProperty('library.monkeyTicks').map { it as int }.getOrElse(6000)
+        task.extraJvmArgs.add("-Dfaithful.harness.monkeyTicks=${monkeyTicks}".toString())
+        task.timeoutSeconds = Math.max(420, (int) (monkeyTicks / 20) + 120)
+        if (gameJava.isPresent()) task.javaExecutable = gameJava
+        task.stages = providers.gradleProperty('library.stages').map { it.split(',') as List }.orElse([])
+        task.keepGoing = providers.gradleProperty('library.keepGoing').isPresent()
+        task.seed = providers.gradleProperty('library.seed').map { it as long }.orElse(1733L)
+        task.parallel = providers.gradleProperty('library.parallel').map { it as int }.orElse(1)
+    }
+    tasks.register('libraryTest', oldfaithful.gradle.LibraryTestTask) {
+        description = 'The conflict harness on the library or a set: registry, combinations, salts, round trips, multiplayer, the monkey.'
+        harnessSettings(it)
+        dependsOn 'libraryStatic'
+        subjects.each { p ->
+            it.subjects.from(p.tasks.named('remapJar'))
+            // A mod's own test (`Scenario`), a mod of its own that depends on it.
+            if (p.tasks.names.contains('scenarioRemapJar')) it.subjects.from(p.tasks.named('scenarioRemapJar'))
+            if (p.tasks.names.contains('selftestRemapJar')) it.selftests.from(p.tasks.named('selftestRemapJar'))
+        }
+        tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        runDir = rootProject.layout.projectDirectory.dir(providers.gradleProperty('library.runDir').getOrElse('local/run/lib-harness-test'))
+    }
+    tasks.register('librarySelftest', oldfaithful.gradle.LibraryTestTask) {
+        description = "Mods' own tests (-Plibrary.mods=a,b), together with what they depend on: single player and a server with a joined client, each fresh and after a restart."
+        harnessSettings(it)
+        dependsOn 'libraryStatic'
+        stages = ['selftest']
+        serverOnly = providers.gradleProperty('library.serverOnly').isPresent()
+        subjects.each { p ->
+            it.subjects.from(p.tasks.named('remapJar'))
+            // What a named mod depends on comes along, but only named mods' tests run.
+            if (p.tasks.names.contains('selftestRemapJar') && (named == null || named.contains(p.name))) it.selftests.from(p.tasks.named('selftestRemapJar'))
+        }
+        tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        runDir = rootProject.layout.projectDirectory.dir(providers.gradleProperty('library.runDir').getOrElse('local/run/lib-selftest'))
+    }
+    tasks.register('libraryBadTest', oldfaithful.gradle.LibraryBadTestTask) {
+        description = 'The harness on planted mistakes: every rule must fire and name the mod.'
+        harnessSettings(it)
+        ['fixture-bad-one', 'fixture-bad-two', 'fixture-bad-monkey'].each { n -> it.subjects.from(project(":library:$n").tasks.named('remapJar')) }
+        it.selftests.from(project(':library:fixture-bad-one').tasks.named('selftestRemapJar'))
+        tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/lib-harness-bad')
+    }
+    tasks.register('coreInertTest', oldfaithful.gradle.LibraryTestTask) {
+        description = "Faithful Core with no content: a fixed seed's chunks byte for byte, a picture pixel for pixel, against the same without it; vanilla peers both ways."
+        harnessSettings(it)
+        stages = ['inert']
+        tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/lib-harness-inert')
+    }
+}
+if (findProject(':library:api-check') != null) {
+    evaluationDependsOn(':library:api-check')
+    def apiJars = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'),
+                   project(':library:api-check').tasks.named('remapJar')]
+    tasks.register('libraryApiTest', oldfaithful.gradle.LibraryApiTestTask) {
+        group = 'verification'
+        description = 'The content APIs on the real server and client: block entities, recipes, tools, lookups, entities, screens, sounds, worldgen, shapes.'
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, apiJars)
+        serverMods.from(apiJars)
+        fixesMod.from(project(':oldfaithful-fixes').tasks.named('remapJar'))
+        tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/api-test')
+        windowRuns = false
+        timeoutSeconds = 150
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+if (findProject(':library:dungeon-check') != null) {
+    evaluationDependsOn(':library:dungeon-check')
+    evaluationDependsOn(':library:better-dungeons')
+    // Pictures of a real dungeon for looking at, by the coordinates betterDungeonsTest found: -PsceneViews, -PsceneSeed as sceneShotStill's, and every light level shown as daylight.
+    tasks.register('sceneShotDungeons', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Takes pictures of given places underground in a new world with Better Dungeons, unseen.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, project(':oldfaithful-core').tasks.named('remapJar'), project(':library:better-dungeons').tasks.named('remapJar'))
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/scene-shot-dungeons')
+        runDir = runDirectory
+        oldFaithful = findProject(':oldfaithful-options') != null
+        windowRuns = false
+        def views = providers.gradleProperty('sceneViews').getOrElse('')
+        def seconds = 120 + 30 * Math.max(1, views.split(';').length)
+        timeoutSeconds = seconds
+        extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1440x900', '-Doldfaithful.selftest.expectSize=1440x900',
+                        "-Doldfaithful.selftest.stallMs=${(seconds - 30) * 1000}".toString(),
+                        "-Doldfaithful.selftest.scene=${runDirectory.dir('shots').asFile.absolutePath}".toString(),
+                        "-Doldfaithful.selftest.sceneViews=${views}".toString(), '-Doldfaithful.selftest.sceneViewTicks=240', '-Doldfaithful.selftest.sceneBright=true',
+                        "-Doldfaithful.selftest.sceneSeed=${providers.gradleProperty('sceneSeed').getOrElse('31337')}".toString()]
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+    tasks.register('betterDungeonsTest', oldfaithful.gradle.BetterDungeonsTestTask) {
+        group = 'verification'
+        description = "Better Dungeons on really generated worlds: the same dungeons whatever the order, sealed and whole, and nothing else in the seed changed."
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'))
+        serverMods.from(project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'), project(':library:dungeon-check').tasks.named('remapJar'))
+        dungeonMod.from(project(':library:better-dungeons').tasks.named('remapJar'))
+        editionMods.from(fixedMods, stillMods)
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        seeds = providers.gradleProperty('dungeons.seeds').map { it.split(',').collect { s -> s as long } }.orElse([1733L, 20261105L, -7L])
+        size = providers.gradleProperty('dungeons.size').map { it as int }.orElse(40)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        windowRuns = false
+        timeoutSeconds = 120
+        runDir = rootProject.layout.projectDirectory.dir('local/run/better-dungeons-test')
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }

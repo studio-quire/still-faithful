@@ -18,7 +18,7 @@ def pureMods = ['oldfaithful-hardening', 'oldfaithful-saves', 'oldfaithful-speed
 def pureServerMods = ['oldfaithful-hardening', 'oldfaithful-saves']
 // Old Faithful's own mods. Pure Faithful's public snapshot has none of them (settings.gradle), so neither the edition
 // nor its tasks exist there.
-def fixedMods = ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options']
+def fixedMods = ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options', 'oldfaithful-settings']
 def fixedServerMods = ['oldfaithful-fixes', 'oldfaithful-lighting']
 def hasFixed = fixedMods.every { findProject(":${it}") != null }
 if (hasFixed) {

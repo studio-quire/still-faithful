@@ -8,8 +8,8 @@ import org.studioquire.oldfaithful.options.settings.SettingsRegistry;
 
 /**
  * Still Faithful's switches on the settings screen (Old Faithful's options mod, docs/options.md > The settings screen):
- * one group of their own, "Polish", since they're the edition's deliberate departures from beta rather than fixes of
- * its mistakes. Each reads "Polished" or "Beta" (dusk: Stepped, Smooth or Beta). Every one waits for a restart, as the
+ * a section of their own in Changes, "Polish", since they're the edition's deliberate departures from beta rather than
+ * fixes of its mistakes. Each reads "Polished" or "Beta" (dusk: Stepped, Smooth or Beta). Every one waits for a restart, as the
  * fixes do (a change that's off has no mixins in the game), except dusk between Stepped and Smooth. Only loaded by the
  * options mod, on the client.
  */
@@ -33,28 +33,30 @@ public final class PolishSettings implements SettingsProvider {
 			{"saves.backgroundAutosave", WORLD, "Autosave", "Every 2 seconds the game paused to write the chunks that had changed."},
 			{"blocks.chestsFaceYou", WORLD, "Chest Facing", "A chest faced away from the block behind it, or south; never the way you chose."},
 			{"render.droppedItemSize", CLIENT, "Dropped Blocks", "Dropped stairs, fences and other part-blocks lay at twice the size."},
+			{"menu.texturePacks", CLIENT, "Texture Packs", "The title screen's Mods and Texture Packs button only ever held texture packs."},
 			{"render.bowPose", CLIENT, "Bow Pose", "Players and skeletons held a bow out flat, like any item."},
+			{"skins.modern", CLIENT, "Modern Skins", "Skins showed their top half only: no jacket, sleeves or trousers, one arm and leg for both, no slim arms."},
 			{PolishConfig.DUSK_KEY, CLIENT, "Dusk",
 					"Beta: dusk's eleven steps of light each swept across the view. Stepped: each step at once. Smooth: no steps."},
 	};
 
 	@Override
 	public void register(SettingsRegistry r) {
-		r.group(GROUP, "Polish", 45, "What later versions improved. Beta has them the old way.");
+		r.changes(GROUP, "Polish", 10, "What later versions improved. Beta has them the old way.");
 		List<String> keys = PolishConfig.keys();
 		for (String[] row : ROWS) {
 			if (!keys.contains(row[0])) continue;
 			if (row[0].equals(PolishConfig.DUSK_KEY)) {
-				r.add(dusk(row));
+				r.add(GROUP, dusk(row));
 				continue;
 			}
-			Setting s = Setting.choice(GROUP, PolishConfig.FILE, row[0], row[2], row[3], "true", "false", "Beta", "true", "Polished")
+			Setting s = Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], "true", "false", "Beta", "true", "Polished")
 					.running(() -> String.valueOf(PolishConfig.applied(row[0])));
-			r.add(WORLD.equals(row[1]) ? s.serverDecides() : s);
+			r.add(GROUP, WORLD.equals(row[1]) ? s.serverDecides() : s);
 		}
 		for (String key : keys) {
 			if (described(key)) continue;
-			r.add(Setting.choice("more", PolishConfig.FILE, key, key, "Described in config/" + PolishConfig.FILE + ".", "true",
+			r.add(GROUP, Setting.choice(PolishConfig.FILE, key, key, "Described in config/" + PolishConfig.FILE + ".", "true",
 					"false", "Beta", "true", "Polished").running(() -> String.valueOf(PolishConfig.applied(key))));
 		}
 	}
@@ -64,7 +66,7 @@ public final class PolishSettings implements SettingsProvider {
 	 * darkness it's drawn at differs); to or from Beta waits for a restart, since Beta has none of the dusk mixins in.
 	 */
 	private static Setting dusk(String[] row) {
-		return Setting.choice(GROUP, PolishConfig.FILE, row[0], row[2], row[3], "smooth", "stepped", "Stepped", "smooth", "Smooth", "beta", "Beta")
+		return Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], "smooth", "stepped", "Stepped", "smooth", "Smooth", "beta", "Beta")
 				.running(() -> PolishConfig.applied(row[0]) ? (DuskLight.smooth ? "smooth" : "stepped") : "beta")
 				.applyNow(v -> {
 					if (PolishConfig.applied(row[0]) && !v.equals("beta")) DuskLight.smooth = v.equals("smooth");

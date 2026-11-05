@@ -7,6 +7,22 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.2.0 (2026-11-05)
+
+On Old Faithful 0.2.0 and Pure Faithful 0.1.3. New, each on its own switch under Changes > Polish:
+
+- **Modern skins**: skins made for later versions show whole, with the jacket, sleeves and trousers, separate left
+  arm and leg, and slim arms for skins that have them. Older skins look as they did in beta. Yours and other
+  players', on any server; the server needs nothing (Modern Skins).
+- The title screen's Mods and Texture Packs button reads Texture Packs, which is all it ever held (Texture Packs).
+
+From Old Faithful 0.2.0:
+
+- The settings screen (Options > Still Faithful...) is in menus now: **Fixes**, a page for each kind of fix, and
+  **Changes**, with Still Faithful's Polish and the window and mouse settings. Your settings carry over.
+- In a big window, the Create New World and Rename World titles stay at the top (World Screen Titles, in Fixes'
+  new Screens section).
+
 ## 0.1.2 (2026-11-03)
 
 On Old Faithful 0.1.4 and Pure Faithful 0.1.3. Still Faithful's own mod is unchanged.

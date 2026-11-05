@@ -1,0 +1,3 @@
+# Two mods on one method, decided to be fine (docs/library.md > The conflict harness). One per line:
+# <class.method> <mod> <mod>... | why
+# The core isn't counted: it's the hook the others should have used.

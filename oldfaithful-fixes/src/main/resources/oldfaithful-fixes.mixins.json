@@ -41,6 +41,8 @@
     "respawn.ClientWorldAccessor",
     "turns.ClientNetworkHandlerMixin",
     "turns.LivingEntityMixin",
+    "worldtitle.CreateWorldScreenMixin",
+    "worldtitle.EditWorldScreenMixin",
     "names.DyeItemMixin",
     "names.SlabBlockItemMixin",
     "pick.MinecraftMixin",

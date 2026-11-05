@@ -56,8 +56,8 @@ Old Faithful's:
 
 | File | What it is |
 |---|---|
-| `OldFaithful-<v>.zip` | The pack: Pure Faithful's pack with Old Faithful's three mods added, its name, seal and README |
-| `oldfaithful-{fixes,lighting,options}-<v>.jar` | Old Faithful's own mods on their own |
+| `OldFaithful-<v>.zip` | The pack: Pure Faithful's pack with Old Faithful's four mods added, its name, seal and README |
+| `oldfaithful-{fixes,lighting,options,settings}-<v>.jar` | Old Faithful's own mods on their own (settings since 0.2.0: the screen, which options needs) |
 | `OldFaithful-server-<v>.zip` | The server package with the fixes and lighting mods added, and its own README |
 | `SHA256SUMS.txt` | For the release notes |
 

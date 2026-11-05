@@ -23,6 +23,7 @@ import org.studioquire.oldfaithful.hardening.log.GameLog;
 public final class SelfTest implements DedicatedServerModInitializer, PreLaunchEntrypoint {
 	private int pass;
 	private int fail;
+	private String owner;
 
 	@Override
 	public void onInitializeServer() {
@@ -152,12 +153,28 @@ public final class SelfTest implements DedicatedServerModInitializer, PreLaunchE
 		else fail(name, new AssertionError("check failed"));
 	}
 
+	/** While a library mod's test runs, whose it is: the harness then reads its results under that mod's name. Null when it's over. */
+	public void owner(String mod) {
+		owner = mod;
+	}
+
+	public String owner() {
+		return owner;
+	}
+
 	public void pass(String name) {
 		pass++;
-		System.out.println("[oldfaithful-selftest] PASS " + name);
+		System.out.println(owner == null ? "[oldfaithful-selftest] PASS " + name : "[faithful-test] PASS " + owner + " | " + name);
 	}
 
 	public void fail(String name, Throwable t) {
+		if (owner != null) {
+			System.out.println("[faithful-test] FAIL " + owner + " | " + name + (t instanceof AssertionError ? "" : ": " + t));
+			for (StackTraceElement frame : t.getStackTrace()) {
+				if (!(t instanceof AssertionError)) System.out.println("[faithful-test]   " + frame);
+			}
+			return;
+		}
 		fail++;
 		System.out.println("[oldfaithful-selftest] FAIL " + name + ": " + t);
 		t.printStackTrace(System.out);

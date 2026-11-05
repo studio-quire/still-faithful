@@ -9,7 +9,7 @@ sourceSets { scenario }
 
 dependencies {
     // LightingSettings, the lava switch on Old Faithful's settings screen: loaded only by the options mod, when present.
-    compileOnly project(':oldfaithful-options')
+    compileOnly project(':oldfaithful-settings')
     testImplementation files(mc.namedJar)
     // Block's tables need the game's language files, which are in the official jar (its classes keep their own names).
     testRuntimeOnly files(mc.clientJar)

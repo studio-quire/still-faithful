@@ -25,26 +25,26 @@ final class DisplaySettings {
 	}
 
 	static void register(SettingsRegistry r) {
-		r.add(Setting.onOff("window", FILE, "vsync", "VSync",
+		r.add("window", Setting.onOff(FILE, "vsync", "VSync",
 				"Frames wait for the screen's refresh, so nothing tears. Beta drew as fast as it could.", true)
 				.applyNow(v -> {
 					Settings.vsync = Boolean.parseBoolean(v);
 					Display.setVSyncEnabled(Settings.vsync);
 				}));
-		r.add(Setting.onOff("window", FILE, "frame.smooth", "Even Frames",
+		r.add("window", Setting.onOff(FILE, "frame.smooth", "Even Frames",
 				"With VSync, each frame moves by exactly one refresh, without beta's fine stutter.", true)
 				.applyNow(v -> FrameClock.enabled = Boolean.parseBoolean(v)));
-		r.add(Setting.onOff("window", FILE, "mouse.subpixel", "Smooth Look",
+		r.add("window", Setting.onOff(FILE, "mouse.subpixel", "Smooth Look",
 				"Turn by the mouse's exact movement, not whole pixels, so slow turns are smooth. Beta: OFF.", false)
 				.applyNow(v -> DisplayConfig.subpixelLook = Boolean.parseBoolean(v)));
-		r.add(Setting.choice("window", FILE, "mouse.input", "Mouse",
+		r.add("window", Setting.choice(FILE, "mouse.input", "Mouse",
 				"System: the desktop pointer's speed and acceleration, as beta had. Raw: the mouse's own movement.",
 				"system", "system", "System", "raw", "Raw")
 				.applyNow(v -> {
 					Settings.rawMouse = "raw".equals(v);
 					refresh();
 				}));
-		r.add(Setting.choice("window", FILE, "fullscreen.exclusive", "Fullscreen",
+		r.add("window", Setting.choice(FILE, "fullscreen.exclusive", "Fullscreen",
 				"F11. Borderless covers the screen at once and alt-tabs cleanly; Exclusive switches its mode, as beta did.",
 				"false", "false", "Borderless", "true", "Exclusive")
 				.applyNow(v -> {
@@ -52,11 +52,11 @@ final class DisplaySettings {
 					refresh();
 				}));
 		// Old Faithful asks for these two on (fabric.mod.json), so a file without them reads as on.
-		r.add(Setting.onOff("window", FILE, "window.remember", "Remember Window",
+		r.add("window", Setting.onOff(FILE, "window.remember", "Remember Window",
 				"The window opens where it was when the game last closed, fullscreen included.", true));
-		r.add(Setting.onOff("window", FILE, "window.startMaximized", "Start Maximized",
+		r.add("window", Setting.onOff(FILE, "window.startMaximized", "Start Maximized",
 				"The window opens maximized when neither the launcher nor a remembered window says otherwise.", true));
-		r.add(Setting.onOff("window", FILE, "window.scaleToDisplay", "Scale to Display",
+		r.add("window", Setting.onOff(FILE, "window.scaleToDisplay", "Scale to Display",
 				"On a high-density screen the window opens scaled up to match, as the rest of the desktop is.", true));
 	}
 

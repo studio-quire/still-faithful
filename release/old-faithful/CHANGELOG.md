@@ -5,6 +5,19 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.0 (2026-11-05)
+
+Released with Still Faithful 0.2.0, which carries it; still on Pure Faithful 0.1.3.
+
+- The settings screen (Options > Old Faithful...) is in menus now: **Fixes**, a page for each kind of fix, and
+  **Changes**, for the window, mouse and display settings and the Quit Game button. Long sections turn over with
+  arrows beside Done. Switches keep their names and config files, so your settings carry over.
+- Fixes for menus and screens have a section of their own, **Screens**.
+- A new fix, on its own switch (World Screen Titles, under Screens): in a big window, the Create New World and Rename
+  World titles stay at the top instead of coming down among the fields.
+- The settings screen is a small mod of its own, **oldfaithful-settings**, in the pack. If you use Old Faithful's
+  mods on their own, add its jar beside them: Old Faithful Options needs it.
+
 ## 0.1.4 (2026-11-03)
 
 Released with Still Faithful 0.1.2, which carries it; still on Pure Faithful 0.1.3. Two new fixes, each on its own

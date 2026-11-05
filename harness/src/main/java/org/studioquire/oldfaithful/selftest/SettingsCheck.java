@@ -26,11 +26,12 @@ import org.studioquire.oldfaithful.selftest.mixin.ScreenAccessor;
 
 /**
  * Old Faithful's settings screen (oldfaithful-options, docs/options.md > The settings screen), from the start-up test
- * in the running world: "Old Faithful..." in Options with beta's own buttons where they were; the groups the installed
- * mods give; every label fitting its button and every hint its two lines; clicks that write the config files (and
- * nothing else in them), apply at once where they should (vsync, sub-pixel look, the mouse, lava light) and mark a
- * restart where they can't; in multiplayer, the world's switches shown as the server's and not pressable. Then the
- * screens drawn at GUI scales Small to Large in a small, a middling and a large window, checked for overlaps and
+ * in the running world: "Old Faithful..." in Options with beta's own buttons where they were; the menus the installed
+ * mods give, their pages turned by real clicks; every label fitting its button and every hint its two lines; clicks that
+ * write the config files (and nothing else in them), apply at once where they should (vsync, sub-pixel look, the mouse,
+ * lava light) and mark a restart where they can't; in multiplayer, the world's switches shown as the server's and not
+ * pressable. With a library folder (`clientStartupTestLibrary`), the Mods menu, mods' pages and a list long enough to page.
+ * Then the screens drawn at GUI scales Small to Large in a small, a middling and a large window, checked for overlaps and
  * saved as pictures (settings-shots/ in the run folder) for looking at. The options mod's classes are reached by name,
  * so the harness builds without it.
  */
@@ -49,6 +50,8 @@ final class SettingsCheck {
 	private final SelfTest results;
 	private final Deque<Step> steps = new ArrayDeque<>();
 	private final Path config = FabricLoader.getInstance().getConfigDir();
+	private final Path list = FabricLoader.getInstance().getGameDir().resolve("mods-library").resolve("selection.txt");
+	private final boolean library = Files.isRegularFile(list);
 	private int startWidth, startHeight, startScale;
 	private final List<String> layoutProblems = new ArrayList<>();
 	private int layoutsChecked;
@@ -112,10 +115,42 @@ final class SettingsCheck {
 		return mc.currentScreen;
 	}
 
-	private Screen openGroup(Minecraft mc, String title) {
+	private Screen openMenu(Minecraft mc, String menu) {
 		Screen top = openSettings(mc);
-		press(top, button(top, title + "..."));
+		press(top, button(top, menu + "..."));
 		return mc.currentScreen;
+	}
+
+	private static boolean has(Screen s, String textStart) {
+		for (ButtonWidget b : buttons(s)) {
+			if (b.text.startsWith(textStart)) return true;
+		}
+		return false;
+	}
+
+	/** The page of a menu with this button on it, reached as a player reaches it, over the arrows. */
+	private Screen pageWith(Minecraft mc, String menu, String label) {
+		Screen page = openMenu(mc, menu);
+		while (!has(page, label)) press(page, button(page, ">"));
+		return page;
+	}
+
+	/** A menu turned on by this many pages. */
+	private Screen turned(Minecraft mc, String menu, int pages) {
+		Screen page = openMenu(mc, menu);
+		for (int i = 0; i < pages; i++) press(page, button(page, ">"));
+		return page;
+	}
+
+	private Screen openMod(Minecraft mc, String name) {
+		Screen mods = pageWith(mc, "Mods", name + "...");
+		press(mods, button(mods, name + "..."));
+		return mc.currentScreen;
+	}
+
+	/** As the mouse clicks, through beta's loop over the buttons, which turning a page rebuilds. */
+	private static void click(Screen s, ButtonWidget b) {
+		((ScreenAccessor) s).oldfaithful$click(b.x + 2, b.y + 2, 0);
 	}
 
 	/** Every button inside the screen, none over another, every label inside its button. */
@@ -146,10 +181,12 @@ final class SettingsCheck {
 		startHeight = Display.getHeight();
 		startScale = mc.options.guiScale;
 		steps.add(this::optionsScreen);
-		steps.add(this::groupsAndWords);
+		steps.add(this::menusAndWords);
+		steps.add(this::menuPages);
 		steps.add(this::restartSwitch);
 		steps.add(this::liveSwitches);
 		steps.add(this::multiplayer);
+		if (library) steps.add(this::modPages);
 		for (int[] size : WINDOWS) {
 			steps.add(resize(size[0], size[1]));
 			steps.add(wait(5));
@@ -169,16 +206,27 @@ final class SettingsCheck {
 				});
 				steps.add(capture(at + "-top", null));
 				steps.add(m -> {
-					layout(m, openGroup(m, "Window and Mouse"), at + " Window and Mouse");
+					layout(m, pageWith(m, "Changes", "VSync:"), at + " Window and Mouse");
 					return true;
 				});
 				// Pointing at the first button, so its hint shows.
 				steps.add(capture(at + "-window", "VSync"));
 				steps.add(m -> {
-					layout(m, openGroup(m, "Blocks and Items"), at + " Blocks and Items");
+					layout(m, pageWith(m, "Fixes", "Wooden Slabs:"), at + " Blocks and Items");
 					return true;
 				});
 				steps.add(capture(at + "-blocks", null));
+				if (!library) continue;
+				steps.add(m -> {
+					layout(m, openMenu(m, "Mods"), at + " Mods");
+					return true;
+				});
+				steps.add(capture(at + "-mods", "World Rules"));
+				steps.add(m -> {
+					layout(m, openMod(m, "World Rules"), at + " World Rules");
+					return true;
+				});
+				steps.add(capture(at + "-world-rules", "Enabled"));
 			}
 		}
 		// A change waiting for a restart, pointed at.
@@ -186,13 +234,17 @@ final class SettingsCheck {
 		steps.add(wait(5));
 		steps.add(m -> {
 			m.options.guiScale = 2;
-			Screen redstone = openGroup(m, "Redstone and Lighting");
+			Screen redstone = pageWith(m, "Fixes", "Repeaters:");
 			press(redstone, button(redstone, "Repeaters:"));
 			return true;
 		});
 		steps.add(capture("854x480-gui2-redstone-waiting", "Repeaters"));
 		steps.add(m -> {
 			press(m.currentScreen, button(m.currentScreen, "Repeaters:"));
+			return true;
+		});
+		everyLevel();
+		steps.add(m -> {
 			results.check("layouts: no button outside its screen, over another, or with its label overflowing, in " + layoutsChecked
 					+ " screens at GUI scales Small to Large in 640x480, 854x480 and 1920x1080 (pictures in settings-shots/)"
 					+ (layoutProblems.isEmpty() ? "" : ": " + layoutProblems), layoutProblems.isEmpty());
@@ -206,6 +258,102 @@ final class SettingsCheck {
 			m.setScreen(null);
 			return true;
 		});
+	}
+
+	/** One picture of each level and page, at the GUI scale most players have: levels/ in settings-shots/. */
+	private void everyLevel() {
+		steps.add(m -> {
+			openSettings(m);
+			return true;
+		});
+		steps.add(capture("levels/1-top", "Changes"));
+		steps.add(m -> {
+			openSettings(m);
+			return true;
+		});
+		steps.add(capture("levels/1-top-fixes", "Fixes"));
+		for (int page = 0; page < 6; page++) {
+			int turn = page;
+			steps.add(m -> {
+				turned(m, "Fixes", turn);
+				return true;
+			});
+			steps.add(capture("levels/2-fixes-" + (page + 1), null));
+		}
+		boolean still = FabricLoader.getInstance().isModLoaded("stillfaithful-polish");
+		for (int page = 0; page < (still ? 3 : 1); page++) {
+			int turn = page;
+			steps.add(m -> {
+				turned(m, "Changes", turn);
+				return true;
+			});
+			steps.add(capture("levels/2-changes-" + (page + 1), null));
+		}
+		if (!library) return;
+		steps.add(m -> {
+			openMenu(m, "Mods");
+			return true;
+		});
+		steps.add(capture("levels/2-mods", "World Rules"));
+		steps.add(m -> {
+			openMod(m, "World Rules");
+			return true;
+		});
+		steps.add(capture("levels/3-world-rules", null));
+		steps.add(m -> {
+			openMod(m, "World Rules");
+			return true;
+		});
+		steps.add(capture("levels/3-world-rules-pointed", "Apple Drops"));
+		steps.add(m -> {
+			Screen rules = openMod(m, "World Rules");
+			press(rules, button(rules, "Enabled:"));
+			return true;
+		});
+		steps.add(capture("levels/3-world-rules-off", null));
+		steps.add(m -> {
+			press(m.currentScreen, button(m.currentScreen, "Done"));
+			return true;
+		});
+		steps.add(capture("levels/2-mods-waiting", null));
+		steps.add(m -> {
+			Screen rules = openMod(m, "World Rules");
+			press(rules, button(rules, "Enabled:"));
+			openMod(m, "Plain F3");
+			return true;
+		});
+		steps.add(capture("levels/3-plain-f3", null));
+		steps.add(m -> {
+			manyMods(true);
+			turned(m, "Mods", 1);
+			return true;
+		});
+		steps.add(capture("levels/2-mods-many", null));
+		steps.add(m -> {
+			manyMods(false);
+			return true;
+		});
+	}
+
+	/** A hundred and some mods for a moment, each reading as Plain F3's switch does; only the screen's lists know them. */
+	@SuppressWarnings("unchecked")
+	private void manyMods(boolean on) throws ReflectiveOperationException {
+		Object registry = Class.forName(PKG + "SettingsRegistry").getMethod("get").invoke(null);
+		java.util.Map<String, Object> mods = (java.util.Map<String, Object>) field(registry, "mods");
+		if (!on) {
+			mods.keySet().removeIf(id -> id.startsWith("many-"));
+			return;
+		}
+		Object plain = mods.get("plain-f3");
+		java.lang.reflect.Constructor<?> group = plain.getClass().getDeclaredConstructors()[0];
+		group.setAccessible(true);
+		Field modSwitch = plain.getClass().getDeclaredField("modSwitch");
+		modSwitch.setAccessible(true);
+		for (int i = 1; i <= 100; i++) {
+			Object g = group.newInstance("many-" + i, String.format("Many Mod %03d", i), 0, null);
+			modSwitch.set(g, modSwitch.get(plain));
+			mods.put("many-" + i, g);
+		}
 	}
 
 	/** True when done. */
@@ -274,29 +422,31 @@ final class SettingsCheck {
 		return true;
 	}
 
-	/** The groups the installed mods give, and every label and hint fitting its place. */
-	private boolean groupsAndWords(Minecraft mc) throws Exception {
+	/** The menus the installed mods give, and every label and hint fitting its place. */
+	private boolean menusAndWords(Minecraft mc) throws Exception {
 		FabricLoader loader = FabricLoader.getInstance();
 		List<String> expected = new ArrayList<>();
-		if (loader.isModLoaded("oldfaithful-fixes")) expected.addAll(java.util.Arrays.asList("Blocks and Items...", "Mobs and Vehicles..."));
-		if (loader.isModLoaded("oldfaithful-fixes") || loader.isModLoaded("oldfaithful-lighting")) expected.add("Redstone and Lighting...");
-		if (loader.isModLoaded("oldfaithful-fixes")) expected.add("Looks and Sounds...");
-		if (loader.isModLoaded("stillfaithful-polish")) expected.add("Polish...");
-		if (loader.isModLoaded("oldfaithful-fixes")) expected.add("Multiplayer...");
-		expected.add(loader.isModLoaded("purefaithful-display") ? "Window and Mouse..." : "Game...");
+		if (loader.isModLoaded("oldfaithful-fixes") || loader.isModLoaded("oldfaithful-lighting")) expected.add("Fixes...");
+		expected.add("Changes...");
+		if (library) expected.add("Mods...");
 		expected.add("Done");
 		Screen top = openSettings(mc);
-		results.check("settings: the groups of the installed mods, in order: " + texts(top), texts(top).equals(expected));
+		results.check("settings: a wide button for each menu of the installed mods: " + texts(top), texts(top).equals(expected));
+		boolean wide = true;
+		for (ButtonWidget b : buttons(top)) wide &= ((ButtonWidgetAccessor) b).oldfaithful$width() == 200;
+		results.check("and they're all beta's wide button", wide);
 
 		Class<?> registryType = Class.forName(PKG + "SettingsRegistry"), screenType = Class.forName(PKG + "SettingsScreen");
 		Object registry = registryType.getMethod("get").invoke(null);
-		List<?> groups = (List<?>) call(registry, registryType, "groups");
+		List<Object> groups = new ArrayList<>();
+		for (String menu : new String[]{"fixes", "changes", "mods"}) groups.addAll((List<?>) call(registry, registryType, menu));
 		List<String> problems = new ArrayList<>();
 		int settings = 0;
 		for (Object g : groups) {
-			Object note = field(g, "note");
+			Object noteSource = field(g, "note"), note = noteSource == null ? null : ((java.util.function.Supplier<?>) noteSource).get();
 			if (note != null && ((List<?>) call(top, screenType, "wrap", note, 300)).size() > 2) problems.add("note of " + field(g, "title"));
-			for (Object s : (List<?>) field(g, "settings")) {
+			if (mc.textRenderer.getWidth(field(g, "title") + "...") > 194) problems.add("the mod name " + field(g, "title"));
+			for (Object s : (List<?>) call(g, g.getClass(), "all")) {
 				settings++;
 				String label = (String) field(s, "label"), hint = (String) field(s, "hint");
 				int lines = ((List<?>) call(top, screenType, "wrap", hint, 300)).size();
@@ -325,11 +475,105 @@ final class SettingsCheck {
 		return true;
 	}
 
+	/** Over a menu's pages by real clicks, to the end and back, one page a click: the titles, and how many switches they hold. */
+	private int walk(Minecraft mc, String menu, List<String> titles) throws Exception {
+		Screen page = openMenu(mc, menu);
+		int switches = 0;
+		List<String> back = new ArrayList<>();
+		while (true) {
+			titles.add((String) call(page, page.getClass(), "pageTitle"));
+			for (ButtonWidget b : buttons(page)) {
+				if (b.text.contains(": ")) switches++;
+			}
+			if (!has(page, ">") || !button(page, ">").active) break;
+			click(page, button(page, ">"));
+		}
+		while (has(page, "<") && button(page, "<").active) {
+			click(page, button(page, "<"));
+			back.add(0, (String) call(page, page.getClass(), "pageTitle"));
+		}
+		if (!back.equals(titles.subList(0, titles.size() - 1))) titles.add("back by other pages: " + back);
+		return switches;
+	}
+
+	private boolean menuPages(Minecraft mc) throws Exception {
+		Class<?> registryType = Class.forName(PKG + "SettingsRegistry");
+		Object registry = registryType.getMethod("get").invoke(null);
+		List<String> titles = new ArrayList<>();
+		int shown = walk(mc, "Fixes", titles), registered = 0;
+		for (Object g : (List<?>) call(registry, registryType, "fixes")) registered += ((List<?>) field(g, "settings")).size();
+		results.check("Fixes: a page a section, there and back a click at a time, holding all " + registered + " fixes: " + titles + " " + shown,
+				titles.equals(java.util.Arrays.asList("Fixes: Blocks and Items (1/7)", "Fixes: Mobs (2/7)", "Fixes: Players and Vehicles (3/7)",
+						"Fixes: Redstone and Lighting (4/7)", "Fixes: Looks and Sounds (5/7)", "Fixes: Screens (6/7)", "Fixes: Multiplayer (7/7)")) && shown == registered);
+		titles.clear();
+		walk(mc, "Changes", titles);
+		boolean still = FabricLoader.getInstance().isModLoaded("stillfaithful-polish");
+		results.check("Changes: " + titles, titles.equals(still
+				? java.util.Arrays.asList("Changes: Polish (1/3)", "Changes: Polish (2/3)", "Changes: Window and Mouse (3/3)")
+				: java.util.Collections.singletonList("Changes: Window and Mouse")));
+		return true;
+	}
+
+	/** The library's mods: a wide button each, leading to a page with the on and off first, then what the mod has. */
+	private boolean modPages(Minecraft mc) throws Exception {
+		Screen mods = openMenu(mc, "Mods");
+		results.check("Mods: a wide button for each mod, by name: " + texts(mods),
+				texts(mods).equals(java.util.Arrays.asList("No Toasts...", "Plain F3...", "World Rules...", "Done"))
+						&& ((ButtonWidgetAccessor) button(mods, "World Rules")).oldfaithful$width() == 200);
+
+		Screen rules = openMod(mc, "World Rules");
+		ButtonWidget enabled = button(rules, "Enabled:"), keep = button(rules, "Keep Inventory:"), lock = button(rules, "Lock Rules");
+		// In a world, the core's Lock Rules pairs with it (pressed in libraryRulesTest, not here: it can't be undone in game).
+		results.check("World Rules' page: the on and off and Lock Rules in a row of their own at the top, short buttons, the rules below: " + texts(rules),
+				enabled.text.equals("Enabled: ON") && enabled.x == rules.width / 2 - 155 && enabled.y == rules.height / 6
+						&& lock.x == rules.width / 2 + 5 && lock.y == enabled.y && lock.active
+						&& ((ButtonWidgetAccessor) enabled).oldfaithful$width() == 150 && ((ButtonWidgetAccessor) lock).oldfaithful$width() == 150
+						&& keep.y == rules.height / 6 + 24 && has(rules, "Apple Drops: OFF"));
+		java.util.Set<String> before = new java.util.HashSet<>(Files.readAllLines(list));
+		press(rules, enabled);
+		List<String> off = Files.readAllLines(list);
+		String offText = enabled.text;
+		press(rules, enabled);
+		results.check("Enabled: pressed, \"" + offText + "\", the list without the mod; pressed again, as it was",
+				offText.equals("Enabled: OFF*") && !off.contains("mods-library/world-rules.jar") && before.contains("mods-library/world-rules.jar")
+						&& new java.util.HashSet<>(Files.readAllLines(list)).equals(before));
+		press(rules, keep);
+		String pressed = keep.text;
+		press(rules, keep);
+		results.check("a rule on the mod's page: pressed, \"" + pressed + "\" at once, no restart; pressed again, \"" + keep.text + "\"",
+				pressed.equals("Keep Inventory: ON") && keep.text.equals("Keep Inventory: OFF"));
+		press(rules, button(rules, "Done"));
+		results.check("Done goes back one level, to the Mods menu: " + mc.currentScreen.getClass().getSimpleName(), mc.currentScreen.getClass().getName().equals(PKG + "SettingsModsScreen"));
+
+		Screen plain = openMod(mc, "Plain F3");
+		results.check("a mod with no settings has only its on and off: " + texts(plain), texts(plain).equals(java.util.Arrays.asList("Enabled: ON", "Done")));
+
+		manyMods(true);
+		Screen many = openMenu(mc, "Mods");
+		String first = buttons(many).get(2).text;
+		ButtonWidget next = button(many, ">");
+		click(many, next);
+		String second = buttons(many).get(2).text;
+		press(many, buttons(many).get(3));
+		press(mc.currentScreen, button(mc.currentScreen, "Done"));
+		boolean samePage = mc.currentScreen == many && buttons(many).get(2).text.equals(second);
+		int pages = 2;
+		while (button(many, ">").active) {
+			click(many, button(many, ">"));
+			pages++;
+		}
+		results.check("a hundred mods more: " + pages + " pages of five from \"" + first + "\", on to \"" + second + "\", and Done from a mod's page comes back to the page it left",
+				pages == 21 && first.equals("Many Mod 001...") && second.equals("Many Mod 006...") && samePage);
+		manyMods(false);
+		mc.setScreen(null);
+		return true;
+	}
+
 	/** A fix: written to its file and nothing else changed there, marked as waiting for a restart, and back. */
 	private boolean restartSwitch(Minecraft mc) throws Exception {
 		String name = "oldfaithful-fixes.properties", key = "redstone.repeaterUpdates";
 		String before = file(name);
-		Screen redstone = openGroup(mc, "Redstone and Lighting");
+		Screen redstone = pageWith(mc, "Fixes", "Repeaters:");
 		ButtonWidget b = button(redstone, "Repeaters:");
 		String was = b.text;
 		press(redstone, b);
@@ -347,7 +591,7 @@ final class SettingsCheck {
 	private boolean liveSwitches(Minecraft mc) throws Exception {
 		if (FabricLoader.getInstance().isModLoaded("oldfaithful-lighting")) {
 			Method lava = Class.forName("org.studioquire.oldfaithful.lighting.LightingConfig").getMethod("lightGeneratedLava");
-			Screen redstone = openGroup(mc, "Redstone and Lighting");
+			Screen redstone = pageWith(mc, "Fixes", "Lava Light:");
 			ButtonWidget b = button(redstone, "Lava Light:");
 			boolean on = (Boolean) lava.invoke(null);
 			press(redstone, b);
@@ -358,16 +602,19 @@ final class SettingsCheck {
 					on && off && text.equals("Lava Light: Beta") && (Boolean) lava.invoke(null) && b.text.equals("Lava Light: Fixed"));
 		}
 		if (!FabricLoader.getInstance().isModLoaded("purefaithful-display")) return true;
-		Screen window = openGroup(mc, "Window and Mouse");
+		Screen window = pageWith(mc, "Changes", "VSync:");
 		String display = "purefaithful-display.properties";
 
 		ButtonWidget vsync = button(window, "VSync:");
+		// StartupCheck keeps vsync off for the run, against display stalls; as shipped for this button alone.
+		if (Settings.vsync) org.lwjgl.opengl.Display.setSwapInterval(1);
 		boolean wasOn = Settings.vsync && Window.swapInterval() == 1;
 		press(window, vsync);
 		boolean nowOff = !Settings.vsync && Window.swapInterval() == 0 && file(display).contains("vsync=false") && vsync.text.equals("VSync: OFF");
 		press(window, vsync);
 		results.check("VSync: pressed, off at once (swap interval " + (nowOff ? 0 : "not 0") + ") and in the file; pressed again, on (" + Window.swapInterval() + ")",
 				wasOn && nowOff && Settings.vsync && Window.swapInterval() == 1 && vsync.text.equals("VSync: ON"));
+		org.lwjgl.opengl.Display.setSwapInterval(0);
 
 		Field subpixel = Class.forName("org.studioquire.oldfaithful.display.DisplayConfig").getField("subpixelLook");
 		ButtonWidget look = button(window, "Smooth Look:");
@@ -400,10 +647,10 @@ final class SettingsCheck {
 		String before = file("oldfaithful-fixes.properties");
 		mc.world.isRemote = true;
 		try {
-			Screen redstone = openGroup(mc, "Redstone and Lighting");
+			Screen redstone = pageWith(mc, "Fixes", "Repeaters:");
 			ButtonWidget repeaters = button(redstone, "Repeaters:"), lava = button(redstone, "Lava Light:");
 			press(redstone, repeaters);
-			Screen blocks = openGroup(mc, "Blocks and Items");
+			Screen blocks = pageWith(mc, "Fixes", "Wooden Slabs:");
 			ButtonWidget slabs = button(blocks, "Wooden Slabs:"), pick = button(blocks, "Pick Block:");
 			results.check("multiplayer: \"" + repeaters.text + "\" and \"" + lava.text + "\" can't be pressed (a press changed nothing),"
 					+ " \"" + slabs.text + "\" and \"" + pick.text + "\" (this game's own) can",

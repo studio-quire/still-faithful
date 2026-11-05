@@ -16,4 +16,7 @@ public interface ScreenAccessor {
 
 	@Invoker("buttonClicked")
 	void oldfaithful$press(ButtonWidget button);
+
+	@Invoker("mouseClicked")
+	void oldfaithful$click(int mouseX, int mouseY, int button);
 }

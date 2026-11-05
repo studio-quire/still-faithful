@@ -23,12 +23,14 @@ Old Faithful's own:
   that need a pickaxe; axes, pickaxes and shovels slow on blocks of their own material; the furnace eating the lava
   bucket; water washing away torches and rails without dropping them; repeaters that don't work doors, note blocks,
   dispensers, TNT or rail junctions; repeater clocks that stop when the world is reloaded; footsteps saved up on the
-  way down stairs; pick block selecting nothing; dots of sky along block edges; and more, in single player and multiplayer.
+  way down stairs; pick block selecting nothing; dots of sky along block edges; world screen titles slipping down
+  in a big window; and more, in single player and multiplayer.
 - Lighting as beta's own rule says it should be: no dark patches under overhangs or at chunk edges, and lava from
   world generation lights its surroundings. Existing worlds heal as you play.
 - A field-of-view slider (Options, beside Difficulty), the GUI at Normal size on a first start, Quit Game on the
   title screen, and a window that opens maximised the first time and where you left it after.
-- Options > Old Faithful...: every switch above, and the display settings, in the game.
+- Options > Old Faithful...: every switch above, and the display settings, in the game, in menus of Fixes and
+  Changes.
 - The title screen says "Old Faithful @VERSION@" under beta's own version line.
 
 Your worlds are in .minecraft/saves, in beta 1.7.3's own format: they open in the original game and in Pure

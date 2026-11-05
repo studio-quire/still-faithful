@@ -14,10 +14,10 @@ dependencies {
     compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
     // PolishSettings, the switches on the settings screen: loaded only by Old Faithful's options mod, when present;
     // the edition's name on that screen and on the title line (mixin/edition) reaches into it and the hardening mod.
-    compileOnly project(':oldfaithful-options')
+    compileOnly project(':oldfaithful-settings')
     compileOnly project(':oldfaithful-hardening')
     compileOnly project(':oldfaithful-saves')
-    testImplementation project(':oldfaithful-options')
+    testImplementation project(':oldfaithful-settings')
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
     selftestCompileOnly files(mc.namedJar)
@@ -28,6 +28,7 @@ dependencies {
     selftestCompileOnly project(':harness')
     selftestCompileOnly sourceSets.main.output
     selftestCompileOnly project(':oldfaithful-saves')
+    selftestCompileOnly project(':oldfaithful-hardening')
     selftestCompileOnly sourceSets.scenario.output
     scenarioCompileOnly files(mc.namedJar)
     scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"

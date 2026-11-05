@@ -6,7 +6,8 @@
   "environment": "*",
   "entrypoints": {
     "server": ["org.studioquire.oldfaithful.selftest.SelfTest"],
-    "preLaunch": ["org.studioquire.oldfaithful.selftest.SelfTest"]
+    "preLaunch": ["org.studioquire.oldfaithful.selftest.SelfTest"],
+    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.selftest.SunSteps", "org.studioquire.oldfaithful.selftest.BlockCheck"]
   },
   "mixins": ["oldfaithful-selftest.mixins.json"],
   "depends": {

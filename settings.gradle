@@ -43,9 +43,12 @@ include 'oldfaithful-speed'
 include 'oldfaithful-saves'
 // The Fixed edition's own mods (Old Faithful). Not in Pure Faithful's public snapshot until Old Faithful is released
 // (tools/publish/rules.py), so they're included only where they exist.
-['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options'].each { if (file(it).isDirectory()) include it }
+['oldfaithful-settings', 'oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options'].each { if (file(it).isDirectory()) include it }
 // Still Faithful's own mod (the third edition): private for now (tools/publish/rules.py), so included only where it exists.
 if (file('oldfaithful-polish').isDirectory()) include 'oldfaithful-polish'
 // Test-only bug hunts (hunt/): private (tools/publish/rules.py), so included only where it exists.
 if (file('hunt').isDirectory()) include 'hunt'
+// The Faithful Library (docs/library.md): the core, and each mod in library/. Not in the editions' public snapshots.
+if (file('oldfaithful-core').isDirectory()) include 'oldfaithful-core'
+if (file('library').isDirectory()) file('library').eachDir { if (it.name != 'build' && new File(it, 'build.gradle').isFile()) include ":library:${it.name}" }
 include 'harness'

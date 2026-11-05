@@ -128,7 +128,7 @@ tasks.register('prismFixedInstance', Zip) {
     }
     // The edition's icon, the green β seal, named for iconKey as the release pack does.
     from('prism/release/icons/final/oldfaithful-128.png') { rename { 'oldfaithful.png' } }
-    ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options'].each { name ->
+    ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options', 'oldfaithful-settings'].each { name ->
         if (findProject(":$name") != null) from(project(":$name").tasks.named('remapJar')) { into '.minecraft/mods' }
     }
     duplicatesStrategy = DuplicatesStrategy.FAIL
@@ -136,6 +136,50 @@ tasks.register('prismFixedInstance', Zip) {
     archiveFileName = 'OldFaithful-fixed-dev.zip'
 }
 
+
+// Faithful Library to try (docs/library.md): Still Faithful's dev instance with the library's mods in mods-library/, chosen by
+// the list a launch is told of, all on to begin with. `./gw prismLibraryInstance`, after `prismStillInstance` exists.
+if (file('oldfaithful-core').isDirectory() && findProject(':oldfaithful-polish') != null) {
+    def shippedLibrary = { subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() && !it.file('gradle.properties').text.contains('library_test=true') } }
+    tasks.register('prismLibraryInstance', Zip) {
+        group = 'oldfaithful'
+        description = "Builds local/prism/FaithfulLibrary-dev.zip: Still Faithful's dev instance with the Faithful Library in mods-library/."
+        def still = tasks.named('prismStillInstance')
+        dependsOn still
+        def libraryProjects = [project(':oldfaithful-core')] + shippedLibrary()
+        def jars = libraryProjects.collect { it.tasks.named('remapJar') }
+        from({ zipTree(still.get().archiveFile) }) {
+            filesMatching('instance.cfg') {
+                filter { String line ->
+                    line == 'name=Still Faithful (dev)' ? 'name=Faithful Library (dev)' :
+                    line == 'JvmArgs=--enable-native-access=ALL-UNNAMED' ? 'JvmArgs=--enable-native-access=ALL-UNNAMED -Dfabric.addMods=@mods-library/selection.txt' : line
+                }
+            }
+        }
+        // Named without their versions: the list a launch reads has to stay right when a pack update replaces a jar.
+        from(jars) { into '.minecraft/mods-library'; rename { it.replaceFirst(/-\d.*\.jar$/, '.jar') } }
+        def list = layout.buildDirectory.file('library-selection/prismLibraryInstance/selection.txt')
+        doFirst {
+            def f = list.get().asFile
+            f.parentFile.mkdirs()
+            f.text = jars.collect { "mods-library/${it.get().output.get().asFile.name.replaceFirst(/-\d.*\.jar$/, '.jar')}" }.join('\n') + '\n'
+        }
+        from(layout.buildDirectory.dir('library-selection/prismLibraryInstance')) { into '.minecraft/mods-library' }
+        duplicatesStrategy = DuplicatesStrategy.FAIL
+        destinationDirectory = layout.projectDirectory.dir('local/prism')
+        archiveFileName = 'FaithfulLibrary-dev.zip'
+    }
+    // A server with the library, for trying World Rules with others: the server package plus the core, settings and mods.
+    tasks.register('libraryServerPackage', Sync) {
+        group = 'oldfaithful'
+        description = 'local/server-package/FaithfulLibrary-server: the server package with the Faithful Library.'
+        dependsOn tasks.named('serverPackage')
+        from('local/server-package/OldFaithful-server')
+        from(project(':oldfaithful-settings').tasks.named('remapJar')) { into 'mods' }
+        from(([project(':oldfaithful-core')] + subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() && !it.file('gradle.properties').text.contains('library_test=true') }).collect { it.tasks.named('remapJar') }) { into 'mods' }
+        into 'local/server-package/FaithfulLibrary-server'
+    }
+}
 
 // The server package (docs/multiplayer.md): beta 1.7.3's server, which the owner supplies, run through Fabric Loader
 // with our hardening mod; start scripts that check the server jar's hash. Written to local/server-package/, never

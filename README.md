@@ -13,7 +13,7 @@ account. Nothing of Mojang's is in this repository or in our downloads. For Wind
 
 ## What it changes
 
-Every change has its own switch, all on: in the game under **Options > Still Faithful... > Polish**, or in
+Every change has its own switch, all on: in the game under **Options > Still Faithful... > Changes > Polish**, or in
 `config/stillfaithful-polish.properties`. Switch one off to have beta's behaviour back (after a restart).
 
 - **Dusk and dawn without the steps.** Beta darkens the world in eleven steps, and at each one the chunks around you
@@ -41,6 +41,10 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   the same saves at the same moments, crash-safe as Pure Faithful's (it needs Pure Faithful's saves mod).
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
+- **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and
+  leg of their own, and slim arms where the skin has them. Older skins look as they did in beta. Yours and other
+  players', on any server; the server needs nothing.
+- The title screen's Mods and Texture Packs button reads **Texture Packs**, which is all it ever held.
 
 Smooth and stepped dusk need OpenGL 2.0 and have so far been tested only on NVIDIA graphics. If the sky or the
 landscape looks wrong, set **Dusk** to **Beta** (after a restart it's beta's own way), and please tell us in an issue.
@@ -69,11 +73,11 @@ Faithful" and its version under beta's own version line.
 ## For existing instances
 
 Already playing b1.7.3 on Fabric (Babric) in Prism? **stillfaithful-polish** (client and server) works on its own:
-drop the jar from the release into the instance's `.minecraft/mods`. Without Old Faithful's options mod its switches
-are only in the config file, and its background saving needs Pure Faithful's saves mod; everything else works
-anywhere.
+drop the jar from the release into the instance's `.minecraft/mods`. Without Old Faithful's settings mod its switches
+are only in the config file, its background saving needs Pure Faithful's saves mod, and modern skins need Pure
+Faithful's hardening mod, which fetches skins at all; everything else works anywhere.
 
-The whole of Still Faithful on its own is this mod plus Old Faithful's three and Pure Faithful's four mods and its
+The whole of Still Faithful on its own is this mod plus Old Faithful's four and Pure Faithful's four mods and its
 LWJGL, from the Old Faithful and Pure Faithful releases the Still Faithful release names;
 [Pure Faithful's README](https://github.com/studio-quire/pure-faithful#for-existing-instances) says how to install
 its LWJGL.

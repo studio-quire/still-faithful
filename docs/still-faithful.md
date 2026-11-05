@@ -14,7 +14,7 @@ Modrinth as `still-faithful-polish` (link-only, `docs/release.md` > Modrinth).
   switch per change in `config/stillfaithful-polish.properties`, all on, written with explanations on first start;
   `PolishConfig` (the mixin config plugin) skips a switched-off change's mixins, each change's mixins in their own
   package under `mixin/`. `mixin/edition` is always in.
-- On the settings screen as a group of its own, **Polish** (`PolishSettings`), each button "Name: Polished / Beta";
+- On the settings screen as a section of its own in Changes, **Polish** (`PolishSettings`), each button "Name: Polished / Beta";
   every change waits for a restart, as the fixes do. The edition renames Old Faithful's screen: "Still Faithful..."
   in Options and the screen's title (`mixin/edition`, into the options mod's classes, only where it's installed).
 - The title line reads "Still Faithful <version>": Pure Faithful's hardening mod draws it and names the first
@@ -38,12 +38,14 @@ Modrinth as `still-faithful-polish` (link-only, `docs/release.md` > Modrinth).
 | 20 | `liquids.lavaThins` | world | Where beta draws its 3-in-4 refusal to thin flowing lava (and then schedules nothing, so cut-off lava lingers), the lava thins and its next tick comes 4 times later, as later versions do; the same draw is made, so the world's random runs as before. Lava already stuck in a world goes once something beside it changes |
 | 20 | `liquids.waterSources` | world | The "still water below" test reads the block below's data, not the flowing block's own |
 | 34 | `render.droppedItemSize` | client | Dropped non-cube blocks (stairs, fences, cactus, plates, buttons, trapdoors) at a quarter scale like every dropped block, not a half |
+| - | `menu.texturePacks` | client | The title screen's Mods and Texture Packs button reads Texture Packs, as later betas renamed it (user, 2026-11-05) |
 | 34 | `render.bowPose` | client | Players' and skeletons' bows take the held-tool path, shifted and turned (`BowPose`); third person only |
 | 12 | `boats.sturdy` | world | A break needs beta's own condition (a sideways collision while still moving over 0.15 along the free axis) and a real crash: at least 0.25 blocks a tick lost into what it hit. So every break here would also be one in beta; scrapes along a shore or an item never break a boat. Items and arrows aren't solid to boats (as #31 for carts) |
 | 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). At the surface, vertical speed × 0.8 a tick (rides steadily instead of bobbing). Paddling is beta's: same top speed, acceleration, turning |
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
 | 4 | `animals.keepTended` | world | Animals a player has dealt with never despawn (`KeptAnimals`, below) |
 | 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule |
+| | `skins.modern` | client | 64x64 skins kept whole and drawn on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
 
@@ -83,6 +85,36 @@ Limits: run only on our LWJGL component and an NVIDIA GPU (the GL20 calls exist 
 NV_fog_distance the shader assumes eye-plane fog); Advanced OpenGL and anaglyph reasoned, not tested; a mod that meshes
 chunks off the main thread, or SmoothBeta (which hooks the tessellator during chunk builds), won't compose: switch it
 off for those.
+
+### Modern skins
+
+Pure Faithful's hardening fetches real skins, 64x64 included, but beta's `SkinImageProcessor` draws them on a 64x32
+canvas and `ModelPart` divides V by 32. Client-only: nothing from the server or other players. No setting beyond the
+switch. Built 2026-11-05 by Claude Opus 5.5.
+- **Whole skins.** The skin's download gets `ModernSkin.processor` instead of beta's (capes, through the same call, keep
+  beta's). A 64x64 image becomes a `ModernSkin` (a BufferedImage, which is the mark); anything else goes to beta's
+  processor, so classic skins are beta's exactly.
+- **Transparency.** Beta's rules on every layer: head, body and limbs opaque; a layer area with no transparent pixel at
+  all is cleared, the hat's rule, as 1.8 had it (later versions keep it for 64x32 skins only, so a layer painted
+  wholly solid shows there and not here). Layers are alpha tested like the hat, not blended.
+- **The model.** `PlayerEntityRenderer` keeps beta's model and two `ModernPlayerModel`s (wide, slim), and sets `model` and
+  `bipedModel` to the one for the player being drawn, from what the texture manager holds for them at that moment, then
+  puts beta's back. Zombies, skeletons, armour and anything else on `BipedEntityModel` are untouched, and a player
+  still waiting for a skin stays on beta's model and char.png. It's 1.8's layout: left limbs of their own, layers 0.25 out
+  (the hat stays 0.5, and stays where beta leaves it when sneaking), slim arms 3 wide with their pivot 0.5 lower; the legs
+  keep beta's pivots (1.8 moved them 0.1 inward). Faces: V halved, and each box's bottom face turned over, as later
+  versions do (seen in skinview3d's UVs, which follow them).
+- **Slim arms.** The flag is in the profile's textures metadata (`"metadata":{"model":"slim"}` under SKIN, absent for
+  wide; read from jeb_ and MHF_Alex, 2026-11-05). A mixin at hardening's `Skins.parseProfile` reads it out of the
+  response hardening already fetched, so Pure Faithful isn't changed and there's no request of ours: its HTTPS, size
+  checks and one lookup per name are all there is, and a server can do nothing it couldn't before. A lookup of our own
+  would double the calls to a rate-limited service; reading the arm's unused pixels only guesses. Without hardening
+  there are no skins, and the mixin isn't applied.
+- **Poses.** Layers copy their limb's pivot, rotation and visibility after `setAngles`, which includes Faithful Core's
+  `PlayerRender.onPose` listeners. In a slim arm, what's held moves half a pixel inward, as later versions do.
+- **The hand.** The first-person hand is the one thing drawn outside the renderer's `render`, so `HeldItemRenderer` chooses
+  the model around `renderHand`, before it's entered: Old Faithful's riding fix clears `riding` at its start, on whichever
+  model is then in place. The sleeve follows the arm, with the alpha test on, which beta's frame doesn't promise there.
 
 ### Carts meeting carts (#31)
 
@@ -154,7 +186,7 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 
 - `./gw :harness:clientStartupTestStill`: the hidden start-up test with all three editions' mods and the polish
   mod's test-only `selftest` mod (`StillCheck`, a `WorldCheck`), after Old Faithful's `FixesCheck`; then the options
-  and settings checks (the Polish group, "Still Faithful...", every label fitting). Each check expects the change
+  and settings checks (the Polish section, "Still Faithful...", every label fitting). Each check expects the change
   where its switch was on at start and beta's behaviour where off; `-Pstill.beta` starts with every switch off, and
   every check came out beta's way (2026-11-02): stairs dropped planks and cobblestone; placed birch leaves had data 10
   and decayed; glowstone took 32 ticks by hand and dropped nothing; cut-off lava stayed at level 2 on the refusal
@@ -186,6 +218,24 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   draw 0, 4.5, 5.5 and 11, it drew at 0, 4, 5 and 11 and matched beta's baking there to 1/255; dusk played through
   marks no chunk in either mode, and stepped frames are drawn at whole steps only, smooth ones between. The pictures
   are in `local/run/client-startup-still/dusk/`.
+- `SkinCheck` (modern skins, the same run, a third WorldCheck): generated skins (`TestSkins`: a loud one, a part and
+  layer to each of twelve hues with a black and a white corner on every face; wide, slim, classic 64x32; a realistic
+  one, wide and slim; one with a cape) answered where hardening meets the network (`Https.send`), so its name lookup,
+  profile, decode and the game's download thread run as for a real player; figures that hold a pose, against a white
+  wool backdrop. Checks: what each skin arrives as, one name lookup and profile each, slim from the profile's flag
+  (also for the same name in another case), capes on beta's canvas, the transparency rules on the processor; in the
+  front and back pictures of the loud skins, every part's hue present or absent, on the side of the figure it belongs
+  to, a slim arm 0.80 of a wide one's width; the first-person sleeve. Pictures in `skins/` of the run folder: every skin
+  from four sides, the loud ones from above and below, walking, swinging, sneaking, riding, sleeping, hurt, with a bow,
+  a sword, a block, armour, armour while riding, the cape from behind, zombies and skeletons, and the player's own
+  hand, map, third person and inventory figure in each skin. 2026-11-05, both ways: with the switch everything as
+  above; with `-Pstill.beta` every skin came out 64x32 on beta's model, mirrored, no sleeve, and the classic skin's and
+  the zombies' pictures matched the switched-on run's to the pixel in one pair of runs and within 1/255 (2 on the hand)
+  in another, across the backdrop too: smooth dusk's light against beta's (the bow pose is off there too; walking
+  differs by the frame's place in its tick). SkinCheck turns vsync off while it runs and puts it back: the start-up test
+  keeps it on for the settings checks, and hidden clients waiting on the refresh are the stalls' trigger (root
+  `docs/gpu-resets.md`); two of six runs without that ended in a stall, neither of the two with it did. The real path: jeb_ and Notch (64x32: beta's), MHF_Alex and MHF_Steve (64x64, both
+  slim in their profiles) through hardening's own client and parser, outside the game.
 - `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves`: the saves mod's real-server test with the polish mod beside
   it (damaged chunks; the server killed outright 8 times during bursts of save-all, every chunk and level.dat read
   back with vanilla's reader after each, nothing gone): passed 2026-11-02 with the background writer doing the
@@ -198,7 +248,8 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   pigs riding, no server errors. `-Ppolish.run=<ticks>` shortens it, `-Ppolish.debug` prints a booster tick by tick.
   Passed 2026-11-02.
 - `serverTest`, `clientAudit` and `clientAuditSdl` carry the mod, so every mixin is applied and audited.
-- Not checked by a test: the bow pose and dropped item sizes (what's seen: the user's), boat handling's feel and the
+- Not checked by a test: how modern skins look on real players and between a real client and server (reasoned:
+  nothing goes over the network, each client draws what it fetched); the bow pose and dropped item sizes (what's seen: the user's), boat handling's feel and the
   bobbing (the user's), glowstone between a real client and server (the marker and gating mirror #9/#10's, audited and
   reasoned), animals kept by riding a minecart or hatched from an egg (the same keep call, reasoned).
 
