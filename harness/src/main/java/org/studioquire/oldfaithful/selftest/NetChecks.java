@@ -21,7 +21,7 @@ import org.studioquire.oldfaithful.hardening.packet.MoveChecks;
 import org.studioquire.oldfaithful.selftest.mixin.ConnectionAccessor;
 
 /**
- * Phase 6's hardening, checked in-process on both sides (docs/multiplayer.md): login names, movement numbers, the
+ * Phase 6's hardening, checked in-process on both sides: login names, movement numbers, the
  * bounded read queue on a real loopback connection, and, on the client, that a packet whose handling throws ends the
  * connection instead of the game. The live attacks against a running server are in :harness:multiplayerTest.
  */

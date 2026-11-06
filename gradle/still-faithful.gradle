@@ -1,5 +1,5 @@
 // Still Faithful, the third edition (docs/still-faithful.md): Old Faithful plus its own mod, oldfaithful-polish, public
-// since 0.1.0 (2026-11-03) in its own repository (tools/publish/rules.py; this file, the mod and its texts are in
+// since 0.1.0 (2026-11-03) in its own repository (this file, the mod and its texts are in
 // neither of the other editions' snapshots). `./gw releaseStill` builds its pack, server package and mod into
 // local/release/still-faithful-<v>/, with SHA256SUMS.txt; `./gw prismStillInstance` the dev instance beside the others.
 // Nothing here publishes anything. As Old Faithful's release does with Pure Faithful's (docs/release.md > Versions), it

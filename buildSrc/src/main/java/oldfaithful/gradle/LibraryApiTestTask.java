@@ -24,7 +24,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Faithful Core's content APIs end to end (docs/library.md): worldgen on a fixed seed with and without a mod's features, then library/api-check on the real server with
+ * Faithful Core's content APIs end to end: worldgen on a fixed seed with and without a mod's features, then library/api-check on the real server with
  * the hidden client joined to it (and again with the fix mod on the server, whose answer to the 2-9 block update must compose with the core's), then single player.
  */
 public abstract class LibraryApiTestTask extends ClientStartupTask {

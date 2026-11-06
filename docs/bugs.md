@@ -920,7 +920,7 @@ spawning floors beside channels included, while east and south of 0, 0 they do; 
 too. The server-only `isAnyBlockInBox` has the same subtraction (movement checks). OF, low.
 **Fixed in Old Faithful** (2026-11-02, `spawning.besideWater`): `isBoxSubmergedInFluid` tests the box's own blocks.
 `isAnyBlockInBox` is left as beta: it only serves the server's flying check, and fixing it would make that check
-stricter for honest players (CLAUDE.md > Decisions). Checked on the real server first (`ServerWorldFixesTest`, the
+stricter for honest players. Checked on the real server first (`ServerWorldFixesTest`, the
 control): a pig on grass with water beside its west (or north) side may spawn east and south of 0, 0 and not west and
 north of it; with the fix it may everywhere.
 
@@ -1052,8 +1052,8 @@ are built (reasoned, not benchmarked).
 
 ## The piston hunt
 
-Claude Opus 5.5, 2026-11-02. `./gw :hunt:pistonHunt` (about 6 minutes) runs the real b1.7.3 server with a test-only mod
-(`hunt/`, never shipped) in a flat, bare test world: each scene gets its own cell of air, a script of what happens tick
+Claude Opus 5.5, 2026-11-02. A private test-only tool (about 6 minutes) runs the real b1.7.3 server with a test-only mod
+(never shipped) in a flat, bare test world: each scene gets its own cell of air, a script of what happens tick
 by tick (power is a redstone torch placed and taken away), 30 ticks to settle, then checks. An exception from a block
 entity, block tick or entity, which would stop a vanilla server, is caught, recorded against its scene, and the hunt
 goes on (`-Phunt.unguarded=true` lets it crash as vanilla does). Checked after every scene: moving-piston blocks left,

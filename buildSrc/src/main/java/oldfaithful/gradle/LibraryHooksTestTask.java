@@ -22,7 +22,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Faithful Core's hooks and attachments, with every hook listened to by the test-only {@code hook-check} mod (docs/library.md). A
+ * Faithful Core's hooks and attachments, with every hook listened to by the test-only {@code hook-check} mod. A
  * server without the core writes a world, for the byte check; the real server with the core runs each hook's scene against raw
  * clients and the hidden client, is restarted, and runs again under an order salt; the hidden client runs them in single player
  * and reopens its world; then all of it again beside Still Faithful's mods.

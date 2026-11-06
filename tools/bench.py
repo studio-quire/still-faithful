@@ -9,7 +9,7 @@ Each run launches the game as a player's launcher does (Fabric, our mods, Prism'
 self-test mod's Bench creates a world on a fixed seed and plays a fixed script: settle at spawn, stand, turn, fly.
 Before each run the PC is checked for competing load; GPU power, clocks and temperature are sampled throughout; a
 driver reset (nvlddmkm event 153) during a run stops the series. Runs are interleaved across configurations and
-distances, with a cool-down between them (docs/gpu-resets.md). If the cursor guard stops a run, the run is retried
+distances, with a cool-down between them. If the cursor guard stops a run, the run is retried
 once the user has been away (no input) for three minutes, at once if they already are; a run that trips it three
 times is skipped. Trips are noted in run.json.
 

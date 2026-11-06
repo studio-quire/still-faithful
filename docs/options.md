@@ -15,8 +15,8 @@ the fix mod has them.
 
 ## The settings screen
 
-The screen and config editing live in `oldfaithful-settings` since 2026-11-04 (same package, so the mods using them didn't change): the library's mods need them on any edition
-(`docs/library.md`). Options > "Old Faithful..." with this mod installed, "Mods..." without it; this mod's own switches are a provider like any other's, listed first; `options.screen` is still
+The screen and config editing live in `oldfaithful-settings` since 2026-11-04 (same package, so the mods using them didn't change): the library's mods need them on any edition.
+Options > "Old Faithful..." with this mod installed, "Mods..." without it; this mod's own switches are a provider like any other's, listed first; `options.screen` is still
 read from this mod's file.
 
 Claude Opus 5.5, 2026-11-02. So players needn't edit config files: **Options > Old Faithful...**, a 200-wide button
@@ -37,11 +37,11 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   pointed at (what beta did, in a sentence), or the section's note.
 - **Mods**: a wide button per mod with a page, by name, five to a page with the same arrows, whether the mod is on said
   beside it ("OFF*" when a change on its page waits for a restart). Its page has **Enabled: ON** alone in the top row where
-  the mod sits in `mods-library/` (Faithful Library's switch: `docs/library.md` > Getting a combination), then the mod's own
+  the mod sits in `mods-library/` (Faithful Library's switch: its README), then the mod's own
   settings and world rules below, eight to a page. With no line of its own the page shows the mod's description. A mod
   that's off isn't running, so its page has only Enabled until it is; a mod in `mods/` with settings has its page without Enabled.
   A page can have one button of its own beside Enabled (`PageButton`): the core's **Lock Rules**, on every page with world rules while
-  a world is open, pairs with it in the top row on beta's two columns; alone, either sits in the middle (`docs/library.md` > Rules and settings).
+  a world is open, pairs with it in the top row on beta's two columns; alone, either sits in the middle.
 - **What's there**: only what's installed. Each mod lists its switches through a small API
   (`oldfaithful-settings`: a `SettingsProvider` registered as the `oldfaithful-options:settings` entrypoint in its
   fabric.mod.json, loaded when a screen first asks and never on a server). A switch goes on its mod's own page unless the
@@ -70,7 +70,7 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   drawn, heard and predicted, and the client-side multiplayer fixes); wooden slabs and tool speeds are this game's
   switch but apply on a server only where it has the fix too (`ServerMarker`), as their hints say. Fixes that run
   only on a server (#5, #16a, #16b, #48) aren't on the screen; the Multiplayer page's note points to the server's
-  own file. A mod's world rules show the server's value and can't be pressed (`docs/library.md` > Rules and settings).
+  own file. A mod's world rules show the server's value and can't be pressed.
 
 ## FOV
 

@@ -24,13 +24,13 @@ we can't bundle, we write ourselves; spending long on the lower layers is fine.
 4. **Fast.** Rendering (buffers instead of display lists, chunk meshing off the main thread), a faster lighting
    engine, entity culling of our own, memory and GC, server tick. Long render distances at high frame rates. Measured
    against vanilla on fixed seeds.
-5. **Fixed** (the Fixed edition; Purist leaves these alone, see CLAUDE.md > Editions). A catalogue of b1.7.3's bugs, fixed one by one; the ones that are part of beta's feel (the Far Lands and
+5. **Fixed** (the Fixed edition; Purist leaves these alone). A catalogue of b1.7.3's bugs, fixed one by one; the ones that are part of beta's feel (the Far Lands and
    the like) kept as toggles in a settings screen of our own. The window remembered between launches
    (`window.remember` on by default, user 2026-11-02; built, off in Purist: `docs/lwjgl.md` > The display mod).
 6. **Multiplayer.** A matching server package; networking hardened (packet limits, safe handling of what servers
-   send); LAN. Started 2026-11-02 (`docs/multiplayer.md`): the survey, the Purist fixes, the package and its test. LAN isn't part of b1.7.3, so not Purist.
+   send); LAN. Started 2026-11-02: the survey, the Purist fixes, the package and its test. LAN isn't part of b1.7.3, so not Purist.
 7. **Release.** The finished pack (one download, import into Prism or a compatible launcher), our mods on their own,
-   on GitHub (studio-quire) and Modrinth (link-only), a page on studioquire.org. A small installer of our own later
+   on GitHub (studio-quire), a page on studioquire.org. A small installer of our own later
    if launchers fall short.
 8. **Later:** transformative mods on top, optional and separate.
 

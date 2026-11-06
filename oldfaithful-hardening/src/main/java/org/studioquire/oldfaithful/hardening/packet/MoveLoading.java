@@ -1,11 +1,11 @@
 package org.studioquire.oldfaithful.hardening.packet;
 
 /**
- * How fast a player's own movement may make the server load chunks (S6 in docs/multiplayer.md).
+ * How fast a player's own movement may make the server load chunks.
  *
- * <p>Vanilla loads (or generates) the chunks a move brings into view right away, on the server thread, and accepts up
- * to 101 move packets a tick of up to 10 blocks each. A client sending moves as fast as that allows travels about
- * 1,000 blocks a tick and has the server generate dozens of chunk rows every tick: the whole server stalls.
+ * <p>Vanilla loads (or generates) the chunks a move brings into view right away, on the server thread. Here that's
+ * paced, so one player's movement
+ * can't hold up the server.
  *
  * <p>Here each player has a budget of chunks their movement may bring into view, refilled every tick. When a move
  * needs more than is left, the chunk map's update waits (the player keeps the chunks they had) until the budget

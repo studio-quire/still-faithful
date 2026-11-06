@@ -130,7 +130,7 @@ final class LibraryNetStage implements Stage {
 		}
 	}
 
-	/** Each connection from an address of its own, past the server's five seconds between logins from one. */
+	/** Each connection from an address of its own. */
 	private RawClient source(int port, String name) throws IOException {
 		int n = ++connections;
 		return new RawClient(port, name, "127.0." + (n / 250 + 1) + "." + (n % 250 + 1));
@@ -305,6 +305,8 @@ final class LibraryNetStage implements Stage {
 		}
 	}
 
+	private static final String SECOND_HELLO = "a second hello";
+
 	private static RawServer.Attack garbage(int channel, byte[] data) {
 		return out -> RawServer.channel(out, channel, data);
 	}
@@ -334,6 +336,10 @@ final class LibraryNetStage implements Stage {
 			out.writeInt(0);
 		}));
 		cases.add(new RawServer.Case("an unknown channel", false, null, garbage(60000, new byte[4])));
+		// Its match hash changed, so a client that took it would disconnect (hostileServer sees it stay).
+		byte[] second = hello.clone();
+		second[second.length - 1] ^= 1;
+		cases.add(new RawServer.Case(SECOND_HELLO, false, null, garbage(0, second)));
 		Random random = new Random(t.getSeed().get());
 		for (Map.Entry<Integer, String> channel : channels) {
 			if (channel.getValue().startsWith("harness-probe:")) continue;
@@ -412,6 +418,7 @@ final class LibraryNetStage implements Stage {
 			clientThread.start();
 			raw.play(cases, (name, left, must) -> {
 				t.getLogger().lifecycle("hostile: {}: the client {}", name, left ? "left" : "stayed");
+				if (name.equals(SECOND_HELLO) && left) t.fail("faithful-core", "hostile-server", name + ": the client took it");
 				if (must && !left) t.fail("faithful-core", "hostile-server", name + ": the client should have disconnected");
 			});
 			clientThread.join(120_000);

@@ -51,6 +51,8 @@ public final class StartupCheck {
 	private static final String EXPECT_MISSING = System.getProperty("oldfaithful.selftest.expectMissing");
 	/** The conflict harness: host:port of a server to try, reporting what screen it ends on instead of playing. */
 	private static final String TRY_SERVER = System.getProperty("oldfaithful.selftest.tryServer");
+	/** After a refusal's drawn: presses Use This Server's Set and reports what the screen says then (`libraryPackTest`). */
+	private static final boolean USE_SET = Boolean.getBoolean("oldfaithful.selftest.useServerSet");
 	/** The conflict harness: host:port of a hostile server, joined again and again until its kick says it's done. */
 	private static final String HOSTILE = System.getProperty("oldfaithful.selftest.hostile");
 	/** "<name>:<mod id>" for an edition beyond Old Faithful: its title line, and the name its settings button carries. */
@@ -150,7 +152,7 @@ public final class StartupCheck {
 				results.check("mouse: system pointer speed and acceleration (the display mod's default)", !Settings.rawMouse
 						&& "1".equals(SDLHints.SDL_GetHint(SDLHints.SDL_HINT_MOUSE_RELATIVE_SYSTEM_SCALE)));
 				if (!WORLD_CHECKS_ONLY) vsyncCheck();
-				// Hidden clients waiting on the refresh stall the user's display (root docs/gpu-resets.md), so vsync is off from here on; the
+				// Hidden clients waiting on the refresh stall the user's display, so vsync is off from here on; the
 				// settings check turns it on for its own VSync button only, after vsyncCheck has seen it as it ships.
 				org.lwjgl.opengl.Display.setSwapInterval(0);
 				windowChecks(mc);
@@ -255,6 +257,18 @@ public final class StartupCheck {
 				return;
 			case 44:
 				if (++wait < 3) return;
+				if (USE_SET) {
+					wait = 0;
+					results.check("Use This Server's Set is on the refusal", LibraryScreens.click(mc.currentScreen, "Use This Server's Set"));
+					LibraryScreens.clear();
+					phase = 45;
+					return;
+				}
+				finish(mc);
+				return;
+			case 45:
+				if (++wait < 15) return;
+				System.out.println("[library-harness] SET " + LibraryScreens.text());
 				finish(mc);
 				return;
 			case 42:

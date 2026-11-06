@@ -161,7 +161,7 @@ public final class SkinCheck implements WorldCheck {
 		on = PolishConfig.applied(KEY);
 		still = true;
 		// The start-up test already turns vsync off (and only the settings check's VSync button turns it on); hidden clients waiting on the
-		// refresh are what's been found to stall the display (root docs/gpu-resets.md > Silent stalls): off while these
+		// refresh are what's been found to stall the display: off while these
 		// hundred pictures are taken, then put back as it was.
 		swapInterval = swapInterval();
 		org.lwjgl.opengl.Display.setSwapInterval(0);

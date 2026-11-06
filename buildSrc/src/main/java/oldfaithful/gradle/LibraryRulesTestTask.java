@@ -25,7 +25,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Faithful Core's base layer and World Rules, end to end (docs/library.md): the server package with them against raw clients
+ * Faithful Core's base layer and World Rules, end to end: the server package with them against raw clients
  * (vanilla, with the core, and hostile), the rules' scenes on the real server, the real client (hidden) joining it, a server
  * with a mod that must match, and the real client in single player. Then the lock on both: locked from the console and by the page's
  * button, still locked after a restart or a reopen, and unlocked by taking its line out of the world's file with the game stopped.
@@ -393,7 +393,7 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 			String reason = vanilla.login(60);
 			expect("a vanilla client is refused, plainly: " + reason, reason != null && reason.contains("Faithful Library"));
 		}
-		Thread.sleep(5500); // the server's per-address login throttle
+		Thread.sleep(5500); // between logins
 		try (RawClient core = new RawClient(port, "Agrees").core(true)) {
 			expect("a client that agrees gets in", core.login(60) == null);
 			expect("its hello says something must match", core.serverMustMatch());

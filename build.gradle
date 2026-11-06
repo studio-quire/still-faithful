@@ -137,7 +137,7 @@ tasks.register('prismFixedInstance', Zip) {
 }
 
 
-// Faithful Library to try (docs/library.md): Still Faithful's dev instance with the library's mods in mods-library/, chosen by
+// Faithful Library to try (docs/release.md): Still Faithful's dev instance with the library's mods in mods-library/, chosen by
 // the list a launch is told of, all on to begin with. `./gw prismLibraryInstance`, after `prismStillInstance` exists.
 if (file('oldfaithful-core').isDirectory() && findProject(':oldfaithful-polish') != null) {
     def shippedLibrary = { subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() && !it.file('gradle.properties').text.contains('library_test=true') } }
@@ -181,7 +181,7 @@ if (file('oldfaithful-core').isDirectory() && findProject(':oldfaithful-polish')
     }
 }
 
-// The server package (docs/multiplayer.md): beta 1.7.3's server, which the owner supplies, run through Fabric Loader
+// The server package: beta 1.7.3's server, which the owner supplies, run through Fabric Loader
 // with our hardening mod; start scripts that check the server jar's hash. Written to local/server-package/, never
 // committed; :harness:multiplayerTest runs the game from it.
 // Applied inside each task's configuration, which runs lazily, after the subprojects are evaluated. The notices,
@@ -232,5 +232,7 @@ tasks.register('serverPackageZip', Zip) {
 }
 
 apply from: 'gradle/release.gradle'
-// Still Faithful, the third edition (private for now): its pack and dev instance, where its files exist.
+// Still Faithful, the third edition: its pack and dev instance, where its files exist.
 if (file('gradle/still-faithful.gradle').isFile()) apply from: 'gradle/still-faithful.gradle'
+// The Faithful Library's release, where its files exist.
+if (file('gradle/library.gradle').isFile()) apply from: 'gradle/library.gradle'

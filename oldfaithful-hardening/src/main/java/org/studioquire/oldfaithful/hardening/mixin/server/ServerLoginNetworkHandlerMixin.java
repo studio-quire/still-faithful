@@ -14,11 +14,11 @@ import org.studioquire.oldfaithful.hardening.util.Log;
 /**
  * The login packet, checked before the server acts on it:
  * <ul>
- * <li>Only one per connection. In online mode each one starts a thread that asks the session server; a client
- * sending hundreds a second exhausts the server's threads (an OutOfMemoryError the server doesn't survive) and gets
- * it rate-limited by Mojang. An honest client sends exactly one.</li>
- * <li>The name must be usable as a file name ({@link Usernames}): offline-mode servers wrote player data wherever
- * the name pointed, level.dat included.</li>
+ * <li>Only one per connection. In online mode each one
+ * costs the server a session check,
+ * and an honest client sends exactly one.</li>
+ * <li>The name must be usable as a file name ({@link Usernames}),
+ * since player data is saved under it.</li>
  * </ul>
  */
 @Mixin(ServerLoginNetworkHandler.class)

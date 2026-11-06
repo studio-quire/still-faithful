@@ -4,9 +4,9 @@ import java.util.Locale;
 
 /**
  * A b1.7.3 server saves each player to {@code world/players/<name>.dat}, the name exactly as the client sent it. On
- * an offline-mode server nothing checks that name, so "../level" logs in and its player data is written over the
- * world's level.dat at the next save (the world's seed, spawn and time are gone), and any other ".dat" file the server
- * can reach is as exposed. On Windows, device names (CON, NUL, COM1, ...) misbehave as files too.
+ * an offline-mode server nothing else checks that name, so here it has to be
+ * safe as a file name
+ * on any system a server runs on.
  *
  * <p>Refused: names that can't be a plain file name. Everything else vanilla accepted still logs in, including
  * offline-mode names Mojang wouldn't allow (spaces, dots, accents); online-mode names are always letters, digits and

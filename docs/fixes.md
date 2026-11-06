@@ -1,7 +1,7 @@
 # The Fixed edition's fix mod (oldfaithful-fixes)
 
 Claude Opus 5.5, 2026-11-02. Old Faithful's own mod, beside Pure Faithful's: fixes of beta's clear mistakes from
-`docs/bugs.md`, narrowly (CLAUDE.md > Editions): beta as it was meant to work, nothing players built around. The
+`docs/bugs.md`, narrowly: beta as it was meant to work, nothing players built around. The
 causes, traced in the decompiled game, are in each entry there; the mixins' comments say what each changes and why.
 
 ## Shape

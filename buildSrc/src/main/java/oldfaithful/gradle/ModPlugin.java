@@ -38,7 +38,7 @@ public class ModPlugin implements Plugin<Project> {
 		Project root = project.getRootProject();
 		MinecraftFiles mc = root.getExtensions().getByType(MinecraftFiles.class);
 
-		// The Pure edition's mods are Pure Faithful's publicly (CLAUDE.md > Decisions): the jar, mod id, licence file and
+		// The Pure edition's mods are Pure Faithful's publicly: the jar, mod id, licence file and
 		// icon path carry that name; the project folders, packages and tasks keep the project's internal "oldfaithful".
 		// A mod of the Fixed edition only (`oldfaithful_edition=fixed` in its gradle.properties) is Old Faithful's, so
 		// its public name stays oldfaithful-*, with Old Faithful's icon, version and links (docs/release.md > Names).
@@ -46,7 +46,7 @@ public class ModPlugin implements Plugin<Project> {
 		Object edition = project.findProperty("oldfaithful_edition");
 		boolean fixedEdition = "fixed".equals(edition);
 		boolean stillEdition = "still".equals(edition);
-		// The Faithful Library's (`oldfaithful_edition=library`, docs/library.md): faithful-*, or the mod's own folder name.
+		// The Faithful Library's (`oldfaithful_edition=library`, docs/library-authoring.md): faithful-*, or the mod's own folder name.
 		boolean library = "library".equals(edition);
 		String publicName = fixedEdition ? "oldfaithful" : stillEdition ? "stillfaithful" : library ? "faithful" : "purefaithful";
 		String modId = project.getName().replaceFirst("^oldfaithful-", publicName + "-");

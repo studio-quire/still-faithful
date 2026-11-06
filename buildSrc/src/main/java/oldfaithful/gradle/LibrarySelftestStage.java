@@ -91,7 +91,7 @@ final class LibrarySelftestStage implements Stage {
 	}
 
 	/**
-	 * A client with the set's content on servers that have none of it, which admit it (docs/library.md > What must match): one with the core alone, then the real one. Each mod's
+	 * A client with the set's content on servers that have none of it, which admit it: one with the core alone, then the real one. Each mod's
 	 * {@code faithful:test-without} runs there, as an op that can {@code /give} itself what it needs.
 	 */
 	private void serversWithout(Path dir, List<Path> jars, String stall, String planted) throws Exception {

@@ -35,7 +35,7 @@ import org.objectweb.asm.tree.MethodNode;
 import org.objectweb.asm.tree.TypeInsnNode;
 
 /**
- * The conflict harness's first stage (docs/library.md): what can be read from a mod's jar without launching anything. Jars are the
+ * The conflict harness's first stage (docs/library-harness.md): what can be read from a mod's jar without launching anything. Jars are the
  * named ({@code -dev}) ones, so targets read as the source does. Each failure names the mod and the rule.
  */
 final class LibraryStatic {

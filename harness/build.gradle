@@ -58,7 +58,7 @@ tasks.register('serverTest', oldfaithful.gradle.ServerTestTask) {
     if (gameJava.isPresent()) javaExecutable = gameJava
 }
 
-// Phase 6 (docs/multiplayer.md): the server package, started by its own script, against raw-packet clients doing
+// Phase 6: the server package, started by its own script, against raw-packet clients doing
 // honest play and the attacks the hardening stops. Offline mode, so the raw clients can log in.
 tasks.register('multiplayerTest', oldfaithful.gradle.MultiplayerTestTask) {
     group = 'verification'
@@ -491,7 +491,7 @@ if (findProject(':oldfaithful-fixes') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// The Faithful Library (docs/library.md): World Rules on the base layer, end to end. Pure Faithful's mods under it, as the
+// The Faithful Library: World Rules on the base layer, end to end. Pure Faithful's mods under it, as the
 // lightest edition; the settings screen, the core and the mod beside them.
 if (findProject(':library:world-rules') != null) {
     evaluationDependsOn(':library:world-rules')
@@ -519,7 +519,7 @@ if (findProject(':library:world-rules') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// Faithful Core's hooks and attachments, every hook listened to by the test-only hook-check mod (docs/library.md); Pure Faithful's
+// Faithful Core's hooks and attachments, every hook listened to by the test-only hook-check mod; Pure Faithful's
 // mods under it, then Still Faithful's whole set beside it, which hooks many of the same methods.
 if (findProject(':library:hook-check') != null) {
     evaluationDependsOn(':library:hook-check')
@@ -549,7 +549,7 @@ if (findProject(':library:hook-check') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// The conflict harness's first stage (docs/library.md): no game launched. `-Plibrary.mods=a,b` narrows it to those library mods.
+// The conflict harness's first stage (docs/library-harness.md): no game launched. `-Plibrary.mods=a,b` narrows it to those library mods.
 // Named jars, so targets read as the source does. `libraryStaticBadTest` runs the rules over planted mistakes.
 if (findProject(':oldfaithful-core') != null) {
     def libraryNames = providers.gradleProperty('library.mods').map { it.split(',') as List }.getOrElse(null)
@@ -658,7 +658,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty() && findProject(':library:world-
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// The conflict harness, stages 2 to 8 (docs/library.md > The conflict harness). `-Plibrary.mods=a,b` for a set (any folder in library/, test mods too),
+// The conflict harness, stages 2 to 8 (docs/library-harness.md). `-Plibrary.mods=a,b` for a set (any folder in library/, test mods too),
 // `-Plibrary.stages=registry,combinations`, `-Plibrary.keepGoing`, `-Plibrary.seed=N`, `-Plibrary.monkeyTicks=N`.
 if (findProject(':library:harness-probe') != null) {
     def allLibrary = rootProject.subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() }
@@ -871,6 +871,58 @@ if (findProject(':library:dungeon-check') != null) {
         if (p.edition) extraJvmArgs = ["-Doldfaithful.selftest.edition=${p.edition}".toString()]
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
+}
+// The library's packs and server packages as they ship (LibraryPackTestTask): nothing ticked, no list, everything ticked, and each stage of a server's mods.
+['Old': [pack: 'releasePackLibraryOld', server: 'releaseServerLibraryOld', args: []],
+ 'Still': [pack: 'releasePackLibraryStill', server: 'releaseServerLibraryStill', args: ["-Doldfaithful.selftest.edition=Still Faithful:stillfaithful-polish".toString()]]].each { label, p ->
+    if (!rootProject.tasks.names.contains(p.pack)) return
+    def key = label.toLowerCase()
+    def packZip = rootProject.tasks.named(p.pack)
+    def serverZip = rootProject.tasks.named(p.server)
+    def unpacked = tasks.register("libraryPackTest${label}Unpack", Sync) {
+        from { zipTree(packZip.get().archiveFile) }
+        into layout.buildDirectory.dir("pack-test/library-${key}/instance")
+    }
+    def unpackedServer = tasks.register("libraryPackTest${label}UnpackServer", Sync) {
+        from { zipTree(serverZip.get().archiveFile) }
+        into layout.buildDirectory.dir("pack-test/library-${key}/server")
+        eachFile { it.path = it.path.substring(it.path.indexOf('/') + 1) }
+        includeEmptyDirs = false
+    }
+    def packNatives = tasks.register("libraryPackTest${label}Natives", Sync) {
+        dependsOn unpacked
+        from { fileTree(unpacked.get().destinationDir) { include 'libraries/*natives*.jar' }.collect { zipTree(it) } }
+        exclude 'META-INF/**'
+        into layout.buildDirectory.dir("pack-test/library-${key}/natives")
+    }
+    def libraries = unpacked.map { fileTree(it.destinationDir) { include 'libraries/*.jar'; exclude 'libraries/*natives*.jar', 'libraries/intermediary-*.jar' } }
+    tasks.register("libraryPackTest${label}", oldfaithful.gradle.LibraryPackTestTask) {
+        group = 'verification'
+        description = "The ${label} Faithful library pack and server package from a release: nothing ticked, everything ticked, and a server at each stage."
+        dependsOn packNatives, unpackedServer
+        it.label = label
+        instance = layout.dir(unpacked.map { it.destinationDir })
+        serverPackage = layout.dir(unpackedServer.map { it.destinationDir })
+        serverJar = mc.serverJar
+        gameJar = mc.clientJar
+        intermediaryMappings = layout.file(unpacked.map { fileTree(it.destinationDir) { include 'libraries/intermediary-*.jar' }.singleFile })
+        loaderClasspath.from(libraries)
+        mods.from(tasks.named('remapJar'))
+        natives = layout.buildDirectory.dir("pack-test/library-${key}/natives")
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir("local/run/library-pack-${key}")
+        oldFaithful = true
+        windowRuns = false
+        timeoutSeconds = 300
+        extraJvmArgs = p.args
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+if (tasks.names.contains('libraryPackTestOld')) tasks.register('libraryPackTest') {
+    group = 'verification'
+    description = "The library's packs and server packages as they ship, for both editions."
+    dependsOn 'libraryPackTestOld', 'libraryPackTestStill'
 }
 // The same on Linux x64, in Docker (tools/in_linux.py): `clientStartupTestLinux` runs it on both test images.
 def clientStartupLinux = linuxImages.collect { img ->

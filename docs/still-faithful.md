@@ -1,6 +1,6 @@
 # Still Faithful (the third edition)
 
-The third edition (CLAUDE.md > Editions): beta with polish, as it might have been. Old Faithful plus what later
+The third edition: beta with polish, as it might have been. Old Faithful plus what later
 versions improved, still beta in content. Entry numbers are `docs/bugs.md`'s. Decisions are the user's (2026-11-02)
 unless marked open. Built from 2026-11-02 by Claude Opus 5.5. Public since 0.1.0 (2026-11-03, on Old Faithful 0.1.2
 and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.org/still-faithful/; no Modrinth
@@ -269,8 +269,7 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   the zombies' pictures matched the switched-on run's to the pixel in one pair of runs and within 1/255 (2 on the hand)
   in another, across the backdrop too: smooth dusk's light against beta's (the bow pose is off there too; walking
   differs by the frame's place in its tick). SkinCheck turns vsync off while it runs and puts it back: the start-up test
-  keeps it on for the settings checks, and hidden clients waiting on the refresh are the stalls' trigger (root
-  `docs/gpu-resets.md`); two of six runs without that ended in a stall, neither of the two with it did. The real path: jeb_ and Notch (64x32: beta's), MHF_Alex and MHF_Steve (64x64, both
+  keeps it on for the settings checks, and hidden clients waiting on the refresh are the stalls' trigger; two of six runs without that ended in a stall, neither of the two with it did. The real path: jeb_ and Notch (64x32: beta's), MHF_Alex and MHF_Steve (64x64, both
   slim in their profiles) through hardening's own client and parser, outside the game.
 - `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves`: the saves mod's real-server test with the polish mod beside
   it (damaged chunks; the server killed outright 8 times during bursts of save-all, every chunk and level.dat read

@@ -164,7 +164,7 @@ save's `commitAll` returns only when every save, including one another thread is
   client mixin, `clientStartupTest` makes a world, plays 100 ticks and saves on leaving (the world it left read
   cleanly, 299 chunks, checked once), `serverTest` and `multiplayerTest` run the server with it (the server package
   includes it). The benchmark (`benchSetup`) leaves it out, so its baseline stays as measured.
-- `./gw :hunt:pistonEdgeTest` (about a minute; the hunt is test-only and private): #53's scenes on the real server with
+- A private test (about a minute): #53's scenes on the real server with
   this mod (no fault, nothing lost) and without it (the control, where they fail).
 - `./gw :oldfaithful-saves:test -Pmeasure`: the game-thread cost of a chunk save, ours against vanilla, in autosave's
   rhythm with background forcing going on. Measured 2026-11-02: median 1.0 ms both, p99 1.9 to 2.0 ms ours against

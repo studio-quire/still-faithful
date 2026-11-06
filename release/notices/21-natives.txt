@@ -14,4 +14,4 @@ the commit, the compiler and the flags; the build script is sources/build-native
     licenses/openal-soft/LICENSE-pffft, and {fmt}'s licence in licenses/openal-soft/LICENSE.
     OpenAL Soft is used unmodified, as a separate library (OpenAL.dll) that the game loads at run time: you may
     replace it with another build of OpenAL Soft, including one you've changed. Its complete source code, and the
-    script and settings it was built with, are in sources/openal-soft/.
+    script and settings it was built with, are in @OPENAL_SOURCES@.

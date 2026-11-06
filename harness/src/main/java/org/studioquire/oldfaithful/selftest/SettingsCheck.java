@@ -51,7 +51,9 @@ final class SettingsCheck {
 	private final Deque<Step> steps = new ArrayDeque<>();
 	private final Path config = FabricLoader.getInstance().getConfigDir();
 	private final Path list = FabricLoader.getInstance().getGameDir().resolve("mods-library").resolve("selection.txt");
-	private final boolean library = Files.isRegularFile(list);
+	private final boolean library = Files.isDirectory(list.getParent());
+	/** A release's library pack (`libraryPackTest`): {@code off}, as shipped with nothing on; {@code absent}, the same with no list at all; {@code on}, everything on. */
+	private static final String PACK = System.getProperty("oldfaithful.selftest.libraryPack");
 	private int startWidth, startHeight, startScale;
 	private final List<String> layoutProblems = new ArrayList<>();
 	private int layoutsChecked;
@@ -186,7 +188,8 @@ final class SettingsCheck {
 		steps.add(this::restartSwitch);
 		steps.add(this::liveSwitches);
 		steps.add(this::multiplayer);
-		if (library) steps.add(this::modPages);
+		if (PACK != null) steps.add(this::packMods);
+		else if (library) steps.add(this::modPages);
 		for (int[] size : WINDOWS) {
 			steps.add(resize(size[0], size[1]));
 			steps.add(wait(5));
@@ -289,7 +292,7 @@ final class SettingsCheck {
 			});
 			steps.add(capture("levels/2-changes-" + (page + 1), null));
 		}
-		if (!library) return;
+		if (!library || PACK != null) return;
 		steps.add(m -> {
 			openMenu(m, "Mods");
 			return true;
@@ -565,6 +568,81 @@ final class SettingsCheck {
 		results.check("a hundred mods more: " + pages + " pages of five from \"" + first + "\", on to \"" + second + "\", and Done from a mod's page comes back to the page it left",
 				pages == 21 && first.equals("Many Mod 001...") && second.equals("Many Mod 006...") && samePage);
 		manyMods(false);
+		mc.setScreen(null);
+		return true;
+	}
+
+	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Better Dungeons", "No Toasts", "Plain F3", "Water Bottles", "World Rules");
+	private static final List<String> PACK_IDS = java.util.Arrays.asList("better-dungeons", "no-toasts", "plain-f3", "water-bottles", "world-rules");
+
+	private java.util.Set<String> listed() throws Exception {
+		java.util.Set<String> lines = new java.util.TreeSet<>();
+		for (String line : Files.readAllLines(list)) {
+			if (!line.trim().isEmpty()) lines.add(line.trim());
+		}
+		return lines;
+	}
+
+	/**
+	 * A library pack from a release, by what a player finds: with nothing on, none of the library's code is here and the Mods menu still offers all of it; ticking a mod
+	 * brings the core onto the list and unticking the last takes it off, and the run leaves everything ticked for the next launch to find. With everything on, it all loaded.
+	 */
+	private boolean packMods(Minecraft mc) throws Exception {
+		boolean on = PACK.equals("on");
+		boolean anyLoaded = FabricLoader.getInstance().isModLoaded("faithful-core");
+		boolean allLoaded = anyLoaded;
+		for (String id : PACK_IDS) {
+			anyLoaded |= FabricLoader.getInstance().isModLoaded(id);
+			allLoaded &= FabricLoader.getInstance().isModLoaded(id);
+		}
+		if (on) {
+			results.check("everything on: the core and all five mods are loaded", allLoaded);
+		} else {
+			boolean coreClass = true;
+			try {
+				Class.forName("org.studioquire.oldfaithful.core.impl.CoreNet", false, getClass().getClassLoader());
+			} catch (ClassNotFoundException e) {
+				coreClass = false;
+			}
+			results.check("nothing on: no library mod is loaded and the core's classes aren't there", !anyLoaded && !coreClass);
+			results.check("nothing on: the list is " + (PACK.equals("absent") ? "absent" : "there and empty"), PACK.equals("absent") ? !Files.exists(list) : listed().isEmpty());
+		}
+		List<String> wanted = new ArrayList<>();
+		for (String name : PACK_NAMES) wanted.add(name + "...");
+		wanted.add("Done");
+		Screen mods = openMenu(mc, "Mods");
+		results.check("Mods: a wide button for each mod: " + texts(mods), texts(mods).equals(wanted));
+		for (String name : PACK_NAMES) {
+			Screen page = openMod(mc, name);
+			boolean rulesHere = on && name.equals("World Rules");
+			results.check(name + "'s page: " + texts(page), button(page, "Enabled:").text.equals(on ? "Enabled: ON" : "Enabled: OFF") && (rulesHere ? has(page, "Keep Inventory:") && has(page, "Lock Rules") : texts(page).size() == 2));
+		}
+		if (on) {
+			java.util.Set<String> before = listed();
+			Screen page = openMod(mc, "Water Bottles");
+			ButtonWidget enabled = button(page, "Enabled:");
+			press(page, enabled);
+			String offText = enabled.text;
+			boolean gone = !listed().contains("mods-library/water-bottles.jar") && listed().contains("mods-library/faithful-core.jar");
+			press(page, enabled);
+			results.check("Water Bottles unticked, \"" + offText + "\", off the list with the core still on it; ticked, as it was", offText.equals("Enabled: OFF*") && gone && listed().equals(before));
+			mc.setScreen(null);
+			return true;
+		}
+		Screen page = openMod(mc, "Water Bottles");
+		ButtonWidget enabled = button(page, "Enabled:");
+		press(page, enabled);
+		String onText = enabled.text;
+		java.util.Set<String> one = listed();
+		results.check("Water Bottles ticked, \"" + onText + "\": the list has it and the core: " + one, onText.equals("Enabled: ON*")
+				&& one.equals(new java.util.TreeSet<>(java.util.Arrays.asList("mods-library/faithful-core.jar", "mods-library/water-bottles.jar"))));
+		press(page, enabled);
+		results.check("Water Bottles unticked, \"" + enabled.text + "\": the last mod off takes the core with it, the list empty: " + listed(), enabled.text.equals("Enabled: OFF") && listed().isEmpty());
+		for (String name : PACK_NAMES) {
+			Screen p = openMod(mc, name);
+			press(p, button(p, "Enabled:"));
+		}
+		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == 6);
 		mc.setScreen(null);
 		return true;
 	}

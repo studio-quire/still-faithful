@@ -21,7 +21,7 @@ import org.studioquire.oldfaithful.hardening.util.Log;
 
 /**
  * Replaces the game's resource downloader. The original fetched an XML listing over plain HTTP from a dead S3
- * bucket (or, with some fix mods, a third-party mirror), parsed it with external entities enabled (XXE), and wrote
+ * bucket, parsed it with external entities enabled (XXE), and wrote
  * each listed key to {@code resources/<key>} without checking where that path led (path traversal). Anyone able to
  * alter that response could write any file the player can.
  *

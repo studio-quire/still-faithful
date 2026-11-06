@@ -3,12 +3,12 @@ package org.studioquire.oldfaithful.hardening.packet;
 /**
  * What a b1.7.3 server takes from a client's movement packets without checking:
  * <ul>
- * <li>NaN and infinite numbers. Every comparison with NaN is false, so a NaN position slips past the "moved too
- * quickly", "illegal stance" and world-border checks; the player is then wherever the next packet says, and NaN
- * ends up in the saved player file.</li>
- * <li>A riding player's motion. While riding, the client sends its motion in place of a position (y and stance -999),
- * and the server moves the player by it with no limit at all. Moving by ten million blocks makes the collision search
- * walk every block column in between: one packet hangs the server.</li>
+ * <li>NaN and infinite numbers,
+ * which an honest client never sends
+ * and which don't belong in a saved player file.</li>
+ * <li>A riding player's motion,
+ * which is limited here to
+ * what an honest rider sends.</li>
  * </ul>
  * A client that does either is disconnected as vanilla disconnects one that leaves the world ("Illegal position").
  * Honest clients send finite numbers, and a rider's motion is a fraction of a block a tick.

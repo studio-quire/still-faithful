@@ -24,7 +24,7 @@ user's game's mouse mid-play).
 With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (the user's call, 2026-11-03: their own game grabbing the cursor
 stopped tests; the harness's HandsOff still keeps the test game from grabbing).
 A display mode change isn't the command's either: it moves the cursor and the screen's edges, so the guard stands
-aside for a few seconds (2026-11-05: a test started during tools/vblank.ps1's flip took 1600x900 as the clip to keep,
+aside for a few seconds (2026-11-05: a test started during a display flip took 1600x900 as the clip to keep,
 and put the user's cursor back in it).
 
 Windows only. Claude Opus 5.5, 2026-11-01.
@@ -204,7 +204,7 @@ class CursorGuard:
 
     def problem(self):
         """None while the cursor is untouched; otherwise (exit code, what happened)."""
-        # A display mode change (tools/vblank.ps1 fix) moves the cursor and the screen's edges, and the game didn't.
+        # A display mode change moves the cursor and the screen's edges, and the game didn't.
         screen = self.whole_screen()
         if screen != self.screen:
             self.screen, self.settling = screen, time.monotonic() + MODE_CHANGE_SECONDS

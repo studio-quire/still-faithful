@@ -84,6 +84,15 @@ ext.releaseTokens = { Map ed ->
         HOMEPAGE             : ed.homepage,
         ICON                 : ed.icon,
         SERVER_MODS          : ed.serverModsText,
+        // More launch arguments, each with its leading comma, in the pack's net.minecraft component: the library packs' list of mods.
+        EXTRA_JVM_ARGS       : ed.extraJvmArgs ?: '',
+        // A library pack's edition, and the mods under it (gradle/library.gradle).
+        EDITION_NAME         : ed.editionName ?: '',
+        EDITION_VERSION      : ed.editionVersion ?: '',
+        EDITION_LINE         : ed.editionLine ?: '',
+        EDITION_REPO         : ed.editionRepo ?: '',
+        // Where the notices say OpenAL Soft's source is. The editions' own texts move to the zip's real name at their next releases.
+        OPENAL_SOURCES       : ed.openalSources ?: 'sources/openal-soft/',
         PURE_NAME            : release_name,
         PURE_VERSION         : pureVersion,
         PURE_REPO            : release_repo,
@@ -225,7 +234,7 @@ def packTask = { String taskName, Map ed ->
             filesMatching(['mmc-pack.json', 'patches/*.json', 'instance.cfg']) { filter tokensFilter }
         }
         // The icon (the β seal, drawn by tools/icon_candidates.py), named for instance.cfg's iconKey.
-        from("prism/release/icons/final/${ed.icon}-128.png") { rename { "${ed.icon}.png" } }
+        from("prism/release/icons/final/${ed.iconFile ?: ed.icon + '-128.png'}") { rename { "${ed.icon}.png" } }
         from('prism/dev/patches') {
             include 'net.fabricmc.fabric-loader.json', 'net.fabricmc.intermediary.json'
             into 'patches'
@@ -289,6 +298,8 @@ def guardRelease = { Sync sync, String edition, String version, String versionPr
 }
 
 ext.guardRelease = guardRelease
+ext.releasePackTask = packTask
+ext.releaseServerTask = serverTask
 
 // Pure Faithful ---------------------------------------------------------------------------------------------------
 

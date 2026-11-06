@@ -35,7 +35,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * The conflict harness, stages 2 to 8 (docs/library.md > The conflict harness), cheap first, stopping at the first stage that fails unless told
+ * The conflict harness, stages 2 to 8 (docs/library-harness.md), cheap first, stopping at the first stage that fails unless told
  * to go on. {@code mods} (inherited) is what every client carries: Pure Faithful's mods, the self-test, settings and the core.
  * A failure names the stage, the mod and the rule. Boots are parallel, a few at a time: each is a game of its own.
  */

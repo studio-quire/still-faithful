@@ -1,6 +1,6 @@
 plugins { id 'oldfaithful.mod' }
 
-// The settings screen and config editing (docs/options.md, docs/library.md): split from oldfaithful-options so a
+// The settings screen and config editing (docs/options.md): split from oldfaithful-options so a
 // library mod has a screen on any edition. Its classes keep the options mod's package, so nothing that uses them changes.
 dependencies {
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"

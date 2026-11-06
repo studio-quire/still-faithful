@@ -36,7 +36,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Better Dungeons on really generated worlds (docs/library.md). Each seed's square of chunks, far from the spawn, is made by the real server through library/dungeon-check, with and without the mod,
+ * Better Dungeons on really generated worlds. Each seed's square of chunks, far from the spawn, is made by the real server through library/dungeon-check, with and without the mod,
  * in several visiting orders, one of them across a restart. Then, from what was really in the world: every dungeon the same whatever the order, every room reachable from beta's, nothing open to
  * anything but its own rooms, and every cell outside the dungeons as a world without the mod has it.
  */

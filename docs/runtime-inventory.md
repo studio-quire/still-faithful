@@ -220,18 +220,6 @@ Prism picked Mojang's 21.0.7 for the client check. What an instance can and can'
    notices of its shaded parts; the ASM, LWJGL and jinput jars carry no licence files; OpenAL Soft is LGPL. Our own
    builds now carry their notices and sources; the rest is listed in `docs/mirror.md` for before anything is public.
 
-## Contradictions with `docs/stack-audit.md`
-
-- §3b: "custom builds of unverifiable provenance" for LF's OpenAL DLLs: they are LWJGL 3.3.6's official builds of
-  the 1.24.1 tag (above). Its observation that they don't match OpenAL Soft's own release zip still holds.
-- §1/§3a: the loader now shades class-tweaker 0.3.0, not access-widener, and mapping-io 0.9.1; MixinExtras is
-  inside the loader, not a separate library.
-- §3a "nothing in the loader layer has a known vulnerability": true of the artifacts themselves, but Mixin's shaded
-  Guava 21.0/Gson 2.2.4 and MixinExtras' commons-lang3 3.3.2 have OSV entries (all unreachable).
-- §1 "Bundles OpenAL Soft 1.24.1": except Linux i386 and the macOS `openal.dylib`, which are 1.15.1.
-- §3a's JRE row: Mojang's `jre-legacy` is 8u51 with a refreshed CA store (`8u51-cacert462b08`), so its trust store
-  is newer than the runtime; the runtime's own fixes are still 2015's.
-
 ## Not checked
 
 - Prism itself: its handling of local-hint libraries and natives, and of `file://` URLs, is from reading its source;

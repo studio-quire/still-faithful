@@ -25,7 +25,7 @@
     },
     "+traits": ["legacyLaunch", "texturepacks", "noapplet"],
     "minecraftArguments": "--username ${auth_player_name} --session ${auth_session} --gameDir ${game_directory} --assetsDir ${game_assets}",
-    "+jvmArgs": ["--enable-native-access=ALL-UNNAMED"],
+    "+jvmArgs": ["--enable-native-access=ALL-UNNAMED"@EXTRA_JVM_ARGS@],
     "compatibleJavaMajors": [21, 25],
     "compatibleJavaName": "java-runtime-delta",
     "requires": [{"uid": "org.lwjgl", "equals": "@LWJGL_VERSION@"}]

@@ -22,9 +22,9 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Phase 6's live test (docs/multiplayer.md): the server package, started by its own start script with an offline-mode
- * world, and raw-packet clients of ours doing what honest players do and what attackers do. Each attack must end in
- * the expected refusal while the server stays responsive and honest play carries on.
+ * Phase 6's live test: the server package, started by its own start script with an offline-mode world, and raw-packet
+ * clients of ours, honest and not. Whatever isn't honest must end in the expected refusal while the server stays
+ * responsive and honest play carries on.
  */
 public abstract class MultiplayerTestTask extends GameTestTask {
 	private static final Pattern SAFE_PLAYER_FILE = Pattern.compile("[A-Za-z0-9_]+\\.dat");
@@ -132,7 +132,7 @@ public abstract class MultiplayerTestTask extends GameTestTask {
 			expectKick(c, "Illegal position", "NaN position", failures);
 		}
 
-		// Riding: honest motion is fine; ten million blocks in one packet used to hang the server.
+		// Riding: honest motion is fine; past that, the client is let go.
 		try (RawClient c = new RawClient(port, "Rider1")) {
 			expectLogin(c, failures);
 			if (server.await(l -> l.contains("Rider1 seated in a boat"), 20) == null) failures.add("Rider1 wasn't seated");

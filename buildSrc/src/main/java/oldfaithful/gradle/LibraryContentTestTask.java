@@ -22,7 +22,7 @@ import org.gradle.api.tasks.PathSensitivity;
 import org.gradle.api.tasks.TaskAction;
 
 /**
- * Faithful Core's content layer end to end (docs/library.md): a server with a content mod, its blocks reloaded under a different
+ * Faithful Core's content layer end to end: a server with a content mod, its blocks reloaded under a different
  * numbering, a real client seeing them through every packet, a vanilla client refused, the mod removed and put back, and the world
  * opened by the real, unmodified server. Then single player.
  */

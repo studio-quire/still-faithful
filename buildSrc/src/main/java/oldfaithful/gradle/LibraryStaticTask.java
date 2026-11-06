@@ -23,7 +23,7 @@ import org.gradle.api.tasks.TaskAction;
 
 /**
  * The conflict harness's first stage: {@link LibraryStatic} over the library's jars, with the editions' read for their mixin targets
- * (docs/library.md). With {@code expected} set, the jars are a fixture of mistakes: each expected text must appear among the failures,
+ * (docs/library-harness.md). With {@code expected} set, the jars are a fixture of mistakes: each expected text must appear among the failures,
  * which is how the rules themselves are checked.
  */
 public abstract class LibraryStaticTask extends DefaultTask {
