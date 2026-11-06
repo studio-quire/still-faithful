@@ -4,8 +4,7 @@ Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves al
 says it may be the user's call to take into Purist. Old Faithful (Fixed) is narrow (user, 2026-11-02): beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
-not to Fixed. Fixed so far: forty-three entries in `oldfaithful-fixes` (`docs/fixes.md`), each with its
-own switch in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
+not to Fixed. Fixed so far: forty-six entries in `oldfaithful-fixes` (`docs/fixes.md`), with forty-nine switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
 
 Sources:
 - The decompiled game (`local/decomp/b1.7.3-named`, Babric's names), read for causes.
@@ -107,12 +106,14 @@ Key:
 | 65 | A spawner set to a thing that isn't a mob (an edited world) crashes the game every tick a player is near | bug | Pure | low (edited worlds) | fixed |
 | 66 | Small spawning and generation slips: squid in lava, Nether chunks without a heightmap, the Nether's decoration unseeded, clay beside the water it tested | bug, ask | OF / SF / none | low | squid fixed (OF); the Nether's heightmap T |
 | 67 | Falling sand or gravel deletes any block of its own kind it passes into (a piston pushing it into a column, say) | bug | OF | low | fixed (OF) |
-| 68 | Single player: rejoining a world far from its spawn, the walls around you aren't solid for a moment; you can walk into one and suffocate | bug | OF | mid | fixed (OF) |
+| 68 | Single player: a rejoin prepares the terrain around the world's spawn, not around the player. Nothing a player notices; left as beta. The suffocation reported with it may well be #75's | bug | none | none | T |
 | 69 | Chests can't be turned: the front is worked out from the blocks around (south when free-standing, sideways in a corner) | ask | SF | mid | built (SF) |
 | 70 | Dots of sky flicker along block edges where render chunks meet: each chunk is placed with a rounding error bigger than beta's overlap | bug | OF | mid | fixed (OF) |
 | 71 | Screen-aligned lines flicker over the block-breaking cracks (seen by the user); the cracks never lose depth to their block in measurement | ? | ? | low-mid | not reproduced; set aside (user) |
 | 72 | Dots of sky along some edges of grass, stone, dirt, planks, bricks, wool and others: a face's texture starts exactly on its tile's edge, and a hair of rounding reads the transparent tile beside it in the atlas | bug | OF | mid | fixed (OF) |
 | 73 | Create New World and Rename World: in a big window the title comes down among the fields (seen by the user) | bug | OF | low | fixed (OF) |
+| 74 | Under a block 2 above the floor, a step-up sinks the player 0.3 into the floor or a ledge, then the push-out shoves them out | bug | OF | mid | fixed (OF) |
+| 75 | Rejoining while touching a wall can put the box a rounding step inside it: the player walks in, suffocates if the wall reaches the eye, and is pushed out | bug | OF | low-mid | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -959,19 +960,45 @@ falling block), so the server sends each kept block again as it's passed and whe
 the real server (`ServerWorldFixesTest`): a falling sand some ticks into its fall in a cell of sand leaves two sand
 (one dropped as an item); beta, one.
 
-### 68. Rejoining far from spawn: walls not solid at first (T, seen)
-Found by the user playing Still Faithful (2026-11-03): on a rejoin they walked a little into a wall, took suffocation
-damage and were pushed out. `Minecraft.setWorld` (single player) runs `prepareWorld`, which loads the chunks 128 blocks
-around, before the saved player is read (`World.addPlayer` reads it afterwards; `getPlayerForProxy` always returns
-null), so `prepareWorld`'s own "around the player if there is one" never applies on a rejoin and it centres on the
-world spawn. Farther than that from spawn (the user's: about 230 blocks) the player stands in chunks nobody has
-loaded, and `World.getEntityCollisions` skips columns whose chunk isn't loaded (`LegacyChunkCache.isChunkLoaded` is
-true only for chunks already in it): no collisions until something loads them (the renderer's chunk builds, the
-push-out's own block reads, `loadChunksNearEntity` every 30 ticks). Respawns and portals prepare after the player is
-placed and are fine. OF, mid (anyone living away from spawn). **Fixed in Old Faithful** (2026-11-03,
-`world.rejoinTerrain`, client): `prepareWorld` centres on the saved player's position when no player exists yet (the
-world is already the saved player's dimension). Its mixin applies in `clientStartupTestFixed`; the rejoin itself is the
-user's check in their world.
+### 68. A rejoin prepares the terrain around the spawn, not the player (T, measured; left as beta)
+`Minecraft.setWorld` (single player) runs `prepareWorld`, which loads the chunks 128 blocks around, before the saved
+player is read (`World.addPlayer` reads it afterwards; `getPlayerForProxy` always returns null), so `prepareWorld`'s own
+"around the player if there is one" never applies on a rejoin and it centres on the world spawn. Respawns and portals
+prepare after the player is placed and are fine. Old Faithful 0.1.3 to 0.2.0 (`world.rejoinTerrain`, client) centred
+`prepareWorld` on the saved player's position when no player existed yet. **Removed in 0.2.1**, as below; a config file
+naming the switch loads as before, since only the switches the mod knows are read.
+It was written up as the cause of a report by the user playing Still Faithful (2026-11-03: on a rejoin about 230 blocks
+from spawn they walked a little into a wall, took suffocation damage and were pushed out), reasoning that the walls had no
+collision until their chunks loaded (`World.getEntityCollisions` skips a column whose chunk isn't loaded, and
+`ChunkCache.isChunkLoaded` is true only for chunks already in it). Measured 2026-11-06, that isn't what happens. `World.updateEntity`
+doesn't tick the player until the chunks within 32 blocks are loaded, and with the switch off, 160 real rejoins (`:harness:ledgeHunt`,
+real save, quit and reopen, families T and V, half of V 230 to 630 blocks from spawn) had no first tick over an unloaded
+column, a first tick at most 1 world tick later (with it on, 0), no longer to reopen, and the sinks of #75 at the same
+rate (10 of 100 with the switch on or off). What the report describes is what #75 does beside a wall as tall as the eye:
+same walk in, 60 ticks of damage over those 10, same push-out; with #75's fix 0 of 100. Whether theirs was that event can't be
+shown after the fact, since their world isn't known to have had such a wall. 0 of 60 at arbitrary places (V), so it takes a
+wall past a power of two, or a rarer run of walking than these.
+So this switch prevented nothing measured, which also made the "walls solid from the first moment" of the 0.1.3 changelog and
+Old Faithful's README wrong (corrected in 0.2.1's).
+
+What it did do, measured 2026-11-06 on a hidden client, Still Faithful, Far view, 48 reopenings, 24 each way, in alternating
+launches at Balanced and Max FPS, of worlds saved 300 and 4000 blocks from spawn (a probe not kept in the tree). It works as written: on entering the world, 289
+of the 289 chunks around the player are loaded with it, 1 without. Nothing a player would notice follows:
+| Medians, ms unless marked | With | Without |
+|---|---|---|
+| Reopening, after the first in a launch | 160 to 168 | 168 to 182 |
+| Reopening, the first after starting the game | 286 to 292 | 298 to 332 |
+| Render chunks built 1 s in (of 5408) | 48 to 66 | 38 to 54 |
+| Within 64 blocks and in view, all built: 300 from spawn | 3070 to 3300 | 3074 to 3319 |
+| The same, 4000 from spawn | 48 to 138 | 222 to 316 |
+| Within 64 blocks, all built | 33,800 to 39,000 | 33,900 to 36,700 |
+| Longest frame in the first opening after starting the game, 300 from spawn | 130 | 300 to 330 |
+| Longest frame in later openings | 32 to 38 | 34 to 38 |
+The longest frame is the one difference above noise, and it's a single frame as the empty view first appears, about a
+fifth of a second once in a session. At equal rates of building, the fill times differ by less than run to run.
+What this leaves open: these clients ran at 60 frames a second and one rebuild a frame, on a fast disk with the world in the
+disk cache; a client with vsync on, which builds more a frame, isn't run hidden (those stall this PC's display), and a slow cold disk
+wasn't tried. A slow disk might show more, moved from the first frames to the loading screen.
 
 ### 69. Chests can't be turned (T, ask)
 Asked by the user (2026-11-03). Beta stores no facing for a chest (data always 0); `ChestBlock.getTextureId` works the
@@ -1049,6 +1076,72 @@ frames at each of the three places without it, 0 with it (the stray pixel went t
 pixels change (875 to 963 of 1.44 million in each view's first frame), nearly all by under 25 levels of 255: pixels
 on a texel boundary inside a face taking the neighbouring texel. Its cost is a few comparisons per quad while chunks
 are built (reasoned, not benchmarked).
+
+### 74. A step-up under a low roof sinks into the floor (T, seen)
+Asked about by the user (2026-11-06), who remembered being moved slightly into a block and pushed out on a simple
+one-block ledge, single player on Still Faithful; whether theirs had a block overhead isn't known yet. Later versions'
+MC-72868, fixed in 1.8.1-pre1. `Entity.move`'s step-up rises at most `stepHeight`, moves, then always goes down the full
+`stepHeight`, using a collision list gathered upward from the feet, which leaves out the floor being stood on (touching
+isn't intersecting). When a block overhead clips the rise (2 air blocks: rise 0.2), the descent ends 0.3 below where it
+began. Plain blocks can start it: on the tick after walking off an edge `onGround` is still true and gravity has put the
+box below the edge, so that block stops the plain move and the step is tried and accepted. Once overlapping, `Box`'s
+offsets ignore that block, so the player falls or walks further in until `ClientPlayerEntity.pushOutOfBlock`'s probes
+(0.21 from the centre) are in it. The eye falls about 1.01 in the tick, with `cameraOffset` 0.71. In ice or glass, which
+don't suffocate, nothing pushes the player out.
+Seen on the real client (`:harness:ledgeHunt`, Still Faithful; scripted keys, so these aren't
+rates in play): trench one wide, roof 2 above its floor, straight at full speed, 439 of 3000 crossings; roof 3 above or
+none, 0 of 1500 each. Ledge, tapping off the edge and back: roof 2 above its top, 146 of 8000; a single block 2 above
+the top over the low side, 132; a row over the ledge only, 0; roof 3 above or none, 0 of 8000 each. Same on plain, Pure,
+Old and Still. In a standalone copy of `move`, limiting the descent to the actual rise gave 0 sinks over
+the same runs. **Fixed in Old Faithful** (2026-11-06, `movement.stepUnderRoof`): the way down is as long as the way up.
+With nothing overhead those are the same number, so ordinary steps don't change. A step with the rise clipped still lands
+on anything it can reach: repeaters and trapdoors under a roof 2 up, soul sand to stone under one 3 up; too-tall ones are
+refused as before (scenes H, identical with the switch off in all 56 cells). In the open a trench crossing is what it
+always was; under a roof it now crosses the same way.
+| Scene (ledge hunt, Still Faithful) | Beta (switch off; same on plain) | Fixed |
+|---|---|---|
+| D, trench, roof 2 above its rim | 439 of 3000 sink | 0 |
+| D, one-block pit, same roof | 104 of 1500 | 0 |
+| D, off a ledge and back, roof 2 above its top | 16 of 3000 | 0 |
+| E, tap off a ledge, roof 2 above its top | 146 of 8000 | 0 |
+| F, a single block overhead | 132 of 8000 | 0 |
+| F, a row overhead on the low side | 118 of 8000 | 0 |
+| Controls: roof 3 up, none, a row over the ledge only | 0 | 0 |
+None of these took damage: the eye stays above the block it sank into. A zombie through its own `move` on the real server
+(`ServerWorldFixesTest`): 64 of 400 walks across a trench under a roof sink, 0 fixed; in the open 0 and the same result both
+ways. A server's player has no step height, so on a server only mobs are affected.
+Digests over 38 million ticks (A, W, S, `docs/building.md`): open-air walks and wanders identical in all 4500 cells with
+both switches on and off. With roofs, 94 of 4500 differ, all with a roof low enough to clip the rise; with both fixes, ticks overlapping a block go from 20,912 to 0.
+
+### 75. Rejoining against a wall lets you walk into it (T, seen)
+Found looking into #74 (2026-11-06). `Entity.read` calls `setPosition`, which rebuilds the box as x plus and minus
+`width / 2`. Move translates the two faces separately, and the rebuild can land a face about 1e-14 past a wall the player
+was touching; the next move ignores that block and walks in up to the probes. No roof needed and no camera drop. Real
+save, quit and reopen beside a wall just past a power of two: 7 of 100, plain and Still; arbitrary scenes, 0 of 60 real
+rejoins, though writing and reading back the position there gave 1132 of 67624. Why those walls expose it is a model's
+reading, confirmed in a standalone copy of the arithmetic: inside one power of two both faces round alike, and only a walk
+across one leaves the width a step off, which a rebuild from the middle then shows. Beside a wall as tall as the eye the walk in
+suffocates: it may well be what #68's report was.
+**Fixed in Old Faithful** (2026-11-06, `movement.boxAgainstWalls`): at the end of `Entity.setPosition`, a side face within 1e-7 past a
+sixteenth (where every block's sides lie) goes back onto it. The worst rounding measured in that standalone copy was 3.7e-9, at
+x 8.4 million.
+Where the line is, and why: in `setPosition`, for every entity, not only at a load. A multiplayer login or correction goes through
+`setPositionAndAngles` to the same rebuild, so a load-only fix leaves a server's players with the bug; a mob read from its chunk
+has it too (10 of 1000 zombies on the real server, 0 fixed). Beds, portals and dismounts rebuild centred, away from walls, and
+this is nothing to them. `Box` stays strict, so no collision anywhere is looser. No world read, so it's safe during a chunk's
+load. A box only narrows, by at most 1e-7, and positions saved or sent don't change. Sides only: a floor's few bits come back
+exact (1.79 million rebuilds with a camera offset, 0 below the floor). A wall that's another entity's box isn't covered.
+| Scene (ledge hunt, Still Faithful) | Beta (switch off; same on plain) | Fixed |
+|---|---|---|
+| Q, write and read at a ledge past a power of two | 1632 of 20000 walk in | 0 |
+| U, the same at a 4-high wall | 1982 of 20000, 5361 ticks of damage | 0, none |
+| P, real rejoin at such a ledge | 7 of 100, no damage | 0 |
+| T, real rejoin at such a wall | 10 of 100, 60 ticks of damage | 0, none |
+| V, real rejoin at a 4-high wall anywhere | 0 of 60 | 0 |
+| S, write and read at arbitrary scenes | 1132 of 67624 touching | 0 |
+Digests: S differs in about a third of its cells, by design, since each holds 100 reads. Elsewhere only a placing can show it: 2 of 60
+cells in F, a scene's start landing 7e-8 past a sixteenth by chance (replayed). A and W identical. A multiplayer login beside a
+wall wasn't run; it's the same rebuild.
 
 ## The piston hunt
 

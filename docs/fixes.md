@@ -70,7 +70,8 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 64 | `spawning.besideWater` | world | The fluid-in-a-box test reads only the box's own blocks west and north of 0, 0 too |
 | 66 | `spawning.squidInWater` | world | A water creature's place must be water, not any fluid |
 | 67 | `blocks.fallingSandKeepsKind` | world | Falling sand clears a block of its kind on its first tick only; a server sends kept blocks again |
-| 68 | `world.rejoinTerrain` | client (single player) | Opening a saved world, the terrain is prepared around where the player was saved, not the world spawn |
+| 74 | `movement.stepUnderRoof` | wherever the entity moves: a player's client; mobs in the world | A step-up comes down as far as it rose, not always the whole step height; the same number with nothing overhead |
+| 75 | `movement.boxAgainstWalls` | both; every entity | `setPosition` moves a side face that lands just past a sixteenth (within 1e-7) back onto it; the position itself is left alone |
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 
@@ -98,6 +99,11 @@ falling block still clears it in that client's world. #57 is the client's alone:
 player, and a server repeating the move with beta's two trims finds the shorter step supported. #58, #60 and #61 are
 server-only and change nothing a vanilla client can't take (a velocity packet, no damage, the same drowning height the
 client already uses).
+#74 and #75 need nothing from the other side and send nothing different. A server's player has no step height, so #74 on a
+client changes only the client's own moves, which stay within what a vanilla server accepts, and on a server only its mobs. #75
+changes a box, never a position, and rebuilds are each side's own: a fixed client is safe on a vanilla server's login and
+corrections, and a vanilla client on a fixed server is as before. Why #75 sits in `setPosition` for every entity rather than
+only at a load: `docs/bugs.md` #75.
 #42 changes the save format only by adding `TileTicks` to chunks, which vanilla ignores: a world played with the fix
 opens in vanilla (its pending ticks are lost there, as always), and a vanilla world opens with the fix (nothing to
 restore). The multiplayer client's world keeps vanilla's queue; only the world that saves (the server, single player)
@@ -119,7 +125,8 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   red wool and a mob (#46), a minecart rolling at a dropped item (#31), a fish reeled in level with the feet (#34),
   and last the player in a boat and out of it, the boat nudged to a height where beta's rounding drops a rider (#27;
   on vanilla the player fell 3.5 blocks). Also the player sneaking diagonally off an inside corner, through its own
-  move (#57; on vanilla it steps over the gap). Each comes out the other way on vanilla (the new ones checked 2026-11-02
+  move (#57; on vanilla it steps over the gap), a step across a trench under a low roof (#74) and a box rebuilt a rounding step
+  past a wall (#75). Each comes out the other way on vanilla (the new ones checked 2026-11-02
   with their mixins off). About 25 s; output in `local/run/client-startup-fixed/`.
 - `./gw :oldfaithful-fixes:serverTicksTest` (#42): the real dedicated server with this mod and a test-only scenario
   mod (`src/scenario`). A repeater clock is built 400 blocks east of the spawn once the new world's generated liquid
@@ -136,7 +143,9 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   scenario mod's `WorldFixes`: a lone door top on a chest beside a new redstone torch (#55), pigs dropped from 12 to 31
   blocks into one-deep water (#56), a pig turning its head to something 45 degrees up (#59), pigs on grass with water
   beside their west or north side either side of 0, 0 (#64), the squid's place test on lava and water (#66), a falling
-  sand some ticks into its fall in a cell of sand (#67).
+  sand some ticks into its fall in a cell of sand (#67), and on a zombie through its own move: 400 walks across a trench
+  under a roof and in the open (#74: 0 sank with the fix, 64 without; the open air identical), 1000 walks to a wall past x 1024,
+  then written and read (#75: 0 left inside, 10 without).
 - `./gw :harness:fixesMultiplayerTest` (2026-11-02): the multiplayer fixes on the server package, in all four mixes:
   a server with and without this mod, each joined by the real client (hidden on a private desktop, as the start-up
   test) with and without it. The client (`MultiplayerCheck`) joins a scene the self-test mod builds it high above the
@@ -168,11 +177,13 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   `-Pseams.fixes="render.seams=false"` and `-Pseams.polish="sky.dusk=beta"` write switches. Results are appended to
   `local/run/seam-results/seams.txt`, with each view's worst frame (holes magenta) and first frame (for comparing runs
   pixel by pixel). About 6 minutes.
+- `:harness:ledgeHunt` (`docs/building.md`) is the measurement behind #74 and #75, with each switch on and off (`docs/bugs.md`).
 - Not checked by a test: #7, #39, #38, #30 and #34's hotbar, riding poses and death screen, and how #59's heads look
   (what's seen and heard: the user's check), #67's resending of kept blocks to a vanilla client (reasoned: a vanilla
   client's copy of the falling block clears them; not played), #40's mouse (the logic is the unit test), #26 (needs a sleeping player and a monster's path; reasoned in the mixin's comment), #8 on a real
   server (the same change as single player's, in the server's method; audited), #9 and #10 between a real client and
-  server (the marker and the gating are audited and reasoned, not played).
+  server (the marker and the gating are audited and reasoned, not played), #75 on a multiplayer login beside a wall (the same
+  rebuild; `fixesMultiplayerTest` shows the mixes still work, not that scene).
 
 Old Faithful's options and comforts that aren't fixes (the FOV slider, GUI scale, Quit Game, the window) are in their
 own mod, `oldfaithful-options` (`docs/options.md`).

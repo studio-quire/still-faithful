@@ -15,6 +15,7 @@
     "furnace.FurnaceBlockEntityMixin",
     "landings.EntityMixin",
     "liquids.FlowingLiquidBlockMixin",
+    "lowroof.EntityMixin",
     "minecarts.MinecartEntityMixin",
     "nod.LivingEntityMixin",
     "pick.BlockAccessor",
@@ -28,7 +29,8 @@
     "ticks.AlphaChunkStorageMixin",
     "ticks.ChunkMixin",
     "ticks.WorldMixin",
-    "tools.ToolItemMixin"
+    "tools.ToolItemMixin",
+    "wallrounding.EntityMixin"
   ],
   "client": [
     "cursor.HandledScreenMixin",
@@ -46,7 +48,6 @@
     "names.DyeItemMixin",
     "names.SlabBlockItemMixin",
     "pick.MinecraftMixin",
-    "rejoin.MinecraftMixin",
     "seams.ChunkBuilderMixin",
     "seams.ChunkRendererMixin",
     "seams.WorldRendererMixin",

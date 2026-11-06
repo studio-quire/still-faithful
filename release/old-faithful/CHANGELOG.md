@@ -5,6 +5,28 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.1 (2026-11-06)
+
+Released with Still Faithful 0.2.2, which carries it; still on Pure Faithful 0.1.3. Two new fixes, each on its own
+switch, under Players and Vehicles:
+
+- With a block low overhead (a roof 2 above the floor, say), a step could sink you about a third of a block into the
+  floor or the block ahead, and you were shoved back out. A step now comes down only as far as it went up. Mobs sank
+  the same way and no longer do (Steps Under Roofs).
+- Rejoining a world right against a wall, a rounding slip could put you a hair inside it. You then walked into the wall,
+  suffocating if it reached your eyes, until you were pushed out.
+  The sides of your box now stop at the wall (Rejoining by Walls).
+
+A correction: Old Faithful 0.1.3 said that rejoining a world far from its spawn, the walls around you were solid from
+the first moment, and its README said you couldn't walk into one and suffocate. That was wrong. Testing since shows
+the game doesn't move you until the land near you has loaded, at any distance from spawn, so that change didn't
+address the problem it was made for. What was reported then may well have been the rounding slip fixed here, though
+we can't be certain. In our tests the change made no difference a player would notice, so its switch (Rejoining Worlds,
+`world.rejoinTerrain`) is gone; a config file that still names it loads as before.
+
+We can't show that these two fixes cover every time you've been moved into a block and pushed out. If it happens
+again, please tell us in an issue where you were and whether anything was overhead.
+
 ## 0.2.0 (2026-11-05)
 
 Released with Still Faithful 0.2.0, which carries it; still on Pure Faithful 0.1.3.
@@ -34,6 +56,8 @@ Released with Still Faithful 0.1.1, which carries it; still on Pure Faithful 0.1
 
 - Rejoining a single-player world far from its spawn, the walls around you are solid from the first moment (beta
   loaded the land around the spawn first, so for a moment you could walk into a wall and suffocate).
+
+  Corrected in 0.2.1: this was wrong, and the change didn't address that problem.
 
 ## 0.1.2 (2026-11-03)
 

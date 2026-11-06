@@ -30,7 +30,10 @@
     "GameRendererScreenCaptureMixin",
     "GameRendererSceneMixin",
     "GameRendererSeamMixin",
-    "TextRendererRecordMixin"
+    "TextRendererRecordMixin",
+    "LedgeHuntPlayerMixin",
+    "LedgeHuntEntityMixin",
+    "LedgeHuntEntityAccessor"
   ],
   "server": [
     "PlayerManagerRideMixin",

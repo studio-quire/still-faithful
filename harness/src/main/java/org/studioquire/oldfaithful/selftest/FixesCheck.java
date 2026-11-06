@@ -71,6 +71,8 @@ final class FixesCheck {
 		}
 
 		sneakOffCorner(mc, world);
+		stepUnderRoof(mc, world);
+		boxAgainstWall(mc, world);
 
 		// #19: water right above a torch standing on stone, ticked once now: in this new world the scheduled tick would
 		// wait behind the generator's backlog (some 9,000 liquid ticks, past the 1,000 a tick the world works through).
@@ -300,6 +302,63 @@ final class FixesCheck {
 		mc.player.velocityX = mc.player.velocityY = mc.player.velocityZ = 0.0;
 		results.check("fixes #57: sneaking diagonally off an inside corner keeps a block underfoot (stopped at " + at + ", feet at "
 				+ String.format("%.2f", feet - Y) + ")", held && Math.abs(feet - Y) < 0.01);
+	}
+
+	/**
+	 * #74: the player, walking level across a one-wide trench under a roof 2 above the floor, a step from the far rim with
+	 * onGround still true (as on the tick after leaving the near rim): the plain move falls and hits the rim, so the step is
+	 * tried. The roof clips its rise to 0.2. The way down must end level with the rim, not 0.3 inside it.
+	 */
+	private void stepUnderRoof(Minecraft mc, World world) {
+		int tx = bx - 40, cz = bz + 30, floor = Y + 10;
+		for (int x = tx - 3; x <= tx + 3; x++) {
+			for (int z = cz - 1; z <= cz + 1; z++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z, x == tx ? 0 : Block.STONE.id, 0);
+				world.setBlockWithoutNotifyingNeighbors(x, floor + 3, z, Block.STONE.id, 0);
+			}
+		}
+		double ox = mc.player.x, oy = mc.player.y, oz = mc.player.z;
+		boolean wasOnGround = mc.player.onGround;
+		float wasOffset = mc.player.cameraOffset;
+		mc.player.cameraOffset = 0.0F;
+		mc.player.setPosition(tx + 0.6, floor + 1 + (double) mc.player.standingEyeHeight, cz + 0.5);
+		mc.player.onGround = true;
+		mc.player.move(0.215, -0.0784, 0.0);
+		double feet = mc.player.boundingBox.minY - (floor + 1), past = mc.player.boundingBox.maxX - (tx + 1);
+		mc.player.setPosition(ox, oy, oz);
+		mc.player.cameraOffset = wasOffset;
+		mc.player.onGround = wasOnGround;
+		mc.player.velocityX = mc.player.velocityY = mc.player.velocityZ = 0.0;
+		results.check("fixes #74: a step under a low roof comes down level with the rim (feet " + String.format("%.3f", feet) + " from it, "
+				+ String.format("%.3f", past) + " over it)", feet == 0.0 && past > 0.0);
+	}
+
+	/**
+	 * #75: the player's box rebuilt from a position whose rounding lands its side a step past a wall it was touching, as a
+	 * load can leave it, then a step towards the wall. It must stay out.
+	 */
+	private void boxAgainstWall(Minecraft mc, World world) {
+		int wall = bx - 50, cz = bz + 30, floor = Y + 10;
+		for (int x = wall - 2; x <= wall; x++) {
+			for (int z = cz - 1; z <= cz + 1; z++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z, Block.STONE.id, 0);
+				for (int y = floor + 1; y <= floor + 3; y++) world.setBlockWithoutNotifyingNeighbors(x, y, z, x == wall ? Block.STONE.id : 0, 0);
+			}
+		}
+		double ox = mc.player.x, oy = mc.player.y, oz = mc.player.z;
+		boolean wasOnGround = mc.player.onGround;
+		float half = mc.player.width / 2.0F;
+		double x = wall - (double) half;
+		while (x + half <= wall) x = Math.nextUp(x);
+		mc.player.setPosition(x, floor + 1 + (double) mc.player.standingEyeHeight, cz + 0.5);
+		boolean out = world.getEntityCollisions(mc.player, mc.player.boundingBox).isEmpty();
+		mc.player.move(0.2, 0.0, 0.0);
+		double in = mc.player.boundingBox.maxX - wall;
+		mc.player.setPosition(ox, oy, oz);
+		mc.player.onGround = wasOnGround;
+		mc.player.velocityX = mc.player.velocityY = mc.player.velocityZ = 0.0;
+		results.check("fixes #75: a box rebuilt a rounding step past a wall stops at it (" + (out ? "outside" : "inside") + " after the rebuild, side "
+				+ in + " past it after a step)", out && in <= 0.0);
 	}
 
 	private static Slot slot(ScreenHandler screen, int index) {

@@ -464,6 +464,47 @@ if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
+// The ledge hunt (LedgeHunt): the real client's physics on scripted input, looking for the player moving into a block
+// and being pushed out. -Pledge.mods=plain|pure|old|still (default still), -Pledge.runs="A=30000,W=400,S=20000,R=60" or
+// "N=<seconds>" (real terrain, real time, a world of its own), -Pledge.only=F:cell:run replays one run into trace.txt,
+// -Pledge.seed, -Pledge.view (render distance for N). Results in local/run/ledge-hunt-<label>/hunt/.
+if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
+    tasks.register('ledgeHunt', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Hunts the player sliding into blocks on the real client physics, unseen.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        def which = providers.gradleProperty('ledge.mods').getOrElse('still')
+        if (which == 'plain') mods.from(benchMods)
+        else mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod)
+        if (which == 'old' || which == 'still') mods.from(fixedMods)
+        if (which == 'still') mods.from(stillMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def label = providers.gradleProperty('ledge.label').getOrElse(which)
+        def runDirectory = rootProject.layout.projectDirectory.dir("local/run/ledge-hunt-${label}")
+        runDir = runDirectory
+        oldFaithful = (which == 'old' || which == 'still') && findProject(':oldfaithful-options') != null
+        windowRuns = false
+        def ledgeFixes = providers.gradleProperty('ledge.fixes').getOrElse('')
+        if (!ledgeFixes.isEmpty()) configs.put('oldfaithful-fixes.properties', ledgeFixes.split(' ').join('\n') + '\n')
+        def seconds = providers.gradleProperty('ledge.seconds').getOrElse('3000').toInteger()
+        timeoutSeconds = seconds
+        extraJvmArgs = ['-Xmx6g', "-Doldfaithful.selftest.stallMs=${(seconds - 30) * 1000}".toString(),
+                        "-Doldfaithful.selftest.ledge=${runDirectory.dir('hunt').asFile.absolutePath}".toString(),
+                        "-Doldfaithful.selftest.ledgeRuns=${providers.gradleProperty('ledge.runs').getOrElse('A=20000')}".toString(),
+                        "-Doldfaithful.selftest.ledgeSeed=${providers.gradleProperty('ledge.seed').getOrElse('1903')}".toString(),
+                        "-Doldfaithful.selftest.ledgeBases=${providers.gradleProperty('ledge.bases').getOrElse('64')}".toString(),
+                        "-Doldfaithful.selftest.ledgeOpen=${providers.gradleProperty('ledge.open').isPresent()}".toString(),
+                        "-Doldfaithful.selftest.ledgeRunDigests=${providers.gradleProperty('ledge.runDigests').isPresent()}".toString(),
+                        "-Doldfaithful.selftest.ledgeView=${providers.gradleProperty('ledge.view').getOrElse('-1')}".toString()]
+        if (providers.gradleProperty('ledge.only').isPresent()) extraJvmArgs.add("-Doldfaithful.selftest.ledgeOnly=${providers.gradleProperty('ledge.only').get()}".toString())
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
 // Old Faithful's multiplayer fixes in every mix of sides (docs/fixes.md): the server package with and without the fix
 // mod, each joined by the real client (hidden) with and without it, and raw-packet clients for the server-side ones.
 if (findProject(':oldfaithful-fixes') != null) {
@@ -872,7 +913,7 @@ if (findProject(':library:dungeon-check') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// The library's packs and server packages as they ship (LibraryPackTestTask): nothing ticked, no list, everything ticked, and each stage of a server's mods.
+// The library's packs and server packages as they ship (LibraryPackTestTask): as shipped with everything on, nothing ticked, no list, and each stage of a server's mods, as it comes among them.
 ['Old': [pack: 'releasePackLibraryOld', server: 'releaseServerLibraryOld', args: []],
  'Still': [pack: 'releasePackLibraryStill', server: 'releaseServerLibraryStill', args: ["-Doldfaithful.selftest.edition=Still Faithful:stillfaithful-polish".toString()]]].each { label, p ->
     if (!rootProject.tasks.names.contains(p.pack)) return
@@ -898,7 +939,7 @@ if (findProject(':library:dungeon-check') != null) {
     def libraries = unpacked.map { fileTree(it.destinationDir) { include 'libraries/*.jar'; exclude 'libraries/*natives*.jar', 'libraries/intermediary-*.jar' } }
     tasks.register("libraryPackTest${label}", oldfaithful.gradle.LibraryPackTestTask) {
         group = 'verification'
-        description = "The ${label} Faithful library pack and server package from a release: nothing ticked, everything ticked, and a server at each stage."
+        description = "The ${label} Faithful library pack and server package from a release: as shipped, nothing ticked, and a server at each stage."
         dependsOn packNatives, unpackedServer
         it.label = label
         instance = layout.dir(unpacked.map { it.destinationDir })

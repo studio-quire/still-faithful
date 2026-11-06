@@ -8,10 +8,12 @@ import net.minecraft.block.Block;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.world.ServerWorld;
 import org.studioquire.oldfaithful.fixes.scenario.mixin.NaturalSpawnerInvoker;
 
@@ -46,6 +48,9 @@ public final class WorldFixes {
 			squid(world, ox + 8, oz);
 			falls(world, ox + 16, oz + 16);
 			fallingSand(world, ox, oz + 8);
+			stepsUnderRoof(world, ox + 70, oz + 40, true);
+			stepsUnderRoof(world, ox + 70, oz + 50, false);
+			againstWall(world);
 			ticks = 0;
 			return;
 		}
@@ -171,6 +176,69 @@ public final class WorldFixes {
 		FallingBlockEntity sand = new FallingBlockEntity(world, x + 0.5, y + 0.5, z + 0.5, Block.SAND.id);
 		sand.timeFalling = 5;
 		world.spawnEntity(sand);
+	}
+
+	/**
+	 * #74, a mob: a zombie made to walk across a one-wide trench at walking speed through its own move, from 400 starts, with a
+	 * roof 2 above the floor or none. Each walk counts as sunk if the box ever goes into a block.
+	 */
+	private static void stepsUnderRoof(ServerWorld world, int tx, int z0, boolean roof) {
+		int floor = 100;
+		for (int x = tx - 8; x <= tx + 8; x++) {
+			for (int z = z0 - 2; z <= z0 + 2; z++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor - 1, z, Block.STONE.id, 0);
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z, x == tx ? 0 : Block.STONE.id, 0);
+				if (roof) world.setBlockWithoutNotifyingNeighbors(x, floor + 3, z, Block.STONE.id, 0);
+			}
+		}
+		int sunk = 0, crossed = 0, walks = 400;
+		for (int i = 0; i < walks; i++) {
+			ZombieEntity zombie = new ZombieEntity(world);
+			zombie.setPositionAndAnglesKeepPrevAngles(tx - 3.0 + i * 0.0025, floor + 1, z0 + 0.5, 0, 0);
+			zombie.onGround = true;
+			double down = -0.0784;
+			boolean in = false;
+			for (int t = 0; t < 40 && !in; t++) {
+				zombie.move(0.2159, down, 0.0);
+				down = zombie.onGround ? -0.0784 : (down - 0.08) * 0.98;
+				in = !world.getEntityCollisions(zombie, zombie.boundingBox.contract(1.0E-6, 1.0E-6, 1.0E-6)).isEmpty();
+			}
+			if (in) sunk++;
+			if (zombie.x > tx + 1.5 && zombie.boundingBox.minY == floor + 1) crossed++;
+		}
+		say("#74 zombie across a trench " + (roof ? "under a roof" : "in the open") + ": " + sunk + " of " + walks + " sank, " + crossed + " crossed");
+	}
+
+	/**
+	 * #75, a mob: a zombie walked across x 1024 to a wall a block past it until touching, written and read as a chunk's load
+	 * does, from 1000 starts. Counts those left inside the wall, and how far the next step then takes the deepest of them.
+	 */
+	private static void againstWall(ServerWorld world) {
+		int wall = 1025, z0 = 40, floor = 100;
+		load(world, wall - 16, z0 - 16, wall + 16, z0 + 16);
+		for (int x = wall - 8; x <= wall; x++) {
+			for (int z = z0 - 6; z <= z0 + 6; z++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z, Block.STONE.id, 0);
+				for (int y = floor + 1; y <= floor + 3; y++) world.setBlockWithoutNotifyingNeighbors(x, y, z, x == wall ? Block.STONE.id : 0, 0);
+			}
+		}
+		java.util.Random random = new java.util.Random(75);
+		int inside = 0, walks = 1000;
+		double deepest = 0.0;
+		for (int i = 0; i < walks; i++) {
+			ZombieEntity zombie = new ZombieEntity(world);
+			zombie.setPositionAndAnglesKeepPrevAngles(wall - 4.0 - random.nextDouble(), floor + 1, z0 - 4.0 + random.nextDouble() * 8.0, 0, 0);
+			zombie.onGround = true;
+			for (int t = 0; t < 40 && !zombie.horizontalCollision; t++) zombie.move(0.1 + random.nextDouble() * 0.15, -0.0784, 0.0);
+			NbtCompound nbt = new NbtCompound();
+			zombie.write(nbt);
+			zombie.read(nbt);
+			if (world.getEntityCollisions(zombie, zombie.boundingBox).isEmpty()) continue;
+			inside++;
+			zombie.move(0.2, -0.0784, 0.0);
+			deepest = Math.max(deepest, zombie.boundingBox.maxX - wall);
+		}
+		say("#75 zombie read beside a wall: " + inside + " of " + walks + " inside it, the next step " + String.format(Locale.ROOT, "%.3f", deepest) + " in");
 	}
 
 	private static void say(String s) {

@@ -59,8 +59,10 @@ public final class FixesSettings implements SettingsProvider {
 			{"spawning.besideWater", "mobs", WORLD, "Spawning by Water",
 					"West and north of 0, 0, mobs didn't spawn beside water or lava on their west or north side."},
 			{"spawning.squidInWater", "mobs", WORLD, "Squid in Lava", "Squid could spawn in lava, and burn."},
-			{"world.rejoinTerrain", "players", CLIENT, "Rejoining Worlds",
-					"Rejoining far from spawn, the walls around you weren't solid for a moment: you could walk in and suffocate."},
+			{"movement.stepUnderRoof", "players", CLIENT, "Steps Under Roofs",
+					"A step with a block low overhead could sink you into the floor, and you were shoved back out."},
+			{"movement.boxAgainstWalls", "players", CLIENT, "Rejoining by Walls",
+					"Rejoining right against a wall, a rounding slip could let you walk into it and suffocate until pushed out."},
 
 			{"redstone.repeaterUpdates", "redstone", WORLD, "Repeaters",
 					"Doors, note blocks, dispensers, TNT and rails ignored a repeater beside them. Beta keeps circuits built on that."},

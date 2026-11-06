@@ -156,9 +156,6 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"blocks.fallingSandKeepsKind", "fallingsand",
 					"# #67: falling sand or gravel deleted any block of its own kind it passed into (pushed by a piston into a\n"
 					+ "# column, or sand placed in its path).\n"},
-			{"world.rejoinTerrain", "rejoin",
-					"# #68: rejoining a single-player world far from its spawn, the terrain around you wasn't loaded yet, so\n"
-					+ "# for a moment the walls weren't solid: you could walk into one and suffocate until pushed out.\n"},
 			{"render.seams", "seams",
 					"# #70: dots of sky flickered along the edges of blocks, every 16 blocks (where the chunks the world is drawn\n"
 					+ "# in meet): each chunk was placed with a rounding error bigger than the overlap meant to hide the join.\n"
@@ -167,6 +164,14 @@ public final class FixesConfig implements IMixinConfigPlugin {
 					"# #72: dots of sky flickered along some edges of grass, stone, dirt, planks and other blocks: a face's\n"
 					+ "# texture started exactly on the edge of its picture in the texture sheet and could read the transparent\n"
 					+ "# picture beside it. With this, it starts a thousandth of a texel inside.\n"},
+			{"movement.stepUnderRoof", "lowroof",
+					"# #74: stepping with a block low overhead (a roof 2 above the floor, say) could sink you into the floor or the\n"
+					+ "# block ahead, and you were shoved back out with a lurch; mobs sank too. With this, a step comes down only as\n"
+					+ "# far as it went up.\n"},
+			{"movement.boxAgainstWalls", "wallrounding",
+					"# #75: rejoining a world (or a server sending your position) right against a wall, a rounding slip could put you\n"
+					+ "# a hair inside it, and you walked in and suffocated until pushed out; a mob read from its chunk could do the\n"
+					+ "# same. With this, the sides of your box stop at the wall.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

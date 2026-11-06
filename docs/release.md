@@ -34,7 +34,7 @@ dusk violet seal; its config file and log prefix say `stillfaithful-polish`. Its
 editions' snapshots with the folder: the pack `StillFaithful-<v>.zip`, the server package `StillFaithful-server-<v>.zip`,
 the repository `studio-quire/still-faithful`, the page `studioquire.org/still-faithful/`.
 
-The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `better-dungeons`), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the packs `OldFaithful-Library-<v>.zip` and `StillFaithful-Library-<v>.zip`, the server packages `...-Library-server-<v>.zip`, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. A library pack's icon is its edition's seal, unchanged, with a thin ring of its own colour around it (`tools/library_icons.py`, `final/faithfullibrary-*`), so it shows as the same family and as the version with mods.
+The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `better-dungeons`), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the packs `OldFaithful-Library-<v>.zip` and `StillFaithful-Library-<v>.zip`, the server packages `...-Library-server-<v>.zip`, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. A library pack's icon is its edition's own seal (the user's call, 2026-11-06); the glow around them is the site's card's and link preview's only (`tools/library_card.py`).
 
 ## Building one
 
@@ -77,8 +77,8 @@ The Faithful Library's:
 
 | File | What it is |
 |---|---|
-| `OldFaithful-Library-<v>.zip`, `StillFaithful-Library-<v>.zip` | The packs: the edition's pack with Faithful Core and every mod in `.minecraft/mods-library/` under version-less names, an empty `selection.txt`, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
-| `OldFaithful-Library-server-<v>.zip`, `StillFaithful-Library-server-<v>.zip` | The edition's server package with the core, settings and the server-side mods waiting in `mods-library/` under versioned names, for an admin to move into `mods/`; Plain F3 and No Toasts are client-only, so not there |
+| `OldFaithful-Library-<v>.zip`, `StillFaithful-Library-<v>.zip` | The packs: the edition's pack with Faithful Core and every mod in `.minecraft/mods-library/` under version-less names, a `selection.txt` with all of them on, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
+| `OldFaithful-Library-server-<v>.zip`, `StillFaithful-Library-server-<v>.zip` | The edition's server package with the core, settings and the server-side mods on in `mods/` under versioned names, as in the packs; Plain F3 and No Toasts are client-only, so not there |
 | `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,better-dungeons,water-bottles,plain-f3,no-toasts}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release |
 | `SHA256SUMS.txt` | For the release notes |
 

@@ -30,11 +30,11 @@ import org.gradle.api.tasks.TaskAction;
 
 /**
  * A release's library pack and server package, unpacked as they ship (gradle/library.gradle), each launched with the arguments the pack's own component
- * gives. With nothing ticked: the edition's whole start-up test, none of the library's code present, the login a vanilla client's, the Mods menu offering
- * every mod, and ticks written for the next launch. With no list at all, the same. With everything ticked: all of it loaded, in a new world. Then the server package
- * as it comes (a raw vanilla client hears nothing new, the pack's plain client plays), with the server-side mods but Water Bottles (still any client),
- * with all of them (vanilla refused, a plain pack refused, a pack with a mod on told what's missing and offered the server's set, a pack with everything
- * admitted), and with Water Bottles taken out again (the server refuses to start, then goes on when told). Prism itself isn't run here.
+ * gives. As shipped: every mod on the list, the edition's whole start-up test with all of it loaded, in a new world. With nothing ticked: the same test, none of the
+ * library's code present, the login a vanilla client's, the Mods menu offering every mod, and ticks written for the next launch. With no list at all, the same. Then the
+ * server package with every library jar taken out (the plain edition's: a raw vanilla client hears nothing new, the pack plays there both as shipped and with nothing on), with
+ * the server-side mods but Water Bottles (still any client). Then as it comes, everything on (vanilla refused, a plain pack refused, a pack with a mod on told what's missing and
+ * offered the server's set, the pack as shipped admitted), and with Water Bottles taken out again (the server refuses to start, then goes on when told). Prism itself isn't run here.
  */
 public abstract class LibraryPackTestTask extends ClientStartupTask {
 	/** The pack, unzipped: {@code .minecraft/}, {@code patches/} and the rest. */
@@ -78,10 +78,22 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		packArgs = jvmArgs(instance);
 		expect("the pack's component launches with the list: " + packArgs, packArgs.contains("-Dfabric.addMods=@" + LIST));
 
+		Path shipped = game(run, "as-shipped", instance);
+		expect("the pack ships every mod on", Files.readString(shipped.resolve(LIST)).equals(allOn()));
+		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
+		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
+		lines.addAll(played);
+		for (String id : List.of("faithful-core", "better-dungeons", "no-toasts", "plain-f3", "water-bottles", "world-rules")) {
+			expect("as shipped: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
+		}
+		expect("the new world's file has seen Water Bottles", Files.isRegularFile(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties"))
+				&& Files.readString(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties")).contains("mod.water-bottles="));
+		expect("a client with the core says so in its login", loginSeed(run, "login-all", instance, allOn()) == RawClient.CORE_MAGIC);
+
 		Path plain = game(run, "nothing-ticked", instance);
-		expect("the pack ships an empty list", Files.size(plain.resolve(LIST)) == 0);
-		lines.add("--- as shipped, nothing ticked: the edition's whole start-up test");
-		List<String> played = launch(plain, false, args("-Doldfaithful.selftest.libraryPack=off", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
+		Files.writeString(plain.resolve(LIST), "");
+		lines.add("--- nothing ticked: the edition's whole start-up test");
+		played = launch(plain, false, args("-Doldfaithful.selftest.libraryPack=off", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
 		expect("nothing ticked: the loader lists no library mod", loadedNothing(played));
 		expect("the ticks were written for the next launch", Files.readAllLines(plain.resolve(LIST)).size() == 6);
@@ -94,37 +106,28 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.addAll(played);
 		expect("no list: the loader lists no library mod", loadedNothing(played));
 
-		Path all = game(run, "everything-ticked", instance);
-		Files.copy(plain.resolve(LIST), all.resolve(LIST), StandardCopyOption.REPLACE_EXISTING);
-		lines.add("--- everything ticked, a new world");
-		played = launch(all, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.settingsOnly=true", "-Doldfaithful.selftest.stallMs=280000"), failures);
-		lines.addAll(played);
-		for (String id : List.of("faithful-core", "better-dungeons", "no-toasts", "plain-f3", "water-bottles", "world-rules")) {
-			expect("everything ticked: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
-		}
-		expect("the new world's file has seen Water Bottles", Files.isRegularFile(all.resolve("saves/oldfaithful-startup/faithful-world.properties"))
-				&& Files.readString(all.resolve("saves/oldfaithful-startup/faithful-world.properties")).contains("mod.water-bottles="));
-		expect("a client with the core says so in its login", loginSeed(run, "login-all", instance, Files.readString(plain.resolve(LIST))) == RawClient.CORE_MAGIC);
-
 		server(run, instance);
 		report("Library pack test (" + getLabel().get() + ")", lines, failures);
 	}
 
 	private void server(Path run, Path instance) throws Exception {
-		Path dir = run.resolve("server");
-		copyTree(getServerPackage().get().getAsFile().toPath(), dir);
-		Files.copy(getServerJar().get().getAsFile().toPath(), dir.resolve("minecraft_server.jar"));
 		int port = freePort();
-		Files.writeString(dir.resolve("server.properties"), String.join("\n", "level-name=world", "online-mode=false", "server-ip=127.0.0.1",
-				"server-port=" + port, "view-distance=3", "max-players=20", "spawn-monsters=false", "spawn-animals=true", "pvp=true", "allow-flight=true", ""));
-		Path mods = dir.resolve("mods"), library = dir.resolve("mods-library");
-		expect("the server package has the core, the settings and three mods waiting",
-				nameOf(library, "faithful-core") != null && nameOf(library, "oldfaithful-settings") != null && nameOf(library, "water-bottles") != null && SERVER_MODS.stream().allMatch(m -> nameOf(library, m) != null));
-		expect("and no client-only mod", nameOf(library, "plain-f3") == null && nameOf(library, "no-toasts") == null);
+		Path dir = serverFolder(run, "server", port);
+		Path mods = dir.resolve("mods");
+		expect("the server package has the core, the settings and three mods on",
+				nameOf(mods, "faithful-core") != null && nameOf(mods, "oldfaithful-settings") != null && nameOf(mods, "water-bottles") != null && SERVER_MODS.stream().allMatch(m -> nameOf(mods, m) != null));
+		expect("and no client-only mod", nameOf(mods, "plain-f3") == null && nameOf(mods, "no-toasts") == null);
 
-		start(dir, "as it comes");
+		// Its own folder, so these worlds never see Water Bottles.
+		Path plainDir = serverFolder(run, "server-plain", port);
+		Path plainMods = plainDir.resolve("mods"), held = plainDir.resolve("held");
+		Files.createDirectories(held);
+		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "world-rules", "better-dungeons")) {
+			Files.move(plainMods.resolve(nameOf(plainMods, mod)), held.resolve(nameOf(plainMods, mod)));
+		}
+		start(plainDir, "every library jar out");
 		try {
-			expect("as it comes: the loader lists no library mod", loadedNothing(server.lines()));
+			expect("every library jar out: the loader lists no library mod", loadedNothing(server.lines()));
 			Thread.sleep(500);
 			try (RawClient vanilla = new RawClient(port, "PlainPlayer")) {
 				expect("a vanilla client logs in", vanilla.login(60) == null);
@@ -133,14 +136,16 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			}
 			Thread.sleep(5500);
 			expect("the plain pack plays there", tryServer(run, "plain-on-plain", instance, "", port).startsWith("admitted"));
+			Thread.sleep(5500);
+			expect("the pack as shipped plays there", tryServer(run, "shipped-on-plain", instance, allOn(), port).startsWith("admitted"));
 		} finally {
-			stop("as it comes");
+			stop("every library jar out");
 		}
 
-		Files.move(library.resolve(nameOf(library, "faithful-core")), mods.resolve(nameOf(library, "faithful-core")));
-		Files.move(library.resolve(nameOf(library, "oldfaithful-settings")), mods.resolve(nameOf(library, "oldfaithful-settings")));
-		for (String mod : SERVER_MODS) Files.move(library.resolve(nameOf(library, mod)), mods.resolve(nameOf(library, mod)));
-		start(dir, "all but Water Bottles");
+		Files.move(held.resolve(nameOf(held, "faithful-core")), plainMods.resolve(nameOf(held, "faithful-core")));
+		Files.move(held.resolve(nameOf(held, "oldfaithful-settings")), plainMods.resolve(nameOf(held, "oldfaithful-settings")));
+		for (String mod : SERVER_MODS) Files.move(held.resolve(nameOf(held, mod)), plainMods.resolve(nameOf(held, mod)));
+		start(plainDir, "all but Water Bottles");
 		try {
 			try (RawClient vanilla = new RawClient(port, "PlainPlayer")) {
 				expect("World Rules and Better Dungeons on: a vanilla client logs in", vanilla.login(60) == null);
@@ -153,9 +158,8 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			stop("all but Water Bottles");
 		}
 
-		Path bottles = mods.resolve(nameOf(library, "water-bottles"));
-		Files.move(library.resolve(bottles.getFileName()), bottles);
-		start(dir, "all");
+		Path bottles = mods.resolve(nameOf(mods, "water-bottles"));
+		start(dir, "as it comes");
 		try {
 			try (RawClient vanilla = new RawClient(port, "PlainPlayer")) {
 				String reason = vanilla.login(60);
@@ -176,9 +180,9 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			expect("Use This Server's Set says to restart (" + set + ") and turns it on, keeping Plain F3: " + list.replace('\n', ' '),
 					set.contains("restart") && list.contains("water-bottles") && list.contains("plain-f3") && list.contains("faithful-core"));
 			Thread.sleep(5500);
-			expect("a pack with everything on plays there", tryServer(run, "all-on-all", instance, allOn(), port).startsWith("admitted"));
+			expect("the pack as shipped plays there", tryServer(run, "all-on-all", instance, allOn(), port).startsWith("admitted"));
 		} finally {
-			stop("all");
+			stop("as it comes");
 		}
 
 		Files.delete(bottles);
@@ -205,7 +209,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		}
 		expect("and being told is used up", Files.readString(worldFile).contains("accept-missing-content=false"));
 		// Back in, and out again: asked again.
-		Files.copy(getServerPackage().get().getAsFile().toPath().resolve("mods-library").resolve(bottles.getFileName()), bottles);
+		Files.copy(getServerPackage().get().getAsFile().toPath().resolve("mods").resolve(bottles.getFileName()), bottles);
 		start(dir, "Water Bottles back");
 		stop("Water Bottles back");
 		Files.delete(bottles);
@@ -216,6 +220,16 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.add("--- server: Water Bottles taken out a second time");
 		lines.addAll(refused);
 		expect("taken out a second time: refused again", refused.stream().anyMatch(l -> l.contains("accept-missing-content=true")));
+	}
+
+	/** The server package unpacked, with the server jar and a test's properties. */
+	private Path serverFolder(Path run, String name, int port) throws IOException {
+		Path dir = run.resolve(name);
+		copyTree(getServerPackage().get().getAsFile().toPath(), dir);
+		Files.copy(getServerJar().get().getAsFile().toPath(), dir.resolve("minecraft_server.jar"));
+		Files.writeString(dir.resolve("server.properties"), String.join("\n", "level-name=world", "online-mode=false", "server-ip=127.0.0.1",
+				"server-port=" + port, "view-distance=3", "max-players=20", "spawn-monsters=false", "spawn-animals=true", "pvp=true", "allow-flight=true", ""));
+		return dir;
 	}
 
 	/** A game folder laid out as the pack lays out {@code .minecraft}, with the self-test beside the mods. */

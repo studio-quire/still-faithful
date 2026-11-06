@@ -42,6 +42,7 @@ ext.releaseEditions = [
 if (hasFixed) releaseEditions.fixed = [
     name: fixed_release_name, fileName: fixed_release_file_name, tagline: fixed_release_tagline, repo: fixed_release_repo,
     homepage: fixed_release_homepage, version: fixed_edition_version, icon: 'oldfaithful', licenceFolder: 'old-faithful',
+    openalSources: "sources/openal-soft-${openal_version}-sources.zip".toString(),
     mods: pureMods + fixedMods, serverMods: pureServerMods + fixedServerMods,
     serverModsText: 'hardening, saves, fixes and lighting',
     packReadme: 'release/old-faithful/pack-README.txt', serverReadme: 'release/old-faithful/server-README.txt',
@@ -91,7 +92,7 @@ ext.releaseTokens = { Map ed ->
         EDITION_VERSION      : ed.editionVersion ?: '',
         EDITION_LINE         : ed.editionLine ?: '',
         EDITION_REPO         : ed.editionRepo ?: '',
-        // Where the notices say OpenAL Soft's source is. The editions' own texts move to the zip's real name at their next releases.
+        // Where the notices say OpenAL Soft's source is: the zip's real name, but for Pure Faithful 0.1.3's text, until its next release.
         OPENAL_SOURCES       : ed.openalSources ?: 'sources/openal-soft/',
         PURE_NAME            : release_name,
         PURE_VERSION         : pureVersion,

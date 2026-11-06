@@ -14,13 +14,15 @@ by every desktop. A game that grabs the mouse there confines the user's cursor (
 probe from a private desktop changed the session's clip, checked the same day). Whether SetCursorPos also reaches the
 user's cursor from here is unchecked. So callers
 keep the game from grabbing (the harness's HandsOff), and this script guards the user's cursor while the command
-runs: if the clip rectangle changes, it stops the command at once, puts the clip back (exit code 125); if the cursor
+runs: if the clip rectangle changes, it stops the command at once and clears the clip (exit code 125); if the cursor
 moves three times within two seconds with no mouse input in the 100 ms before (a SetCursorPos while the user's
 mouse is still), it stops it too (exit code 126).
 A clip the user's own app sets isn't the command's: when the user's desktop's foreground window belongs to a process
 outside the command's job and the new clip lies within that window, the guard takes it as the user's, adopts it as the
 new baseline and carries on (before 2026-11-03 it stopped the test and "restored" the old clip, which released the
-user's game's mouse mid-play).
+user's game's mouse mid-play). A clip already there when the guard starts is someone else's too, as the command hasn't
+run, and its release is never a problem. The guard only ever clears a clip, never sets one: a clip it put back on a game
+that had just let go pinned the user's cursor (2026-11-06, to one pixel at the screen's centre).
 With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (the user's call, 2026-11-03: their own game grabbing the cursor
 stopped tests; the harness's HandsOff still keeps the test game from grabbing).
 A display mode change isn't the command's either: it moves the cursor and the screen's edges, so the guard stands
@@ -144,7 +146,7 @@ class CursorGuard:
         self.pos = self.read_pos()
         self.input = self.read_input()
         self.unexplained = []
-        self.clip_was_users = False
+        self.clip_was_users = self.clip is not None  # the command hasn't run yet
 
     @staticmethod
     def whole_screen():
@@ -171,12 +173,6 @@ class CursorGuard:
         info = LASTINPUTINFO()
         info.cbSize = ctypes.sizeof(info)
         return info.dwTime if user32.GetLastInputInfo(ctypes.byref(info)) else None
-
-    def restore_clip(self):
-        if self.clip is None:
-            user32.ClipCursor(None)
-        else:
-            user32.ClipCursor(ctypes.byref(RECT(*self.clip)))
 
     def users_own(self, clip):
         """True when the user's foreground window, outside the command's job, holds the new clip."""
@@ -216,7 +212,7 @@ class CursorGuard:
         clip = self.read_clip()
         if clip != self.clip:
             held = clip is not None and self.users_own(clip)
-            if held or self.users_own(None) and self.clip_was_users:
+            if held or clip is None and self.clip_was_users:
                 print(f"[private_desktop] cursor clip {self.clip} -> {clip}: the user's own app; carrying on",
                       file=sys.stderr, flush=True)
                 self.clip_was_users = held
@@ -284,9 +280,9 @@ def run(command, timeout):
             if trouble:
                 kernel32.TerminateJobObject(job, trouble[0])
                 if trouble[0] == 125:
-                    guard.restore_clip()
+                    user32.ClipCursor(None)
                 print(f"[private_desktop] CURSOR GUARD: {trouble[1]}; stopped the command"
-                      + ("; clip restored" if trouble[0] == 125 else ""), file=sys.stderr, flush=True)
+                      + ("; clip cleared" if trouble[0] == 125 else ""), file=sys.stderr, flush=True)
                 kernel32.WaitForSingleObject(pi.hProcess, 10000)
                 return trouble[0]
             if deadline is not None and time.monotonic() > deadline:

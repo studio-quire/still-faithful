@@ -21,7 +21,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
- * The world fixes from the piston hunt and the read after it (#55, #56, #59, #64, #66, #67) on the real b1.7.3
+ * The world fixes from the piston hunt and the read after it (#55, #56, #59, #64, #66, #67, and #74 and #75 on a mob) on the real b1.7.3
  * dedicated server: the scenario mod's scenes (WorldFixes) once with oldfaithful-fixes, then once without it, where each
  * must show beta's bug (so each check is known to see what it checks). Each in a new world of its own.
  * Run with {@code ./gw :oldfaithful-fixes:serverTicksTest} (with #42's test).
@@ -58,6 +58,15 @@ class ServerWorldFixesTest {
 
 		assertTrue(line(fixed, "#67").contains(": 2 sand left of 2"), "#67 with the fix: " + line(fixed, "#67"));
 		assertTrue(line(beta, "#67").contains(": 1 sand left of 2"), "#67 control: " + line(beta, "#67"));
+
+		String roofed = "#74 zombie across a trench under a roof:", open = "#74 zombie across a trench in the open:";
+		assertTrue(line(fixed, roofed).contains(": 0 of 400 sank"), "#74 with the fix: " + line(fixed, roofed));
+		assertTrue(!line(beta, roofed).contains(": 0 of 400 sank"), "#74 control: " + line(beta, roofed));
+		assertTrue(line(fixed, open).contains(": 0 of 400 sank"), "#74 in the open: " + line(fixed, open));
+		assertEquals(line(beta, open), line(fixed, open), "#74 changes nothing in the open");
+
+		assertTrue(line(fixed, "#75").contains(": 0 of 1000 inside"), "#75 with the fix: " + line(fixed, "#75"));
+		assertTrue(!line(beta, "#75").contains(": 0 of 1000 inside"), "#75 control: " + line(beta, "#75"));
 		try {
 			delete(run);
 		} catch (IOException e) {

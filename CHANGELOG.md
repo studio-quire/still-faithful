@@ -7,6 +7,29 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.2.2 (2026-11-06)
+
+On Old Faithful 0.2.1 and Pure Faithful 0.1.3. Still Faithful's own mod is unchanged.
+
+From Old Faithful 0.2.1, each on its own switch, under Fixes > Players and Vehicles:
+
+- With a block low overhead (a roof 2 above the floor, say), a step could sink you about a third of a block into the
+  floor or the block ahead, and you were shoved back out. A step now comes down only as far as it went up. Mobs sank
+  the same way and no longer do (Steps Under Roofs).
+- Rejoining a world right against a wall, a rounding slip could put you a hair inside it. You then walked into the wall,
+  suffocating if it reached your eyes, until you were pushed out.
+  The sides of your box now stop at the wall (Rejoining by Walls).
+
+A correction: Still Faithful 0.1.1 and Old Faithful 0.1.3 said that rejoining a world far from its spawn, the walls around you were solid from
+the first moment, and Old Faithful's README said you couldn't walk into one and suffocate. That was wrong. Testing since shows
+the game doesn't move you until the land near you has loaded, at any distance from spawn, so that change didn't
+address the problem it was made for. What was reported then may well have been the rounding slip fixed here, though
+we can't be certain. In our tests the change made no difference a player would notice, so its switch (Rejoining Worlds,
+`world.rejoinTerrain`) is gone; a config file that still names it loads as before.
+
+We can't show that these two fixes cover every time you've been moved into a block and pushed out. If it happens
+again, please tell us in an issue where you were and whether anything was overhead.
+
 ## 0.2.1 (2026-11-05)
 
 On Old Faithful 0.2.0 and Pure Faithful 0.1.3, both unchanged. Modern Skins now draws skins as a modern client draws
@@ -47,6 +70,8 @@ On Old Faithful 0.1.4 and Pure Faithful 0.1.3. Still Faithful's own mod is uncha
 
 On Old Faithful 0.1.3 (walls solid from the first moment when you rejoin a world far from its spawn) and Pure
 Faithful 0.1.3.
+
+Corrected in 0.2.2: that claim about the walls was wrong, and the change didn't address that problem.
 
 - Chests face you when you place them, and a second chest beside one joins its facing, on its own switch (Chest
   Facing, under Polish). Chests placed before keep beta's rule, which worked the front out from the blocks around.

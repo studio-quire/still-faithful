@@ -52,7 +52,7 @@ final class SettingsCheck {
 	private final Path config = FabricLoader.getInstance().getConfigDir();
 	private final Path list = FabricLoader.getInstance().getGameDir().resolve("mods-library").resolve("selection.txt");
 	private final boolean library = Files.isDirectory(list.getParent());
-	/** A release's library pack (`libraryPackTest`): {@code off}, as shipped with nothing on; {@code absent}, the same with no list at all; {@code on}, everything on. */
+	/** A release's library pack (`libraryPackTest`): {@code on}, everything on, as shipped; {@code off}, nothing on; {@code absent}, the same with no list at all. */
 	private static final String PACK = System.getProperty("oldfaithful.selftest.libraryPack");
 	private int startWidth, startHeight, startScale;
 	private final List<String> layoutProblems = new ArrayList<>();

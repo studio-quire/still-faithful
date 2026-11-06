@@ -73,6 +73,7 @@ public final class StartupCheck {
 	private static SettingsCheck settings;
 	private static MultiplayerCheck multiplayer;
 	private static SceneShot scene;
+	private static LedgeHunt hunt;
 	private static long startedAt;
 	private static long framesReadAt;
 	private static int frameSeconds, frameTotal, worldSeconds, worldFrames, fewestFrames = Integer.MAX_VALUE;
@@ -144,6 +145,12 @@ public final class StartupCheck {
 			case 0:
 				if (!(mc.currentScreen instanceof TitleScreen) || titleLines < 0) return;
 				results.pass("main menu reached");
+				if (LedgeHunt.ENABLED) {
+					// `:harness:ledgeHunt`: straight into a world; none of the menu's checks, so it runs on any set of mods.
+					org.lwjgl.opengl.Display.setSwapInterval(0);
+					phase = 3;
+					return;
+				}
 				results.check("title screen: \"Minecraft Beta 1.7.3\" and the edition's line under it, in beta's grey (" + titleLines
 						+ " lines; title-corner.png in the run folder)", titleLines == 2);
 				titleLineCheck();
@@ -218,7 +225,7 @@ public final class StartupCheck {
 					return;
 				}
 				mc.interactionManager = new SingleplayerInteractionManager(mc);
-				mc.startGame(WORLD, "Old Faithful start-up test", SceneShot.ENABLED ? SceneShot.SEED : 7373L);
+				mc.startGame(WORLD, "Old Faithful start-up test", SceneShot.ENABLED ? SceneShot.SEED : LedgeHunt.ENABLED ? LedgeHunt.SEED : 7373L);
 				mc.setScreen(null);
 				phase = 4;
 				return;
@@ -293,6 +300,11 @@ public final class StartupCheck {
 				results.check("world created, loaded and running: player at y " + Math.round(mc.player.y) + ", world time " + mc.world.getTime()
 						+ " after " + worldTicks + " game ticks" + (mc.currentScreen == null ? "" : ", but " + mc.currentScreen.getClass().getName() + " is open"), mc.world.getTime() >= WORLD_TICKS / 2 && mc.currentScreen == null);
 				results.check("sound system initialised (paulscode on our OpenAL)", paulscode.sound.SoundSystem.initialized());
+				if (LedgeHunt.ENABLED) {
+					hunt = new LedgeHunt(results);
+					phase = 31;
+					return;
+				}
 				if (SceneShot.ENABLED) {
 					// `:harness:sceneShot`: pictures of the world instead of the checks in it.
 					scene = new SceneShot(results);
@@ -348,6 +360,10 @@ public final class StartupCheck {
 				return;
 			case 30:
 				if (scene.tick(mc)) finish(mc);
+				return;
+			case 31:
+				if (hunt.wallDone()) hunt.endNatural();
+				if (hunt.tick(mc)) finish(mc);
 				return;
 			case 10: {
 				// As a player would: out of maximised, then resized and moved. The display mod sees it through the
