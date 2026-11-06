@@ -45,7 +45,7 @@ Neither publishes anything. GitHub rewrites `+` in asset names, so assets have n
 | File | What it is |
 |---|---|
 | `PureFaithful-<v>.zip` | The pack: a Prism instance to import (below) |
-| `purefaithful-{hardening,saves,speed,display}-<v>.jar` | The mods on their own (Modrinth, existing instances) |
+| `purefaithful-{hardening,saves,speed,display}-<v>.jar` | The mods on their own (existing instances) |
 | `org.lwjgl.json` | Our LWJGL component for an existing instance, with each library's URL on this release, SHA-1 and size |
 | `purefaithful-lwjgl-<v>.jar`, `purefaithful-lwjgl3-…-natives-windows.jar`, `purefaithful-sdl3-…-natives-windows.jar`, `purefaithful-openal-soft-…-natives-windows-lwjgl3.jar` | The libraries `org.lwjgl.json` names; must be on the same release |
 | `PureFaithful-server-<v>.zip` | The server package (`docs/multiplayer.md`), with its notices and sources |
@@ -233,8 +233,7 @@ Pure Faithful:
 3. A GitHub release `v<version>` with every file in `local/release/<version>/` (names unchanged: `org.lwjgl.json`'s
    URLs point at them), notes from `CHANGELOG.md` and `SHA256SUMS.txt`.
 4. Check the standalone component in a Prism instance that downloads from the release (the URLs only work now).
-5. Modrinth: `python tools/modrinth.py release <version>` (below).
-6. studioquire.org: the page, the card, `releases.json` (quire-site's CLAUDE.md says how).
+5. studioquire.org: the page, the card, `releases.json` (quire-site's CLAUDE.md says how).
 
 Old Faithful (0.1.0 went out this way with Pure Faithful 0.1.2, 2026-11-02, from one commit):
 
@@ -250,8 +249,7 @@ Old Faithful (0.1.0 went out this way with Pure Faithful 0.1.2, 2026-11-02, from
 5. A GitHub pre-release `v<version>` with every file in `local/release/old-faithful-<version>/`, notes from its
    changelog entry, a line naming the Pure Faithful release whose mods and component it carries (with a link), and
    `SHA256SUMS.txt`.
-6. Modrinth: `python tools/modrinth.py release <version> --edition old-faithful`.
-7. studioquire.org: `/get/old-faithful` follows the newest release by itself; the page's text when the README's
+6. studioquire.org: `/get/old-faithful` follows the newest release by itself; the page's text when the README's
    changes. Its cover and link preview are a real frame, lava in a cave lit by the lighting mod, taken unseen by
    `./gw :harness:sceneShot`.
 
@@ -266,8 +264,7 @@ Still Faithful (0.1.0 went out this way with Old Faithful 0.1.2, 2026-11-03, fro
 3. Push `../still-faithful-public` to `studio-quire/still-faithful` (remote `public`), tag `v<version>`.
 4. A GitHub pre-release `v<version>` with every file in `local/release/still-faithful-<version>/`, notes from its
    changelog entry, the Old Faithful and Pure Faithful releases it carries (with links), and `SHA256SUMS.txt`.
-5. Modrinth: `python tools/modrinth.py release <version> --edition still-faithful`.
-6. studioquire.org: `/get/still-faithful` follows the newest release. Its cover and link preview are a real frame,
+5. studioquire.org: `/get/still-faithful` follows the newest release. Its cover and link preview are a real frame,
    snow falling on the taiga at dusk with smooth dusk on (the covers workshop's s7, the user's pick, 2026-11-03; the
    seal in the middle of the card, where Pure's is left and Old's right), taken unseen by `./gw :harness:sceneShotStill -PsceneViews=...` (SceneShot's view mode;
    a view may add a render distance and `rain`). To choose places, `-PsceneSurvey="x0 z0 x1 z1"` maps a seed's
@@ -276,41 +273,10 @@ Still Faithful (0.1.0 went out this way with Old Faithful 0.1.2, 2026-11-03, fro
 
 ## Modrinth
 
-Since 2026-11-02 the four Pure Faithful mods are Modrinth projects in the **Studio Quire** organisation
-(modrinth.com/organization/studio-quire), which the user asked the studio to manage: `pure-faithful-hardening`,
-`-saves`, `-speed`, `-display`, texts from `release/drafts/modrinth.md`, MIT, source and issues on GitHub. Old
-Faithful's three were made the same way on 2026-11-02: `old-faithful-fixes`, `-lighting`, `-options`, texts in
-`release/drafts/old-faithful-modrinth.md`, source and issues on `studio-quire/old-faithful`. Still Faithful's one,
-`still-faithful-polish`, on 2026-11-03: texts in `release/drafts/still-faithful-modrinth.md`,
-`studio-quire/still-faithful`. The token (the user's account, Shoalstone) is in `local/modrinth-token.txt`,
-git-ignored; never print it.
-
-**Link-only** (the user's call, 2026-11-03). Modrinth's rules (modrinth.com/legal/rules section 6, since 2026-08-13)
-say projects "may not be published publicly if the contents are primarily or entirely a product of AI output", that
-the "Contains AI-generated content" disclosure is required, and that no image on a project page may be AI-made. Ours
-are made by Claude and say so, and we don't reword that to get through. So, on all eight:
-
-- Requested status `unlisted` (what approval gives: reachable by link, not in search or launchers' browsers). Only
-  moderators move a project out of review; an owner can only submit it and set the requested status.
-- The `ai_content` disclosure, uses code, assets and text, with a note on who made what (v3
-  `PATCH /project/{id}/disclosures`, `{"set": [...], "remove": []}`).
-- No icon, gallery or description images, and none on the organisation (its icon was the site's mark, also ours):
-  the seals and the mark stay everywhere else.
-- A note in each review thread (2026-11-03) saying the above and asking for unlisted, or rejection if that isn't
-  allowed either. If a project is rejected, record it here; don't resubmit reworded.
-- Not linked from the READMEs, release notes or studioquire.org: GitHub releases and the site are where players go.
-
-- A release: `python tools/modrinth.py release <version> [--edition old-faithful] [--type beta|release]` uploads each
-  jar from the edition's release folder and checks it against `SHA256SUMS.txt` (`verify` alone re-checks).
-  Upload every release, even while the projects are in review (0.1.1 was), so approval doesn't serve an old one.
-- b1.7.3 takes the `babric` loader only: Modrinth refuses `fabric` for game versions before 18w43b (older uploads
-  elsewhere show both).
-- Sides are set per version as v3's `environment` (`client_or_server` for hardening, saves and lighting,
-  `client_or_server_prefers_both` for fixes and polish, `client_only` for speed, display and options); v2's
-  `client_side`/`server_side` on the project are ignored and read back from it.
-- No required dependencies between any of the mods: each works alone. The display mod's real requirement, our LWJGL
-  component, isn't something Modrinth can install; its description says how. `oldfaithful-options` versions list
-  Pure Faithful Display as optional.
+We don't publish on Modrinth (the user's decision, 2026-11-05). Its moderators rejected all eight projects that day,
+after we'd asked for unlisted or rejection, since its rules bar mostly-AI projects from public listing. The eight
+projects were then deleted at the user's request (2026-11-05); so was the Studio Quire organisation there. GitHub releases and studioquire.org are where players get everything. `tools/modrinth.py`,
+the `release/drafts/*modrinth.md` texts and `local/modrinth-token.txt` are left from then, unused.
 
 ## Not checked yet
 

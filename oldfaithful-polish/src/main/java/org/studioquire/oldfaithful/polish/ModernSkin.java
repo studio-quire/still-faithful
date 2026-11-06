@@ -1,6 +1,5 @@
 package org.studioquire.oldfaithful.polish;
 
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.nio.charset.StandardCharsets;
@@ -36,42 +35,24 @@ public final class ModernSkin extends BufferedImage {
 	private static final Set<String> SLIM = ConcurrentHashMap.newKeySet();
 
 	private static final int[] HEAD = {0, 0, 32, 16}, BODY = {0, 16, 64, 32}, LOWER_LIMBS = {16, 48, 48, 64};
-	/** The hat's area as beta has it, then the layers later versions added, each under the same rule. */
-	private static final int[] HAT = {32, 0, 64, 32};
-	private static final int[][] LAYERS = {{0, 32, 16, 48}, {16, 32, 40, 48}, {40, 32, 56, 48}, {0, 48, 16, 64}, {48, 48, 64, 64}};
 
 	public final boolean slim;
 
 	private ModernSkin(BufferedImage image, boolean slim) {
 		super(64, 64, TYPE_INT_ARGB);
 		this.slim = slim;
-		Graphics g = getGraphics();
-		g.drawImage(image, 0, 0, null);
-		g.dispose();
+		// The file's pixels as they are, not drawn over transparency as beta does: that would turn a pixel that's
+		// transparent in the file black, and later versions make it opaque in the colour it has there.
 		int[] data = ((DataBufferInt) getRaster().getDataBuffer()).getData();
-		// Beta's order: the hat's area is judged before the part of it that's arms and body is made opaque.
+		image.getRGB(0, 0, 64, 64, data, 0, 64);
 		opaque(data, HEAD);
-		layer(data, HAT);
 		opaque(data, BODY);
-		for (int[] layer : LAYERS) layer(data, layer);
 		opaque(data, LOWER_LIMBS);
 	}
 
 	private static void opaque(int[] data, int[] r) {
 		for (int y = r[1]; y < r[3]; y++) {
 			for (int x = r[0]; x < r[2]; x++) data[x + y * 64] |= 0xFF000000;
-		}
-	}
-
-	/** Beta's rule for the hat: an area with no transparent pixel at all was painted by a tool that knew no layers. */
-	private static void layer(int[] data, int[] r) {
-		for (int y = r[1]; y < r[3]; y++) {
-			for (int x = r[0]; x < r[2]; x++) {
-				if (data[x + y * 64] >>> 24 < 128) return;
-			}
-		}
-		for (int y = r[1]; y < r[3]; y++) {
-			for (int x = r[0]; x < r[2]; x++) data[x + y * 64] &= 0xFFFFFF;
 		}
 	}
 

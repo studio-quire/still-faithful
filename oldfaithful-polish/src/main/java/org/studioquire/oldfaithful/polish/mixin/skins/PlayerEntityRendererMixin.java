@@ -8,7 +8,6 @@ import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.render.entity.model.BipedEntityModel;
 import net.minecraft.client.texture.TextureManager;
 import net.minecraft.entity.player.PlayerEntity;
-import org.lwjgl.opengl.GL11;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
@@ -66,14 +65,14 @@ abstract class PlayerEntityRendererMixin extends LivingEntityRenderer implements
 		oldfaithful$wearBeta();
 	}
 
-	/** Beta's hand has no holes, so the alpha test is whatever the frame left it as. */
+	@Inject(method = "renderHand", at = @At("HEAD"))
+	private void oldfaithful$beforeHand(CallbackInfo ci) {
+		if (bipedModel instanceof ModernPlayerModel) ((ModernPlayerModel) bipedModel).beginHand();
+	}
+
 	@Inject(method = "renderHand", at = @At("TAIL"))
 	private void oldfaithful$sleeve(CallbackInfo ci) {
-		if (!(bipedModel instanceof ModernPlayerModel)) return;
-		boolean alphaTest = GL11.glIsEnabled(GL11.GL_ALPHA_TEST);
-		GL11.glEnable(GL11.GL_ALPHA_TEST);
-		((ModernPlayerModel) bipedModel).renderRightSleeve(0.0625F);
-		if (!alphaTest) GL11.glDisable(GL11.GL_ALPHA_TEST);
+		if (bipedModel instanceof ModernPlayerModel) ((ModernPlayerModel) bipedModel).finishHand(0.0625F);
 	}
 
 	/** As later versions: what's held stays centred in a slim arm, half a pixel nearer the body. */

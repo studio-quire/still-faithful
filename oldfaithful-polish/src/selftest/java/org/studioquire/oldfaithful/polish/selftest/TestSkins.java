@@ -35,7 +35,10 @@ final class TestSkins {
 			RIGHT_SLEEVE = 8, LEFT_SLEEVE = 9, RIGHT_TROUSER = 10, LEFT_TROUSER = 11;
 
 	static final String WIDE = "QuireLoudWide", SLIM = "QuireLoudSlim", OLD = "QuireLoudOld", SUIT = "QuireSuit",
-			SUIT_SLIM = "QuireSuitSlim", CAPED = "QuireCaped";
+			SUIT_SLIM = "QuireSuitSlim", CAPED = "QuireCaped", SIEVE = "QuireSieve", LID = "QuireLid", GLASS = "QuireGlass",
+			SOLID = "QuireSolid";
+	/** In {@link #glass}: a pixel of the right leg's front, transparent in the file, whose colour is still there. */
+	static final int HIDDEN_X = 5, HIDDEN_Y = 25, HIDDEN_RGB = 0xFF00FF;
 
 	private static final class Skin {
 		final String name, uuid, hash, capeHash;
@@ -66,6 +69,10 @@ final class TestSkins {
 		add(SUIT, suit(false), false, null);
 		add(SUIT_SLIM, suit(true), true, null);
 		add(CAPED, loud(false, true), false, cape);
+		add(SIEVE, sieve(), false, null);
+		add(LID, lid(), false, null);
+		add(GLASS, glass(), false, null);
+		add(SOLID, solid(), false, null);
 		save(cape, "cape");
 	}
 
@@ -178,6 +185,73 @@ final class TestSkins {
 		box(image, 48, 48, arm, 12, 4, loudFace(LEFT_SLEEVE, true));
 		box(image, 0, 32, 4, 12, 4, loudFace(RIGHT_TROUSER, true));
 		box(image, 0, 48, 4, 12, 4, loudFace(LEFT_TROUSER, true));
+		return image;
+	}
+
+	/** A layer face's hue in {@link #sieve} and {@link #lid}: top red, then yellow, green, cyan, blue, magenta. */
+	private static int faceColour(int face) {
+		return Color.HSBtoRGB(face / 6.0F, 1.0F, 1.0F) & 0xFFFFFF;
+	}
+
+	private static void layers(BufferedImage image, Paint paint) {
+		box(image, 32, 0, 8, 8, 8, paint);
+		box(image, 16, 32, 8, 12, 4, paint);
+		box(image, 40, 32, 4, 12, 4, paint);
+		box(image, 48, 48, 4, 12, 4, paint);
+		box(image, 0, 32, 4, 12, 4, paint);
+		box(image, 0, 48, 4, 12, 4, paint);
+	}
+
+	private static void plainBase(BufferedImage image, int rgb) {
+		Paint base = (face, x, y, w, h) -> 0xFF000000 | rgb;
+		box(image, 0, 0, 8, 8, 8, base);
+		box(image, 16, 16, 8, 12, 4, base);
+		box(image, 40, 16, 4, 12, 4, base);
+		box(image, 32, 48, 4, 12, 4, base);
+		box(image, 0, 16, 4, 12, 4, base);
+		box(image, 16, 48, 4, 12, 4, base);
+	}
+
+	/**
+	 * For looking through a layer: a pale base, and on the layers a hue to each face, a checkerboard of holes, and rows
+	 * going down through solid, half, a quarter and an alpha below the cut-off.
+	 */
+	private static BufferedImage sieve() {
+		BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+		plainBase(image, 0xB8B8B8);
+		int[] alpha = {255, 128, 64, 20};
+		layers(image, (face, x, y, w, h) -> (x / 2 + y / 2) % 2 == 1 ? 0 : alpha[y * 4 / h] << 24 | faceColour(face));
+		return image;
+	}
+
+	/** Only the layers' tops and bottoms, solid: from outside you see them, and past the open sides their undersides. */
+	private static BufferedImage lid() {
+		BufferedImage image = new BufferedImage(64, 64, BufferedImage.TYPE_INT_ARGB);
+		plainBase(image, 0xB8B8B8);
+		layers(image, (face, x, y, w, h) -> face == TOP || face == BOTTOM ? 0xFF000000 | faceColour(face) : 0);
+		return image;
+	}
+
+	/** The sort of skin semi-transparent pixels matter to: a bubble helmet with a solid rim, a thin coat. */
+	private static BufferedImage glass() {
+		BufferedImage image = suit(false);
+		box(image, 32, 0, 8, 8, 8, (face, x, y, w, h) -> face != BOTTOM && face != TOP && y == h - 1 ? 0xFFD0D8E0 : 96 << 24 | 0x60D0F0);
+		Paint coat = (face, x, y, w, h) -> 128 << 24 | 0xC04040;
+		box(image, 16, 32, 8, 12, 4, coat);
+		box(image, 40, 32, 4, 12, 4, coat);
+		box(image, 48, 48, 4, 12, 4, coat);
+		image.setRGB(HIDDEN_X, HIDDEN_Y, HIDDEN_RGB);
+		return image;
+	}
+
+	/** Painted with no transparency anywhere, as by a tool that knows no layers. */
+	private static BufferedImage solid() {
+		BufferedImage image = loud(false, true);
+		for (int y = 0; y < 64; y++) {
+			for (int x = 0; x < 64; x++) {
+				if (image.getRGB(x, y) >>> 24 == 0) image.setRGB(x, y, 0xFF000000 | hue(x % 12));
+			}
+		}
 		return image;
 	}
 

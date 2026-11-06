@@ -19,6 +19,8 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.network.OtherPlayerEntity;
+import net.minecraft.client.render.entity.EntityRenderDispatcher;
+import net.minecraft.client.render.entity.PlayerEntityRenderer;
 import net.minecraft.client.texture.ImageDownload;
 import net.minecraft.client.texture.ImageProcessor;
 import net.minecraft.entity.Entity;
@@ -28,7 +30,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
+import org.lwjgl.opengl.GL11;
 import org.studioquire.oldfaithful.hardening.util.Https;
+import org.studioquire.oldfaithful.polish.ModernPlayerModel;
 import org.studioquire.oldfaithful.polish.ModernSkin;
 import org.studioquire.oldfaithful.polish.PolishConfig;
 import org.studioquire.oldfaithful.polish.selftest.mixin.SkinDownloads;
@@ -177,7 +181,8 @@ public final class SkinCheck implements WorldCheck {
 		ox = Math.floor(mc.player.x) + 0.5;
 		oz = Math.floor(mc.player.z) + 0.5;
 		backdrop();
-		for (String name : new String[] {TestSkins.WIDE, TestSkins.SLIM, TestSkins.OLD, TestSkins.SUIT, TestSkins.SUIT_SLIM, TestSkins.CAPED}) {
+		for (String name : new String[] {TestSkins.WIDE, TestSkins.SLIM, TestSkins.OLD, TestSkins.SUIT, TestSkins.SUIT_SLIM, TestSkins.CAPED,
+				TestSkins.SIEVE, TestSkins.LID, TestSkins.GLASS, TestSkins.SOLID}) {
 			Figure f = new Figure(world, name);
 			figures.put(name, f);
 			enter(f);
@@ -195,13 +200,11 @@ public final class SkinCheck implements WorldCheck {
 		plan.add(c -> {
 			downloads(c);
 			processing();
+			glStateKept(c);
 			return true;
 		});
 		String[] loud = {TestSkins.WIDE, TestSkins.SLIM, TestSkins.OLD};
-		for (String name : figures.keySet()) {
-			if (name.equals(TestSkins.CAPED)) continue;
-			sides(name);
-		}
+		for (String name : new String[] {TestSkins.WIDE, TestSkins.SLIM, TestSkins.OLD, TestSkins.SUIT, TestSkins.SUIT_SLIM}) sides(name);
 		for (String name : loud) {
 			from(name, "above", -3.0, 89);
 			from(name, "below", 0.7, -89);
@@ -217,6 +220,7 @@ public final class SkinCheck implements WorldCheck {
 		}), null);
 		mobs();
 		own();
+		compare();
 	}
 
 	/**
@@ -282,7 +286,7 @@ public final class SkinCheck implements WorldCheck {
 		results.check("skins: a cape stays on beta's canvas", cape.getHeight() == 32 && !(cape instanceof ModernSkin));
 	}
 
-	/** The transparency rules, straight on the processor: beta's hat rule for every layer, and the base opaque. */
+	/** The transparency rules, straight on the processor: the base opaque in the colours it has, the layers as painted. */
 	private void processing() {
 		if (!on) return;
 		ImageProcessor processor = ModernSkin.processor(skin("QuireNobody"));
@@ -290,18 +294,20 @@ public final class SkinCheck implements WorldCheck {
 		for (int y = 0; y < 64; y++) {
 			for (int x = 0; x < 64; x++) painted.setRGB(x, y, 0xFF808080);
 		}
-		// Every layer solid, as a tool knowing no layers would paint them, but for one hole in the left sleeve's.
+		// Every layer solid, as a tool knowing no layers would paint them, but for a hole and a half-transparent pixel.
 		painted.setRGB(50, 50, 0);
+		painted.setRGB(44, 8, 0x80FF2010);
 		painted.setRGB(20, 20, 0x20808080);
 		painted.setRGB(36, 52, 0x20808080);
 		painted.setRGB(4, 4, 0x20808080);
+		painted.setRGB(5, 25, 0x00FF00FF);
 		BufferedImage out = processor.process(painted);
-		results.check("skins: a solid hat is cleared, as beta clears it", alpha(out, 40, 8) == 0);
-		results.check("skins: a solid jacket, sleeve and trouser are cleared by the hat's rule",
-				alpha(out, 20, 36) == 0 && alpha(out, 44, 36) == 0 && alpha(out, 4, 36) == 0 && alpha(out, 4, 52) == 0);
-		results.check("skins: a layer with a hole keeps its pixels", alpha(out, 52, 52) == 255);
+		results.check("skins: a solid hat stays on a 64x64 skin; beta's rule is for 64x32",
+				alpha(out, 40, 8) == 255 && alpha(out, 20, 36) == 255 && alpha(out, 44, 36) == 255 && alpha(out, 4, 36) == 255 && alpha(out, 4, 52) == 255);
+		results.check("skins: a layer keeps its holes and half-transparent pixels", alpha(out, 50, 50) == 0 && out.getRGB(44, 8) == 0x80FF2010);
 		results.check("skins: head, body, arms and legs are opaque whatever the file says",
 				alpha(out, 4, 4) == 255 && alpha(out, 20, 20) == 255 && alpha(out, 36, 52) == 255);
+		results.check("skins: a pixel of them transparent in the file keeps its colour", out.getRGB(5, 25) == 0xFFFF00FF);
 		BufferedImage classic = processor.process(new BufferedImage(64, 32, BufferedImage.TYPE_INT_ARGB));
 		results.check("skins: a 64x32 skin goes to beta's processor", classic.getHeight() == 32 && !(classic instanceof ModernSkin));
 		BufferedImage large = processor.process(new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB));
@@ -367,6 +373,177 @@ public final class SkinCheck implements WorldCheck {
 			x.inventory.armor[1] = new ItemStack(Item.IRON_LEGGINGS);
 			x.inventory.armor[2] = new ItemStack(Item.IRON_CHESTPLATE);
 		}), null);
+	}
+
+	/**
+	 * The skins for looking through a layer, from where you can, in `skins/compare/`, with views.txt, which
+	 * tools/modern-skins takes a real modern client through for the same pictures.
+	 */
+	private void compare() {
+		// Label; what the camera looks at: its height above the feet, its x off the figure's middle (+x is the left of
+		// the picture); the camera's distance and pitch; the figure's yaw and head pitch.
+		Object[][] views = {
+				{"full-front", 0.9, 0.0, 2.0, 0, FRONT, 0},
+				{"full-34", 0.9, 0.0, 2.0, 0, 215, 0},
+				{"full-back", 0.9, 0.0, 2.0, 0, BACK, 0},
+				{"full-side", 0.9, 0.0, 2.0, 0, RIGHT_SIDE, 0},
+				{"head-34", 1.65, 0.0, 0.9, 0, 215, 0},
+				{"head-under", 1.65, 0.0, 1.3, -40, FRONT, 0},
+				{"head-under-34", 1.65, 0.0, 1.3, -40, 215, 0},
+				{"head-under-back", 1.65, 0.0, 1.3, -40, BACK, 0},
+				{"head-over", 1.65, 0.0, 1.1, 50, FRONT, 0},
+				{"head-over-34", 1.65, 0.0, 1.1, 50, 215, 0},
+				{"head-nod", 1.6, 0.0, 0.9, 0, 215, 35},
+				{"arm-under", 1.0, 0.3, 0.8, -55, FRONT, 0},
+				{"arm-over", 1.3, 0.3, 0.8, 60, FRONT, 0},
+				{"body-34", 1.05, 0.0, 1.0, 0, 215, 0},
+				{"legs-below", 0.25, 0.0, 0.7, -60, FRONT, 0},
+				{"legs-above", 0.4, 0.0, 0.7, 60, FRONT, 0},
+		};
+		List<String> table = new ArrayList<>();
+		for (String skin : new String[] {TestSkins.SIEVE, TestSkins.LID, TestSkins.GLASS, TestSkins.SOLID, TestSkins.SUIT, TestSkins.SUIT_SLIM}) {
+			boolean slim = skin.equals(TestSkins.SUIT_SLIM);
+			for (Object[] v : views) {
+				String label = (String) v[0];
+				boolean closeLook = skin.equals(TestSkins.SIEVE) || skin.equals(TestSkins.LID) || skin.equals(TestSkins.GLASS);
+				if (!closeLook && !label.startsWith("full-")) continue;
+				double h = (Double) v[1], off = (Double) v[2], d = (Double) v[3];
+				int pitch = (Integer) v[4], yaw = (Integer) v[5], headPitch = (Integer) v[6];
+				double up = -Math.sin(Math.toRadians(pitch)), along = Math.cos(Math.toRadians(pitch));
+				double dx = -off, dy = d * up - h, dz = d * along;
+				String name = skin + "-" + label;
+				table.add(String.format(java.util.Locale.ROOT, "%s %s %s %.4f %.4f %.4f %d %d %d", name, skin, slim ? "slim" : "wide", dx, dy, dz, yaw, headPitch, pitch));
+				Figure f = figures.get(skin);
+				shot("compare/" + name, c -> {
+					f.reset();
+					place(f, ox + dx, EYE + dy, oz + dz, yaw);
+					f.pitch = f.prevPitch = headPitch;
+					cameraPitch = pitch;
+				}, on ? pictureCheck(name) : null);
+			}
+		}
+		// The same cameras with nobody there, so tools/modern-skins/sheet.py can tell the figure from each client's own
+		// backdrop and sky, which aren't what's being compared.
+		for (Object[] v : views) {
+			int pitch = (Integer) v[4];
+			String name = "blank" + pitch;
+			if (table.stream().anyMatch(line -> line.startsWith(name + " "))) continue;
+			table.add(name + " none wide 0 0 0 0 0 " + pitch);
+			shot("compare/" + name, c -> {
+				Entity on = showing;
+				if (on != null) park(on);
+				showing = null;
+				onShow = null;
+				cameraPitch = pitch;
+			}, null);
+		}
+		plan.add(c -> {
+			try {
+				File dir = new File(OUT, "compare");
+				dir.mkdirs();
+				java.nio.file.Files.write(new File(dir, "views.txt").toPath(), table);
+			} catch (IOException e) {
+				results.fail("skins: writing the compare views", e);
+			}
+			return true;
+		});
+	}
+
+	/**
+	 * What a picture must show, where what's in it was seen to match a modern client's (`docs/still-faithful.md`). Only
+	 * where the switch is on; without it these skins are beta's, with no layers to look through.
+	 */
+	private Consumer<BufferedImage> pictureCheck(String name) {
+		if (name.equals(TestSkins.LID + "-head-under")) {
+			return img -> {
+				Seen top = look(img)[0];
+				results.check(String.format("skins: from below, the inside of the hat's top is lit as a face turned down (%d pixels, value %.2f)", top.count, top.brightest),
+						top.count > PRESENT && top.brightest < 0.55F);
+			};
+		}
+		if (name.equals(TestSkins.LID + "-head-over")) {
+			return img -> {
+				Seen bottom = look(img)[2];
+				results.check(String.format("skins: from above, the inside of the hat's bottom is lit as a face turned up (%d pixels, value %.2f)", bottom.count, bottom.brightest),
+						bottom.count > PRESENT && bottom.brightest > 0.85F);
+			};
+		}
+		if (name.equals(TestSkins.SIEVE + "-full-front")) {
+			return img -> {
+				int blended = blendedCyan(img);
+				results.check("skins: half-transparent layer pixels blend with what's under them (" + blended + " pixels)", blended > 500);
+			};
+		}
+		if (name.equals(TestSkins.SOLID + "-full-front")) {
+			return img -> {
+				Seen[] s = look(img);
+				results.check("skins: a layer painted solid shows (hat " + s[TestSkins.HAT].count + ", jacket " + s[TestSkins.JACKET].count + " pixels)",
+						s[TestSkins.HAT].count > PRESENT && s[TestSkins.JACKET].count > PRESENT);
+			};
+		}
+		if (name.equals(TestSkins.GLASS + "-full-front")) {
+			return img -> {
+				Seen hidden = look(img)[10];
+				results.check("skins: a base pixel transparent in the file shows the colour it has there (" + hidden.count + " pixels)", hidden.count > PRESENT);
+			};
+		}
+		return null;
+	}
+
+	/** Cyan, as the sieve's front is painted, at a saturation between the pure hue and the grey base under it. */
+	private static int blendedCyan(BufferedImage image) {
+		int n = 0;
+		float[] hsb = new float[3];
+		for (int y = 0; y < image.getHeight(); y++) {
+			for (int x = 0; x < image.getWidth(); x++) {
+				int rgb = image.getRGB(x, y);
+				Color.RGBtoHSB(rgb >> 16 & 0xFF, rgb >> 8 & 0xFF, rgb & 0xFF, hsb);
+				if (Math.abs(hsb[0] - 0.5F) < 0.03F && hsb[1] > 0.25F && hsb[1] < 0.75F) n++;
+			}
+		}
+		return n;
+	}
+
+	/**
+	 * However the frame leaves blending, face culling and two-sided lighting, drawing the model and the hand must leave
+	 * them as they were. A tick has the GL context as a frame does, and what's drawn here is cleared before the next one.
+	 */
+	private void glStateKept(Minecraft mc) {
+		if (!on) return;
+		PlayerEntityRenderer renderer = (PlayerEntityRenderer) EntityRenderDispatcher.INSTANCE.get(figures.get(TestSkins.WIDE));
+		ModernPlayerModel.Wearer wearer = (ModernPlayerModel.Wearer) renderer;
+		ModernPlayerModel model = new ModernPlayerModel(false);
+		int changed = 0;
+		for (int bits = 0; bits < 16; bits++) {
+			set(GL11.GL_BLEND, (bits & 1) != 0);
+			set(GL11.GL_CULL_FACE, (bits & 2) != 0);
+			GL11.glLightModeli(GL11.GL_LIGHT_MODEL_TWO_SIDE, (bits & 4) != 0 ? GL11.GL_TRUE : GL11.GL_FALSE);
+			set(GL11.GL_ALPHA_TEST, (bits & 8) != 0);
+			GL11.glBlendFunc(GL11.GL_ONE, (bits & 1) != 0 ? GL11.GL_ONE : GL11.GL_ZERO);
+			String before = glState();
+			model.render(0, 0, 0, 0, 0, 0.0625F);
+			if (!before.equals(glState())) changed++;
+			wearer.oldfaithful$wear(figures.get(TestSkins.WIDE), mc.textureManager);
+			renderer.renderHand();
+			wearer.oldfaithful$wearBeta();
+			if (!before.equals(glState())) changed++;
+		}
+		GL11.glDisable(GL11.GL_BLEND);
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glEnable(GL11.GL_ALPHA_TEST);
+		GL11.glLightModeli(GL11.GL_LIGHT_MODEL_TWO_SIDE, GL11.GL_FALSE);
+		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		results.check("skins: drawing a model and a hand leaves GL's state as found, from 16 starting states (" + changed + " changed)", changed == 0);
+	}
+
+	private static void set(int capability, boolean on) {
+		if (on) GL11.glEnable(capability);
+		else GL11.glDisable(capability);
+	}
+
+	private static String glState() {
+		return GL11.glIsEnabled(GL11.GL_BLEND) + " " + GL11.glIsEnabled(GL11.GL_CULL_FACE) + " " + GL11.glIsEnabled(GL11.GL_ALPHA_TEST) + " "
+				+ GL11.glGetBoolean(GL11.GL_LIGHT_MODEL_TWO_SIDE) + " " + GL11.glGetInteger(GL11.GL_BLEND_SRC) + " " + GL11.glGetInteger(GL11.GL_BLEND_DST);
 	}
 
 	private void mobs() {
@@ -570,6 +747,7 @@ public final class SkinCheck implements WorldCheck {
 	private static final class Seen {
 		int count, minX = Integer.MAX_VALUE, maxX = -1;
 		long sumX;
+		float brightest;
 
 		double middle() {
 			return (double) sumX / count;
@@ -593,6 +771,7 @@ public final class SkinCheck implements WorldCheck {
 				s.sumX += x;
 				s.minX = Math.min(s.minX, x);
 				s.maxX = Math.max(s.maxX, x);
+				s.brightest = Math.max(s.brightest, hsb[2]);
 			}
 		}
 		return seen;

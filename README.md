@@ -42,8 +42,9 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
 - **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and
-  leg of their own, and slim arms where the skin has them. Older skins look as they did in beta. Yours and other
-  players', on any server; the server needs nothing.
+  leg of their own, and slim arms where the skin has them, drawn as a modern client draws them, half-transparent
+  pixels included. Older skins look as they did in beta. Yours and other players', on any server; the server needs
+  nothing.
 - The title screen's Mods and Texture Packs button reads **Texture Packs**, which is all it ever held.
 
 Smooth and stepped dusk need OpenGL 2.0 and have so far been tested only on NVIDIA graphics. If the sky or the

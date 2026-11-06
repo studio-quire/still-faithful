@@ -32,7 +32,7 @@ Still Faithful's own, each on its own switch:
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
 - Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the
-  skin has them. Older skins look as they did in beta.
+  skin has them, drawn as a modern client draws them. Older skins look as they did in beta.
 - The title screen's Mods and Texture Packs button reads Texture Packs, which is all it ever held.
 - The title screen says "Still Faithful @VERSION@" under beta's own version line.
 

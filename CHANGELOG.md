@@ -7,6 +7,19 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.2.1 (2026-11-05)
+
+On Old Faithful 0.2.0 and Pure Faithful 0.1.3, both unchanged. Modern Skins now draws skins as a modern client draws
+them. Older skins, mobs and armour look as they did.
+
+- Half-transparent pixels in a jacket, sleeves, trousers or hat blend, instead of showing as solid.
+- Seen through a hole in a layer, the layer's far side is lit from your side, as on a modern client.
+- The first-person arm and sleeve are drawn the same way, so a sleeve with holes or half-transparent pixels matches
+  the rest of the figure.
+- A layer painted wholly solid stays. It used to be cleared, as beta clears a hat with no transparent pixels.
+- A pixel of the head, body or limbs that the skin's file makes transparent keeps its colour instead of turning black.
+- Slim arms and the legs sit a little differently, where a modern client puts them.
+
 ## 0.2.0 (2026-11-05)
 
 On Old Faithful 0.2.0 and Pure Faithful 0.1.3. New, each on its own switch under Changes > Polish:

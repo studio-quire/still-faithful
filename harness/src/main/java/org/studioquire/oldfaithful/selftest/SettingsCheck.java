@@ -304,7 +304,7 @@ final class SettingsCheck {
 			openMod(m, "World Rules");
 			return true;
 		});
-		steps.add(capture("levels/3-world-rules-pointed", "Apple Drops"));
+		steps.add(capture("levels/3-world-rules-pointed", "Day Length"));
 		steps.add(m -> {
 			Screen rules = openMod(m, "World Rules");
 			press(rules, button(rules, "Enabled:"));
@@ -528,7 +528,7 @@ final class SettingsCheck {
 				enabled.text.equals("Enabled: ON") && enabled.x == rules.width / 2 - 155 && enabled.y == rules.height / 6
 						&& lock.x == rules.width / 2 + 5 && lock.y == enabled.y && lock.active
 						&& ((ButtonWidgetAccessor) enabled).oldfaithful$width() == 150 && ((ButtonWidgetAccessor) lock).oldfaithful$width() == 150
-						&& keep.y == rules.height / 6 + 24 && has(rules, "Apple Drops: OFF"));
+						&& keep.y == rules.height / 6 + 24 && has(rules, "Day Length: Normal"));
 		java.util.Set<String> before = new java.util.HashSet<>(Files.readAllLines(list));
 		press(rules, enabled);
 		List<String> off = Files.readAllLines(list);

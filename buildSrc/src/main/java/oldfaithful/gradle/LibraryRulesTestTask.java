@@ -294,6 +294,8 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 	private void plainClientOnServer(Path run, int port) throws Exception {
 		server.send("rule weather rain");
 		server.send("time set 12600");
+		// A minute standing at dusk: a monster could kill the player, and the next stage would rejoin as them, dead.
+		server.send("rule natural_monsters false");
 		Path game = run.resolve("plain-client-on-server");
 		Files.createDirectories(game.resolve("mods"));
 		List<String> serverJars = getServerMods().getFiles().stream().map(File::getName).toList();
@@ -309,6 +311,7 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		expect("the plain client measured its sun", played.stream().anyMatch(l -> l.contains("sun steps")));
 		server.send("rule day_length normal");
 		server.send("rule weather normal");
+		server.send("rule natural_monsters true");
 	}
 
 	/** What the server said to a console command, from its output. */

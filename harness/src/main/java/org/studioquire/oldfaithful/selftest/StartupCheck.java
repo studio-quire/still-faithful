@@ -277,7 +277,7 @@ public final class StartupCheck {
 				if (mc.world == null || mc.player == null) return;
 				if (++worldTicks < WORLD_TICKS) return;
 				results.check("world created, loaded and running: player at y " + Math.round(mc.player.y) + ", world time " + mc.world.getTime()
-						+ " after " + worldTicks + " game ticks", mc.world.getTime() >= WORLD_TICKS / 2 && mc.currentScreen == null);
+						+ " after " + worldTicks + " game ticks" + (mc.currentScreen == null ? "" : ", but " + mc.currentScreen.getClass().getName() + " is open"), mc.world.getTime() >= WORLD_TICKS / 2 && mc.currentScreen == null);
 				results.check("sound system initialised (paulscode on our OpenAL)", paulscode.sound.SoundSystem.initialized());
 				if (SceneShot.ENABLED) {
 					// `:harness:sceneShot`: pictures of the world instead of the checks in it.

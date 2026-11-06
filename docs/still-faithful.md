@@ -3,8 +3,8 @@
 The third edition (CLAUDE.md > Editions): beta with polish, as it might have been. Old Faithful plus what later
 versions improved, still beta in content. Entry numbers are `docs/bugs.md`'s. Decisions are the user's (2026-11-02)
 unless marked open. Built from 2026-11-02 by Claude Opus 5.5. Public since 0.1.0 (2026-11-03, on Old Faithful 0.1.2
-and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.org/still-faithful/, and the mod on
-Modrinth as `still-faithful-polish` (link-only, `docs/release.md` > Modrinth).
+and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.org/still-faithful/; no Modrinth
+(`docs/release.md` > Modrinth).
 
 ## Shape
 
@@ -45,7 +45,7 @@ Modrinth as `still-faithful-polish` (link-only, `docs/release.md` > Modrinth).
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
 | 4 | `animals.keepTended` | world | Animals a player has dealt with never despawn (`KeptAnimals`, below) |
 | 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule |
-| | `skins.modern` | client | 64x64 skins kept whole and drawn on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
+| | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
 
@@ -90,20 +90,37 @@ off for those.
 
 Pure Faithful's hardening fetches real skins, 64x64 included, but beta's `SkinImageProcessor` draws them on a 64x32
 canvas and `ModelPart` divides V by 32. Client-only: nothing from the server or other players. No setting beyond the
-switch. Built 2026-11-05 by Claude Opus 5.5.
+switch. Built 2026-11-05 by Claude Opus 5.5; drawn as a modern client draws them since the same day, after the user
+asked whether the far faces of a layer looked the same.
 - **Whole skins.** The skin's download gets `ModernSkin.processor` instead of beta's (capes, through the same call, keep
   beta's). A 64x64 image becomes a `ModernSkin` (a BufferedImage, which is the mark); anything else goes to beta's
   processor, so classic skins are beta's exactly.
-- **Transparency.** Beta's rules on every layer: head, body and limbs opaque; a layer area with no transparent pixel at
-  all is cleared, the hat's rule, as 1.8 had it (later versions keep it for 64x32 skins only, so a layer painted
-  wholly solid shows there and not here). Layers are alpha tested like the hat, not blended.
+- **Transparency.** As 26.3's `SkinTextureDownloader`: head, body and limbs opaque, each pixel in the colour the file
+  holds even where the file makes it transparent (beta's draw-over would turn it black); layers exactly as painted, holes
+  and half-transparent pixels too. Beta's hat rule (no transparent pixel at all and the area is cleared) is for 64x32
+  skins there, so a layer painted wholly solid shows.
 - **The model.** `PlayerEntityRenderer` keeps beta's model and two `ModernPlayerModel`s (wide, slim), and sets `model` and
   `bipedModel` to the one for the player being drawn, from what the texture manager holds for them at that moment, then
   puts beta's back. Zombies, skeletons, armour and anything else on `BipedEntityModel` are untouched, and a player
-  still waiting for a skin stays on beta's model and char.png. It's 1.8's layout: left limbs of their own, layers 0.25 out
-  (the hat stays 0.5, and stays where beta leaves it when sneaking), slim arms 3 wide with their pivot 0.5 lower; the legs
-  keep beta's pivots (1.8 moved them 0.1 inward). Faces: V halved, and each box's bottom face turned over, as later
-  versions do (seen in skinview3d's UVs, which follow them).
+  still waiting for a skin stays on beta's model and char.png. It's 26.3's layout (`PlayerModel`): left limbs of their
+  own, layers 0.25 out (the hat stays 0.5, and stays where beta leaves it when sneaking), slim arms 3 wide, legs 0.1
+  inward of beta's. Faces: V halved, right to the pixel's edge (beta stops a tenth short), and each box's bottom face
+  turned over.
+- **How it's drawn** (`ModernPlayerModel.render`). All from 26.3, whose `PlayerModel` uses `entityTranslucent`: blended
+  (source alpha), alpha under 0.1 discarded, depth written, no culling, and all of the model's quads sorted by their
+  middle's distance, farthest first (`sortOnUpload`; orthographic: by depth, the inventory's figure). So twelve parts'
+  faces are collected, sorted and drawn each frame with GL's own calls, not display lists or the tessellator, whose
+  `normal()` ruins a normal with a negative x (a rolled arm's top went dark). A skin with no half-transparent pixels
+  looks as it did, sorted or not; a half-transparent one now blends rather than showing as solid. The last is the look
+  most unlike beta, and the user's call if they don't want it. Not "improved transparency", 26.3's order-independent
+  option, which is off by default.
+- **Far faces.** Since 1.21.9 `entity.fsh` has `PER_FACE_LIGHTING`: `gl_FrontFacing` picks the normal's light or its
+  negative, so a face seen from behind is lit as if facing you, which fixed-function GL calls two-sided lighting (on
+  around the model, off after). Through 1.21.8 (no such thing in the shaders, read from the jars) a face was lit by its
+  outward normal from both sides, as beta's fixed function does. It only shows on faces with a vertical component, since
+  beta's and modern's two lights mirror each other horizontally: the insides of tops and bottoms, and limbs and heads
+  when tilted. skinview3d, a second reference, also draws its layers double-sided, transparent, with an alpha test
+  (`model.ts`), though with a light model of its own.
 - **Slim arms.** The flag is in the profile's textures metadata (`"metadata":{"model":"slim"}` under SKIN, absent for
   wide; read from jeb_ and MHF_Alex, 2026-11-05). A mixin at hardening's `Skins.parseProfile` reads it out of the
   response hardening already fetched, so Pure Faithful isn't changed and there's no request of ours: its HTTPS, size
@@ -114,7 +131,21 @@ switch. Built 2026-11-05 by Claude Opus 5.5.
   `PlayerRender.onPose` listeners. In a slim arm, what's held moves half a pixel inward, as later versions do.
 - **The hand.** The first-person hand is the one thing drawn outside the renderer's `render`, so `HeldItemRenderer` chooses
   the model around `renderHand`, before it's entered: Old Faithful's riding fix clears `riding` at its start, on whichever
-  model is then in place. The sleeve follows the arm, with the alpha test on, which beta's frame doesn't promise there.
+  model is then in place. Arm and sleeve go through the same drawing, with culling off (26.3's `renderHand` uses
+  `entityTranslucent` too, read), the alpha test on, and each put back as found. The hand keeps beta's pose, and a map's
+  two hands both show the right arm's texture, as beta's `renderHand` has it; later versions draw the left arm there.
+- **Left as they are.** What's drawn after the player meets a half-transparent pixel's depth, so water, particles and
+  a later entity don't show through it, nor what the figure holds or wears behind one: 26.3 orders translucent things by
+  distance, beta's frame has no such pass.
+- **Comparing with a real client.** `tools/modern-skins/`: `fetch.py` gets a client as a launcher would, `run.sh` runs
+  it unseen with no account or network, a Java agent (`Driver.java`) giving each view `SkinCheck` wrote to mannequins
+  wearing the test skins through the client's own downloader, and `sheet.py` puts the pictures side by side and counts
+  the figure's pixels that differ. Read and run for behaviour only; none of Mojang's code is copied or kept in the repo.
+  2026-11-05, 26.3 against this build, six skins from up to sixteen views: inside the figure the colours are the same to a
+  level or two, half-transparent ones included, and what differs is lines along edges, the figure a pixel or two off at
+  these distances. Beta's own placement stays, and 26.3 has no first-person or inventory picture here: the hand is read
+  from its code, and the inventory's figure keeps beta's lights, its head darker on one side than a classic skin's
+  because beta's display lists turn every +x face's normal to -x and ours don't.
 
 ### Carts meeting carts (#31)
 
@@ -220,15 +251,20 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   are in `local/run/client-startup-still/dusk/`.
 - `SkinCheck` (modern skins, the same run, a third WorldCheck): generated skins (`TestSkins`: a loud one, a part and
   layer to each of twelve hues with a black and a white corner on every face; wide, slim, classic 64x32; a realistic
-  one, wide and slim; one with a cape) answered where hardening meets the network (`Https.send`), so its name lookup,
+  one, wide and slim; one with a cape; and for looking through a layer, a sieve of holes and rows of alpha with a hue to
+  each face, one with only tops and bottoms, one half-transparent, one painted with no transparency) answered where hardening meets the network (`Https.send`), so its name lookup,
   profile, decode and the game's download thread run as for a real player; figures that hold a pose, against a white
   wool backdrop. Checks: what each skin arrives as, one name lookup and profile each, slim from the profile's flag
   (also for the same name in another case), capes on beta's canvas, the transparency rules on the processor; in the
   front and back pictures of the loud skins, every part's hue present or absent, on the side of the figure it belongs
-  to, a slim arm 0.80 of a wide one's width; the first-person sleeve. Pictures in `skins/` of the run folder: every skin
+  to, a slim arm 0.80 of a wide one's width; the first-person sleeve; a layer's inside lit as modern lights it, from below and above; half-transparent pixels
+  blending; a solid layer showing; a transparent base pixel's colour; GL's state as found after a model and a hand,
+  from sixteen starting states (the picture checks and the processor's fail on the code before this, seen 2026-11-05).
+  Pictures in `skins/` of the run folder: every skin
   from four sides, the loud ones from above and below, walking, swinging, sneaking, riding, sleeping, hurt, with a bow,
   a sword, a block, armour, armour while riding, the cape from behind, zombies and skeletons, and the player's own
-  hand, map, third person and inventory figure in each skin. 2026-11-05, both ways: with the switch everything as
+  hand, map, third person and inventory figure in each skin; `skins/compare/` the views `tools/modern-skins` also takes
+  a real client through. 2026-11-05, both ways: with the switch everything as
   above; with `-Pstill.beta` every skin came out 64x32 on beta's model, mirrored, no sleeve, and the classic skin's and
   the zombies' pictures matched the switched-on run's to the pixel in one pair of runs and within 1/255 (2 on the hand)
   in another, across the backdrop too: smooth dusk's light against beta's (the bow pose is off there too; walking
