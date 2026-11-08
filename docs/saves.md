@@ -87,8 +87,9 @@ walked and every length checked before the game's parser sees it (`NbtCheck`), a
   no permission), the chunk shows as generated terrain but is never saved this session, so the record stays on disk
   as it was; it isn't populated either, which would spill trees and ores from made-up terrain into its real
   neighbours;
-- each case is logged (`[oldfaithful-saves] WARN`) and, on the client, said in chat ("Old Faithful: the chunk at
-  blocks X, Z ...").
+- each case is logged (`[purefaithful-saves] WARN`) with the file-format detail and, on the client, said in chat in
+  the player's words: what happened, where, and where the original is kept ("Still Faithful: The chunk at blocks X, Z
+  ...", under the edition running; `Notices`).
 A partly damaged chunk is saved again, repaired, at the next save once its original is kept, so the repair sticks and
 isn't reported every session. A healthy chunk loads exactly as vanilla loads it.
 
@@ -116,6 +117,11 @@ write or an incomplete file leaves the previous one.
 
 **Pistons near the edge of the loaded world** (`PistonBlockMixin`, both sides): a crash the piston hunt found
 (`docs/bugs.md` #53); in a loaded world nothing changes.
+
+**A new server world's first start** (`ServerWorldMixin`, server only): about 1 in 900 new worlds stopped at
+"Preparing level", as a spring decorated during the spawn search broke a plant before `ServerWorld` had its entity
+map (`docs/bugs.md` #78). The drop is marked dead instead (nothing could be tracking it yet); otherwise nothing
+changes. Faithful Core carries the same wrap, and the two chain harmlessly.
 
 **The committer** never runs two saves of the same file at once (each has its own temporary file anyway), and a full
 save's `commitAll` returns only when every save, including one another thread is running, is on disk.
@@ -159,7 +165,10 @@ save's `commitAll` returns only when every save, including one another thread is
   check and its edits. A second test, `levelDatSurvivesWithoutTheNether` (about 20 s), starts a new world with
   `allow-nether=false` twice: while it runs, level.dat (written then by the overworld alone) is read; after each stop
   the time must not have gone back, the spawn must be the same, and the weather's countdown not reset. The control,
-  the fix switched off: time 119 while running, 0 after the stop, spawn 0, 64, 0.
+  the fix switched off: time 119 while running, 0 after the stop, spawn 0, 64, 0. Two more (#78, about 10 s together):
+  the scenario mod starts the overworld's spawn search with a rose and a spring's water ticked beside it, on the real
+  server's own first start; with this mod the rose's drop is dead, the server starts and the world saves cleanly,
+  and without it (only the scenario mod) beta's null entity map stops the server.
 - The harness's game tests all carry this mod (`docs/building.md`): `clientAudit` and `clientAuditSdl` apply every
   client mixin, `clientStartupTest` makes a world, plays 100 ticks and saves on leaving (the world it left read
   cleanly, 299 chunks, checked once), `serverTest` and `multiplayerTest` run the server with it (the server package

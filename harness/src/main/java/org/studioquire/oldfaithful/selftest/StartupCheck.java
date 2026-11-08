@@ -35,7 +35,8 @@ import org.studioquire.oldfaithful.selftest.mixin.MultiplayerScreenAccessor;
 public final class StartupCheck {
 	public static final boolean ENABLED = Boolean.getBoolean("oldfaithful.selftest.startup");
 	private static final String WORLD = "oldfaithful-startup";
-	private static final int WORLD_TICKS = 100;
+	/** A session holding the hidden world open longer sets this, to ask something of it from outside. */
+	private static final int WORLD_TICKS = Integer.getInteger("oldfaithful.selftest.worldTicks", 100);
 	private static final boolean MENU_ONLY = Boolean.getBoolean("oldfaithful.selftest.menuOnly");
 	/** A first start of Old Faithful (no options.txt yet): checked at the title screen, which it then quits by its button. */
 	private static final boolean FIRST_START = Boolean.getBoolean("oldfaithful.selftest.firstStart");
@@ -51,7 +52,7 @@ public final class StartupCheck {
 	private static final String EXPECT_MISSING = System.getProperty("oldfaithful.selftest.expectMissing");
 	/** The conflict harness: host:port of a server to try, reporting what screen it ends on instead of playing. */
 	private static final String TRY_SERVER = System.getProperty("oldfaithful.selftest.tryServer");
-	/** After a refusal's drawn: presses Use This Server's Set and reports what the screen says then (`libraryPackTest`). */
+	/** After a refusal's drawn: presses Match This Server's Mods and reports what the screen says then (`libraryPackTest`). */
 	private static final boolean USE_SET = Boolean.getBoolean("oldfaithful.selftest.useServerSet");
 	/** The conflict harness: host:port of a hostile server, joined again and again until its kick says it's done. */
 	private static final String HOSTILE = System.getProperty("oldfaithful.selftest.hostile");
@@ -72,6 +73,10 @@ public final class StartupCheck {
 	private static OptionsCheck options;
 	private static SettingsCheck settings;
 	private static MultiplayerCheck multiplayer;
+	/** Still Faithful's fences walked into on a test server instead of the multiplayer fixes' checks. */
+	private static final boolean FENCE_WALK = Boolean.getBoolean("oldfaithful.selftest.fenceWalk");
+	private static FenceWalk fenceWalk;
+	private static int fenceX = Integer.MIN_VALUE, fenceZ;
 	private static SceneShot scene;
 	private static LedgeHunt hunt;
 	private static long startedAt;
@@ -176,6 +181,11 @@ public final class StartupCheck {
 					// `:harness:fixesMultiplayerTest`: the multiplayer fixes, on a test server.
 					String[] hostPort = JOIN.split(":");
 					mc.setScreen(new net.minecraft.client.gui.screen.ConnectScreen(mc, hostPort[0], Integer.parseInt(hostPort[1])));
+					if (FENCE_WALK) {
+						// `:harness:fencesMultiplayerTest`: Still Faithful's fences walked into on a test server.
+						phase = 23;
+						return;
+					}
 					if (Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks")) {
 						// `:harness:libraryRulesTest`: another mod's world checks, as a client on a server.
 						phase = 21;
@@ -266,7 +276,7 @@ public final class StartupCheck {
 				if (++wait < 3) return;
 				if (USE_SET) {
 					wait = 0;
-					results.check("Use This Server's Set is on the refusal", LibraryScreens.click(mc.currentScreen, "Use This Server's Set"));
+					results.check("Match This Server's Mods is on the refusal", LibraryScreens.click(mc.currentScreen, "Match This Server's Mods"));
 					LibraryScreens.clear();
 					phase = 45;
 					return;
@@ -357,6 +367,31 @@ public final class StartupCheck {
 				if (mc.world == null || mc.player == null || mc.currentScreen != null) return;
 				if (++worldTicks < 20) return;
 				optionsOrFinish(mc);
+				return;
+			case 23:
+				if (refused(mc)) return;
+				if (fenceWalk == null) {
+					if (joinStarted == 0) joinStarted = System.currentTimeMillis();
+					if (System.currentTimeMillis() - joinStarted > JOIN_LIMIT_MS) {
+						results.fail("never got into the server's world, or the fence scene never arrived", new AssertionError());
+						finish(mc);
+						return;
+					}
+					if (mc.world == null || mc.player == null || mc.currentScreen != null || !mc.player.onGround) return;
+					if (fenceX == Integer.MIN_VALUE) {
+						fenceX = net.minecraft.util.math.MathHelper.floor(mc.player.x);
+						fenceZ = net.minecraft.util.math.MathHelper.floor(mc.player.z) - 20;
+						mc.player.sendChatMessage("!oftest fences " + fenceX + " " + fenceZ);
+					}
+					int y = MultiplayerScenes.FLOOR + 1, fence = net.minecraft.block.Block.FENCE.id;
+					if (mc.world.getBlockId(fenceX, y, fenceZ) != fence || mc.world.getBlockId(fenceX + FenceScene.CORNER, y, fenceZ + 1) != fence) return;
+					boolean thinClient = Boolean.getBoolean("oldfaithful.selftest.mp.thinClient"), thinServer = Boolean.getBoolean("oldfaithful.selftest.mp.thinServer");
+					String label = (thinClient ? "Still Faithful client" : "client without it") + ", " + (thinServer ? "Still Faithful server" : "server without it");
+					fenceWalk = new FenceWalk(results, label, thinClient && thinServer,
+							(game, x, feet, z, yaw) -> game.player.sendChatMessage("!oftest tp " + x + " " + feet + " " + z + " " + yaw),
+							fenceX, MultiplayerScenes.FLOOR, fenceZ);
+				}
+				if (fenceWalk.tick(mc)) finish(mc);
 				return;
 			case 30:
 				if (scene.tick(mc)) finish(mc);

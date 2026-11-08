@@ -77,6 +77,10 @@ class ServerSaveTest {
 		{36, 0, "Piston", "blockId", "stone", "none", 0},
 	};
 	private final List<String> log = new ArrayList<>();
+	/** More JVM flags for this test's servers. */
+	private final List<String> flags = new ArrayList<>();
+	/** False for a negative control: the server with only the scenario mod. */
+	private boolean savesMod = true;
 
 	@Test
 	void damagedChunksAndKilledSaves() throws Exception {
@@ -278,6 +282,40 @@ class ServerSaveTest {
 		delete(run);
 	}
 
+	/**
+	 * #78: a new world's spawn search starts with a spring's water breaking a rose (the scenario mod), which on beta's
+	 * own server happens in about 1 in 900 new worlds and stops it at "Preparing level". With the mod the world is
+	 * made, the drop marked dead, and the server starts and saves.
+	 */
+	@Test
+	void newWorldSurvivesADropInItsSpawnSearch() throws Exception {
+		fresh();
+		flags.add("-Doldfaithful.saves.scenario.beingbuilt=true");
+		try (Server s = new Server()) {
+			s.await(l -> l.contains("Done ("), 300);
+			assertTrue(has(s.lines(), "[saves-scenario] being built: 1 rose dropped, 0 alive, water where it stood true"),
+					"the spring's water should break the rose during the spawn search, and its drop should be dead");
+			s.saveAndStop();
+		}
+		assertClean(world);
+		delete(run);
+	}
+
+	/** The same without the mod: beta's crash, so the scenario still reaches the case. */
+	@Test
+	void newWorldCrashesInItsSpawnSearchWithoutTheMod() throws Exception {
+		savesMod = false;
+		fresh();
+		flags.add("-Doldfaithful.saves.scenario.beingbuilt=true");
+		try (Server s = new Server()) {
+			s.await(l -> l.contains("java.lang.NullPointerException") || l.contains("Done ("), 300);
+			List<String> lines = s.lines();
+			// The entity map's put, on a map that's null (intermediary names at run time).
+			assertTrue(!has(lines, "Done ("), "beta's server started; the scenario no longer reaches #78");
+			assertTrue(has(lines, "because \"this.field_277\" is null"), "expected beta's null entity map:\n" + String.join("\n", lines));
+		}
+	}
+
 	/** level.dat as soon as it satisfies {@code p}, read while the server may be replacing it. */
 	private NbtCompound awaitLevel(Predicate<NbtCompound> p, int seconds) throws InterruptedException {
 		long deadline = System.currentTimeMillis() + seconds * 1000L;
@@ -456,7 +494,8 @@ class ServerSaveTest {
 			}
 		}
 		Files.createDirectories(run.resolve("mods"));
-		List<String> mods = new ArrayList<>(List.of(System.getProperty("oldfaithful.saves.mod"), System.getProperty("oldfaithful.saves.scenario.mod")));
+		List<String> mods = new ArrayList<>(List.of(System.getProperty("oldfaithful.saves.scenario.mod")));
+		if (savesMod) mods.add(0, System.getProperty("oldfaithful.saves.mod"));
 		// Other mods that change saving, run with this one (Still Faithful's background autosave, for instance).
 		String extraMods = System.getProperty("oldfaithful.saves.extraMods", "");
 		for (String m : extraMods.split(java.io.File.pathSeparator)) {
@@ -500,9 +539,11 @@ class ServerSaveTest {
 		/** {@code spawner}: x,y,z of a spawner the scenario mod makes tick as if a player stood beside it (#65). */
 		Server(String scenario, String spawner) throws IOException {
 			String java = ProcessHandle.current().info().command().orElse("java");
-			process = new ProcessBuilder(java, "-Xmx768m", "-Doldfaithful.saves.scenario=" + scenario,
-					"-Doldfaithful.saves.scenario.spawner=" + spawner, "-cp", System.getProperty("oldfaithful.server.classpath"),
-					"net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui").directory(run.toFile()).redirectErrorStream(true).start();
+			List<String> command = new ArrayList<>(List.of(java, "-Xmx768m", "-Doldfaithful.saves.scenario=" + scenario,
+					"-Doldfaithful.saves.scenario.spawner=" + spawner));
+			command.addAll(flags);
+			command.addAll(List.of("-cp", System.getProperty("oldfaithful.server.classpath"), "net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui"));
+			process = new ProcessBuilder(command).directory(run.toFile()).redirectErrorStream(true).start();
 			live.add(process);
 			process.onExit().thenRun(() -> live.remove(process));
 			stdin = process.getOutputStream();

@@ -11,6 +11,7 @@ import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
@@ -46,6 +47,8 @@ public final class WorldFixes {
 			lookUp(world);
 			spawnBesideWater(world);
 			squid(world, ox + 8, oz);
+			squidSteps(world, ox + 20, oz - 20);
+			squidInWater(world, ox + 20, oz - 30);
 			falls(world, ox + 16, oz + 16);
 			fallingSand(world, ox, oz + 8);
 			stepsUnderRoof(world, ox + 70, oz + 40, true);
@@ -142,6 +145,50 @@ public final class WorldFixes {
 		boolean lava = NaturalSpawnerInvoker.oldfaithful$isValidSpawnPos(SpawnGroup.WATER_CREATURE, world, x, y, z);
 		boolean water = NaturalSpawnerInvoker.oldfaithful$isValidSpawnPos(SpawnGroup.WATER_CREATURE, world, x + 2, y, z);
 		say("#66 squid: in lava " + (lava ? "yes" : "no") + ", in water " + (water ? "yes" : "no"));
+	}
+
+	/** #76: a squid moved along a floor of redstone ore through its own move, 8 blocks, with water over it: the ore it lit. */
+	private static void squidSteps(ServerWorld world, int x0, int z) {
+		int floor = 100;
+		for (int x = x0 - 1; x <= x0 + 12; x++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z + dz, Block.REDSTONE_ORE.id, 0);
+				world.setBlockWithoutNotifyingNeighbors(x, floor + 1, z + dz, Block.WATER.id, 0);
+			}
+		}
+		SquidEntity squid = new SquidEntity(world);
+		squid.setPositionAndAnglesKeepPrevAngles(x0 + 0.5, floor + 1, z + 0.5, 0, 0);
+		for (int t = 0; t < 40; t++) squid.move(0.2, -0.05, 0.0);
+		int lit = 0;
+		for (int x = x0 - 1; x <= x0 + 12; x++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if (world.getBlockId(x, floor, z + dz) == Block.LIT_REDSTONE_ORE.id) lit++;
+			}
+		}
+		say("#76 squid along redstone ore, " + String.format(Locale.ROOT, "%.1f", squid.x - x0) + " blocks: " + lit + " lit");
+	}
+
+	/**
+	 * #77: what a squid's test says at feet heights from the floor up a column of water 3 deep, in steps of 0.025, as long as
+	 * its middle is under the surface; then with its middle over the surface, and out of the water altogether.
+	 */
+	private static void squidInWater(ServerWorld world, int x, int z) {
+		int floor = 100;
+		world.setBlockWithoutNotifyingNeighbors(x, floor, z, Block.STONE.id, 0);
+		for (int y = floor + 1; y <= floor + 3; y++) world.setBlockWithoutNotifyingNeighbors(x, y, z, Block.WATER.id, 0);
+		SquidEntity squid = new SquidEntity(world);
+		int heights = 0, dry = 0;
+		for (int i = 0; i < 96; i++) {
+			squid.setPosition(x + 0.5, floor + 1 + i * 0.025, z + 0.5);
+			heights++;
+			if (!squid.isSubmergedInWater()) dry++;
+		}
+		squid.setPosition(x + 0.5, floor + 1 + 2.45, z + 0.5);
+		boolean above = squid.isSubmergedInWater();
+		squid.setPosition(x + 0.5, floor + 6, z + 0.5);
+		boolean clear = squid.isSubmergedInWater();
+		say("#77 squid's water test: " + dry + " of " + heights + " heights in the water dry; middle over the surface " + (above ? "wet" : "dry")
+				+ ", in the air " + (clear ? "wet" : "dry"));
 	}
 
 	/** #56: pigs (1000 health) dropped from 12 to 31 blocks into a pool one block deep, two blocks apart, down its middle. */

@@ -25,6 +25,8 @@
     "slimes.SlimeEntityMixin",
     "spawnbox.WorldMixin",
     "squid.NaturalSpawnerMixin",
+    "squidsteps.SquidEntityMixin",
+    "squidswim.SquidEntityMixin",
     "steps.EntityMixin",
     "ticks.AlphaChunkStorageMixin",
     "ticks.ChunkMixin",
@@ -67,6 +69,9 @@
   ],
   "server": [
     "chunkorder.ChunkMapMixin",
+    "closedscreens.ScreenHandlerMixin",
+    "closedscreens.ServerPlayerEntityMixin",
+    "closedscreens.ServerPlayNetworkHandlerMixin",
     "drowning.EntityMixin",
     "explosions.ExplosionMixin",
     "lastuse.ServerPlayerInteractionManagerMixin",

@@ -43,8 +43,10 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 12 | `boats.sturdy` | world | A break needs beta's own condition (a sideways collision while still moving over 0.15 along the free axis) and a real crash: at least 0.25 blocks a tick lost into what it hit. So every break here would also be one in beta; scrapes along a shore or an item never break a boat. Items and arrows aren't solid to boats (as #31 for carts) |
 | 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). At the surface, vertical speed × 0.8 a tick (rides steadily instead of bobbing). Paddling is beta's: same top speed, acceleration, turning |
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
-| 4 | `animals.keepTended` | world | Animals a player has dealt with never despawn (`KeptAnimals`, below) |
+| 4 | `animals.keepTended` | world | Animals a player has looked after never despawn (`KeptAnimals`, below) |
 | 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule |
+| 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
+| | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
 | | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
@@ -85,6 +87,32 @@ Limits: run only on our LWJGL component and an NVIDIA GPU (the GL20 calls exist 
 NV_fog_distance the shader assumes eye-plane fog); Advanced OpenGL and anaglyph reasoned, not tested; a mod that meshes
 chunks off the main thread, or SmoothBeta (which hooks the tessellator during chunk builds), won't compose: switch it
 off for those.
+
+### Fences (#30)
+
+The user's ask (2026-11-07), after it was kept as beta. Built by Claude Opus 5.5 the same day. Beta's fence is a whole
+block to aim at and a whole 1 x 1.5 x 1 box to walk into, whatever it joins; here it's the shape it's drawn as. A fence
+joins only fences beside it in beta (`renderFence`), so the arms follow that, and fence gates don't exist.
+- **Shape.** As 1.8 to 1.12 cover it, two boxes: one along z where it joins north or south, one along x where it joins
+  east or west or neither (`FenceShape`). Collision 1.5 high, so still no jumping over; aiming 1 high, the ray tested
+  against each box. The outline is 1.13's: lines round the post and arms as one shape, no edge where an arm meets the
+  post (the footprint traced as one polygon over a 3 x 3 grid, `FenceShape.outline`), grown 0.002 as beta grows its box.
+  Added to `FenceBlock` as overrides of `Block.addIntersectingBoundingBox` and `raycast`; `getCollisionShape` keeps the
+  whole box, so placing a fence where a mob stands, arrows stuck in one and pistons moving one are beta's.
+- **Multiplayer.** Both sides work out collision: the client moves its player, the server replays the move and sends
+  the player back where its result is more than a quarter block off or the place is inside something. So a client is
+  thin only on a server whose login packet carries 'f' (`ServerMarker`, after the fixes' 'm' and 's' and glowstone's
+  'g': the field's 16 characters are now full). The other way round needs nothing: a client with whole fences never
+  goes where a thin server's are, the server's replay of its moves comes out the same (only fewer boxes to stop at), and
+  beta's floating kick counts blocks near the feet, not shapes, so a vanilla player on the edge of a post's top just
+  looks to others as if floating. A server applies the thin shape to everything it moves: mobs, items, boats, carts.
+  Aiming is the client's own everywhere: a server takes the block and face a player names (only the distance is
+  checked), so breaking or placing past a post works on any server; a mob hit through the gap beside a post is hurt only
+  where the server's line of sight (eyes to eyes, its own fences) agrees.
+- **What changes in existing builds.** Posts placed only diagonally to each other no longer close a gap: a player,
+  wolf, chicken or a zombie, skeleton or creeper (0.6 wide) fits between two such posts, as in later versions; pigs,
+  cows and sheep (0.9) still don't. The "smart farm" (the whole box over farmland, #30) goes with it. Path finding is
+  beta's, which treats a fence block as solid either way; mobs only stop snagging on posts as they cut corners.
 
 ### Modern skins
 
@@ -178,7 +206,7 @@ blocks of x = 0), and on curves on either axis.
   riding, no errors, the world saved on stopping. Beta's behaviour on east-west track, now on every axis; left as it is
   (no crash or damage; a cap on the stored speed would make such a pair roll on forever instead).
 
-### Animals that stay (#4): what "dealt with" means
+### Animals that stay (#4): what "looked after" means
 
 Beta has no feeding, breeding or leads; players herd animals by punching them along, carry them in minecarts, and
 shear, milk, saddle and ride them. So an animal is kept for good once:
@@ -271,6 +299,35 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   differs by the frame's place in its tick). SkinCheck turns vsync off while it runs and puts it back: the start-up test
   keeps it on for the settings checks, and hidden clients waiting on the refresh are the stalls' trigger; two of six runs without that ended in a stall, neither of the two with it did. The real path: jeb_ and Notch (64x32: beta's), MHF_Alex and MHF_Steve (64x64, both
   slim in their profiles) through hardening's own client and parser, outside the game.
+- `FenceCheck` (#30, the same run, after StillCheck), in single player, so the switch decides: `FenceWalk` (the
+  harness's, shared with the multiplayer test) walks the player by a scripted input, the game's own physics, into a
+  `FenceScene` (a lone post, a line of three, a corner): up to the post, past its side 0.6 off its middle, diagonally past
+  its corner on a line 1.2 off, up to the line, into the corner's inside, jumping at the post, and standing 6 s on the
+  edge of a post's top. Then the crosshair as each frame works it out: at the post's east face, placing cobblestone
+  against it and pick block; 0.3 beside its middle at a wall and at a pig behind it; and a pig given a path every tick
+  round the end of a row of five fences. Pictures of the outline on the post, the line and the corner in
+  `local/run/fences/` (`-thin`, `-beta`). 2026-11-07, both ways: thin, the player stops 0.075 short of the post's middle
+  line (0.3 from its face), passes its side, keeps to its diagonal line exactly, stops at 0.925 from the line and the corner,
+  jumps 1.25 and never gets over, falls off the top's edge; the crosshair meets the post's face at 0.625, places east of
+  it, picks the fence, and through the gap meets the wall and the pig; the pig got round in 35 ticks touching nothing. With
+  `-Pstill.beta` everything at the whole block (-0.3, 1.3, pushed 0.48 off the diagonal, stood on the edge, the face at
+  1.0, the fence instead of the wall and the pig), and the pig snagged on the row's end on 7 of 38 ticks. A camera
+  exactly along a diagonal into a post's vertical edge misses it by rounding, as beta's own block test would; the
+  pictures look from off the diagonal.
+- `ChatCheck` (chat bars, the same run, after FenceCheck): messages put in the chat in a room of white wool open to the
+  sky, so every bar lies on a plain wall, and each line's bar end found in the picture along the bar's top row (the last
+  sharp brightening, from a pixel that isn't a letter's shadow: commas of the line above reach into that row), against
+  its text: one short line, five of different lengths with a long message wrapped as beta wraps it, and the same with
+  the chat open. Pictures in `local/run/fences/chat/` (`-polished`, `-beta`). 2026-11-07: every bar ended at 2 + its
+  text's width + 1 (14 to 319), and with `-Pstill.beta` at 322 for every line.
+- `./gw :harness:fencesMultiplayerTest` (#30, about 3.5 minutes): the server package with and without the polish mod,
+  each joined by the hidden client with Still Faithful's mods with and without it; the server builds the scene on
+  "!oftest fences" and puts the player at each walk's start on "!oftest tp" (`MultiplayerScenes`), flying off so beta's
+  floating kick runs. 2026-11-07: thin only with both, whole in the other three mixes, the same numbers as single
+  player; in all four no position from the server during any walk, still connected after 6 s on a post's edge, and no
+  "moved wrongly" or floating line in a server's log. Not tested: a vanilla client by itself (the client without the
+  polish mod has Old Faithful's, none of which touch collision) and mobs or boats seen across mixed sides (the server
+  moves them; a client without the change only sees them pass closer to a post than its own fences would let it).
 - `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves`: the saves mod's real-server test with the polish mod beside
   it (damaged chunks; the server killed outright 8 times during bursts of save-all, every chunk and level.dat read
   back with vanilla's reader after each, nothing gone): passed 2026-11-02 with the background writer doing the
@@ -291,7 +348,6 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 ## Kept as beta
 - Eating at full health stays possible (#35): mods add foods with other effects, and blocking eating would need
   adapting for each.
-- The fence hitbox ("smart farms", #30).
 - New worlds spawning near 0,0 on servers with the Nether on (#52).
 - Torches drawn at full brightness (#34): deliberate in `renderTorch`; the user likes it, the glow is how they
   remember early versions.

@@ -39,6 +39,11 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   from an egg you threw. Wild animals still come and go as in beta, and hitting one doesn't keep it.
 - **Saving without the pause.** The game's save every couple of seconds is compressed and written in the background:
   the same saves at the same moments, crash-safe as Pure Faithful's (it needs Pure Faithful's saves mod).
+- **Fences** are a post with arms to the fences beside them, as in later versions, instead of a whole block: you can
+  stand against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past
+  posts needs the server to have this too; aiming past them works anywhere. Posts that only touch diagonally no longer
+  close a gap to players and the narrower mobs.
+- **Chat** lines each have a dark bar only as long as their text, not the chat's full width.
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
 - **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and
@@ -55,7 +60,8 @@ for one): set Dusk to Beta with those.
 Everything else is Old Faithful's and Pure Faithful's: beta's own mistakes fixed, lighting as beta's rule says it
 should be, a field-of-view slider, a settings screen for every switch, a resizable window and borderless fullscreen,
 speed with the same picture, safe logins, and saves that survive crashes. What players built their game around
-(the fence hitbox behind "smart farms", world generation, the closing-the-window undo) stays as beta had it.
+(world generation, the closing-the-window undo) stays as beta had it; the fence's whole-block hitbox behind "smart
+farms" comes back with Fence Shape off.
 
 Worlds stay in beta's own format and open in the original game, Pure Faithful and Old Faithful too; there, placed
 leaves can decay again and kept animals can despawn.

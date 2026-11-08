@@ -14,11 +14,15 @@ import javax.imageio.ImageIO;
 
 import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.render.chunk.ChunkBuilder;
 import net.minecraft.entity.player.ClientPlayerEntity;
 import net.minecraft.world.LightType;
 import net.minecraft.world.World;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.studioquire.oldfaithful.selftest.mixin.ChunkBuilderSceneAccessor;
+import org.studioquire.oldfaithful.selftest.mixin.WorldLightQueueAccessor;
+import org.studioquire.oldfaithful.selftest.mixin.WorldRendererAccessor;
 
 /**
  * Pictures of the real game for the site and listings (`:harness:sceneShot`, docs/release.md), taken in the start-up
@@ -34,7 +38,13 @@ import org.lwjgl.opengl.GL11;
  * facing yaw and pitch, the time of day held at {@code time}, at the Far render distance; after
  * {@code oldfaithful.selftest.sceneViewTicks} (default 900, for the far view to fill in) the frame is saved as
  * {@code view-<n>.png}, with the view in {@code view-<n>.txt}. Optionally after the time: the render distance (0 Far,
- * the default, to 3 Tiny), then {@code rain} for weather. With {@code -Doldfaithful.selftest.sceneBright=true} every level of light shows as full daylight, for
+ * the default, to 3 Tiny), then {@code rain} for weather. A view {@code use x y z} instead uses the block there as a
+ * player's click would (a lever, a door) and shoots nothing, so the views after it show what it did; {@code dig x y z} takes
+ * the block out, {@code put x y z id} puts one in, both telling its neighbours, and {@code probe x y z r} writes the
+ * blocks within r of a place into {@code probe-<n>.txt}. Scheduled block ticks don't run here, so sand left over air
+ * stays. With {@code -Doldfaithful.selftest.sceneSettle=true} a view is
+ * shot as soon as it's built near the camera ({@link #unbuilt}), after at least {@link #SETTLE_MIN} ticks, with
+ * {@code sceneViewTicks} as the cap: for near views like a tower's rooms, where the far view filling in doesn't matter. With {@code -Doldfaithful.selftest.sceneBright=true} every level of light shows as full daylight, for
  * looking at what's built underground.
  *
  * <p>With {@code -Doldfaithful.selftest.sceneSurvey="x0 z0 x1 z1"}: no pictures, a map of the world's surface over
@@ -49,9 +59,16 @@ public final class SceneShot {
 	private static final String VIEWS = given("oldfaithful.selftest.sceneViews");
 	private static final String SURVEY = given("oldfaithful.selftest.sceneSurvey");
 	private Survey survey;
+	private SpawnWatch watch;
+	private CartRide ride;
 	private SeamCheck seams;
 	private static final int VIEW_TICKS = Integer.getInteger("oldfaithful.selftest.sceneViewTicks", 900);
 	private static final boolean BRIGHT = Boolean.getBoolean("oldfaithful.selftest.sceneBright");
+	private static final boolean SETTLE = Boolean.getBoolean("oldfaithful.selftest.sceneSettle");
+	/** How far from the camera (blocks, to a render chunk's middle) a render chunk counts as near. */
+	private static final int SETTLE_RADIUS = Integer.getInteger("oldfaithful.selftest.sceneSettleRadius", 64);
+	/** Ticks the view must stay built in a row: a populated neighbour or a light pass can dirty chunks again. */
+	private static final int SETTLE_MIN = 20, SETTLE_STEADY = 10;
 	private static final int SETTLE_TICKS = 100, HOLD_TICKS = 200;
 	private static final int LAVA = Block.LAVA.id, FLOWING_LAVA = Block.FLOWING_LAVA.id;
 
@@ -93,6 +110,8 @@ public final class SceneShot {
 
 	/** One game tick; true when every shot is taken. */
 	boolean tick(Minecraft mc) {
+		if (SpawnWatch.ENABLED) return (watch == null ? watch = new SpawnWatch(OUT, results) : watch).tick(mc);
+		if (CartRide.ENABLED) return (ride == null ? ride = new CartRide(OUT, results) : ride).tick(mc);
 		mc.options.hideHud = true;
 		mc.options.difficulty = 0;
 		ticks++;
@@ -141,6 +160,44 @@ public final class SceneShot {
 			mc.worldRenderer.reload();
 		}
 		String[] v = views[view].trim().split("\\s+");
+		if (v[0].equals("use")) {
+			int ux = Integer.parseInt(v[1]), uy = Integer.parseInt(v[2]), uz = Integer.parseInt(v[3]), id = mc.world.getBlockId(ux, uy, uz);
+			if (id > 0) Block.BLOCKS[id].onUse(mc.world, ux, uy, uz, mc.player);
+			results.pass("scene: view-" + view + " used block " + id + " at " + ux + " " + uy + " " + uz);
+			view++;
+			return false;
+		}
+		if (v[0].equals("probe")) {
+			// The blocks in a box about a place, layer by layer from the top, into probe-<view>.txt: what's really there, for a picture that doesn't look as planned.
+			int px = Integer.parseInt(v[1]), py = Integer.parseInt(v[2]), pz = Integer.parseInt(v[3]), r = Integer.parseInt(v[4]);
+			StringBuilder out = new StringBuilder();
+			out.append("world time ").append(mc.world.getTime()).append(", ticks ").append(ticks).append('\n');
+			for (int yy = py + r; yy >= py - r; yy--) {
+				out.append("y ").append(yy).append('\n');
+				for (int zz = pz - r; zz <= pz + r; zz++) {
+					out.append(String.format(Locale.ROOT, "%6d", zz));
+					for (int xx = px - r; xx <= px + r; xx++) out.append(String.format(Locale.ROOT, "%4d", mc.world.getBlockId(xx, yy, zz)));
+					out.append('\n');
+				}
+			}
+			try {
+				java.nio.file.Files.write(new File(OUT, "probe-" + view + ".txt").toPath(), out.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8));
+			} catch (java.io.IOException e) {
+				throw new java.io.UncheckedIOException(e);
+			}
+			results.pass("scene: view-" + view + " probed " + px + " " + py + " " + pz);
+			view++;
+			return false;
+		}
+		if (v[0].equals("dig") || v[0].equals("put")) {
+			// Scheduled block ticks don't run in this world (sand put in mid-air stays put, 2026-11-08), so what follows from a change, a crust of sand coming down, isn't seen here.
+			int dx = Integer.parseInt(v[1]), dy = Integer.parseInt(v[2]), dz = Integer.parseInt(v[3]), id = mc.world.getBlockId(dx, dy, dz);
+			int put = v[0].equals("put") ? Integer.parseInt(v[4]) : 0;
+			mc.world.setBlock(dx, dy, dz, put);
+			results.pass("scene: view-" + view + (put == 0 ? " dug out block " + id : " put block " + put) + " at " + dx + " " + dy + " " + dz);
+			view++;
+			return false;
+		}
 		double x = Integer.parseInt(v[0]) + 0.5, y = Double.parseDouble(v[1]), z = Integer.parseInt(v[2]) + 0.5;
 		float yaw = Float.parseFloat(v[3]), pitch = Float.parseFloat(v[4]);
 		long time = Long.parseLong(v[5]);
@@ -156,13 +213,19 @@ public final class SceneShot {
 		held++;
 		mc.world.getProperties().setRaining(rain);
 		mc.world.getProperties().setRainTime(Integer.MAX_VALUE / 2);
-		if (held == VIEW_TICKS) {
-			taken = false;
-			pending = new File(OUT, "view-" + view + ".png");
-		} else if (held > VIEW_TICKS && taken) {
+		if (shotAt == 0) {
+			// Rain fades in over about 100 ticks, so a rainy view always gets the whole hold.
+			if (SETTLE && !rain && held >= SETTLE_MIN - SETTLE_STEADY) steady = (waiting = unbuilt(mc, x, y, z, yaw, pitch)) == null ? steady + 1 : 0;
+			if (held >= VIEW_TICKS || held >= SETTLE_MIN && steady >= SETTLE_STEADY) {
+				shotAt = held;
+				taken = false;
+				pending = new File(OUT, "view-" + view + ".png");
+			}
+		} else if (taken) {
 			String where = String.format(Locale.ROOT, "seed %d, camera at %d %.2f %d, yaw %.0f, pitch %.0f, time %d, render distance %d%s",
 					SEED, (int) Math.floor(x), y, (int) Math.floor(z), yaw, pitch, time, mc.options.viewDistance, rain ? ", raining" : "");
-			results.pass("scene: view-" + view + ".png, " + where);
+			results.pass("scene: view-" + view + ".png, " + where + ", shot after " + shotAt + " ticks"
+					+ (SETTLE && waiting != null ? " (still waiting: " + waiting + ")" : ""));
 			try {
 				java.nio.file.Files.write(new File(OUT, "view-" + view + ".txt").toPath(), (where + "\n").getBytes(java.nio.charset.StandardCharsets.UTF_8));
 			} catch (java.io.IOException e) {
@@ -170,9 +233,48 @@ public final class SceneShot {
 			}
 			view++;
 			held = 0;
+			shotAt = 0;
+			steady = 0;
+			waiting = null;
 		}
 		return false;
 	}
+
+	private int shotAt, steady;
+	private String waiting;
+
+	/**
+	 * What near the camera and in view isn't drawn as it is yet, or null once nothing is: a render chunk not built since the
+	 * renderer last moved it, or waiting to be rebuilt; without the bright light, also light updates still queued, as each
+	 * can change what's drawn. In view is the renderer's own frustum flag, but for a built empty chunk, whose flag cullChunks
+	 * never updates: for those, a cone a little wider than the window's view. Beta's light queue in a new world takes far
+	 * longer than the hold to empty, so without the bright light a view gets the whole hold.
+	 */
+	private static String unbuilt(Minecraft mc, double x, double y, double z, float yaw, float pitch) {
+		int light = BRIGHT ? 0 : ((WorldLightQueueAccessor) mc.world).oldfaithful$lightingQueue().size();
+		double yr = Math.toRadians(yaw), pr = Math.toRadians(pitch);
+		double lx = -Math.sin(yr) * Math.cos(pr), ly = -Math.sin(pr), lz = Math.cos(yr) * Math.cos(pr);
+		long r2 = (long) SETTLE_RADIUS * SETTLE_RADIUS;
+		int dirty = 0, unbuilt = 0;
+		for (ChunkBuilder c : ((WorldRendererAccessor) mc.worldRenderer).oldfaithful$chunks()) {
+			double dx = c.centerX - x, dy = c.centerY - y, dz = c.centerZ - z;
+			double d2 = dx * dx + dy * dy + dz * dz;
+			if (d2 > r2) continue;
+			if (c.hasNoGeometry()) {
+				double d = Math.sqrt(d2);
+				if (d > CHUNK_RADIUS && (dx * lx + dy * ly + dz * lz) / d < Math.cos(Math.min(Math.PI, VIEW_HALF_ANGLE + Math.asin(CHUNK_RADIUS / d)))) continue;
+			} else if (!c.inFrustum) {
+				continue;
+			}
+			if (!((ChunkBuilderSceneAccessor) c).oldfaithful$sceneBuilt()) unbuilt++;
+			else if (c.dirty) dirty++;
+		}
+		if (light == 0 && dirty == 0 && unbuilt == 0) return null;
+		return String.format(Locale.ROOT, "%d render chunks unbuilt, %d to rebuild, %d light updates", unbuilt, dirty, light);
+	}
+
+	/** Half a render chunk's diagonal; and from the middle of the view to its corner, with room (a 1440x900 window at beta's 70 degrees is about 54). */
+	private static final double CHUNK_RADIUS = Math.sqrt(3) * 8, VIEW_HALF_ANGLE = Math.toRadians(62);
 
 	/** The player in the cave's air at the site, looking at the lava, kept from falling, burning or drowning. */
 	private static void hold(ClientPlayerEntity p, Site s) {

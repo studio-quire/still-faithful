@@ -97,6 +97,10 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 	@Input
 	public abstract Property<Boolean> getServerOnly();
 
+	/** The selftest stage in single player only, fresh and reopened: no servers, two hidden clients instead of six. */
+	@Input
+	public abstract Property<Boolean> getSinglePlayerOnly();
+
 	/** Hidden clients in the combinations stage, beyond the whole set. */
 	@Input
 	public abstract Property<Integer> getClientSamples();
@@ -107,6 +111,7 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 		getParallel().convention(1);
 		getKeepGoing().convention(false);
 		getServerOnly().convention(false);
+		getSinglePlayerOnly().convention(false);
 		getClientSamples().convention(2);
 		getStillEdition().convention("");
 	}
@@ -288,6 +293,8 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 		classpath.add(getIntermediaryMappings().get().getAsFile().getAbsolutePath());
 		classpath.add(getServerJar().get().getAsFile().getAbsolutePath());
 		List<String> command = new ArrayList<>(List.of(getJavaExecutable().get(), "-Dmixin.debug.countInjections=true", "-Xmx768m", "-Djava.awt.headless=true"));
+		// The harness probe runs the server's ticks this fast and tells joining clients so; a server without it ignores this.
+		if (getTickMs().get() != 50) command.add("-Doldfaithful.test.tickMs=" + getTickMs().get());
 		command.addAll(jvm);
 		command.addAll(List.of("-cp", String.join(File.pathSeparator, classpath), "net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui"));
 		return command;

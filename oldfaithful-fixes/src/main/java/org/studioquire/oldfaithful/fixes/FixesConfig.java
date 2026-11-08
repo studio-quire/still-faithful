@@ -149,6 +149,9 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"multiplayer.spawnerMobs", "spawners",
 					"# #62 (both): on a server every mob spawner showed a spinning pig. A server with this sends what each spawns;\n"
 					+ "# a client with this shows it.\n"},
+			{"multiplayer.closedScreens", "closedscreens",
+					"# #79 (server): placing a block or using an item a moment after closing a chest, furnace, dispenser or\n"
+					+ "# workbench could leave a player's screen showing one more of it than they had, until that slot changed again.\n"},
 			{"spawning.besideWater", "spawnbox",
 					"# #64: west and north of 0, 0, mobs didn't spawn with water or lava beside their west or north side.\n"},
 			{"spawning.squidInWater", "squid",
@@ -172,6 +175,11 @@ public final class FixesConfig implements IMixinConfigPlugin {
 					"# #75: rejoining a world (or a server sending your position) right against a wall, a rounding slip could put you\n"
 					+ "# a hair inside it, and you walked in and suffocated until pushed out; a mob read from its chunk could do the\n"
 					+ "# same. With this, the sides of your box stop at the wall.\n"},
+			{"squids.footsteps", "squidsteps",
+					"# #76: squid made footsteps on the sea floor, and set off what footsteps set off (redstone ore lit up).\n"},
+			{"squids.swimming", "squidswim",
+					"# #77: squid sank to the bottom and stayed within half a block of it: their test for being in water failed at\n"
+					+ "# some heights, and they couldn't swim across those. With this, they swim all through the water.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

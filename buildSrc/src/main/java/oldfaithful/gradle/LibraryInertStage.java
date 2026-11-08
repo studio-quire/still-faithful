@@ -183,7 +183,6 @@ final class LibraryInertStage implements Stage {
 					raw.stand(5, 50);
 					if (raw.await(r -> r.id() == 250, 0.5) != null) t.fail("faithful-core", "inert-peers", "a vanilla client was sent a 250");
 				}
-				Thread.sleep(5500);
 				Path game = dir.resolve("plain-client");
 				Files.createDirectories(game);
 				t.client("a client without the core on a server with it", game, plainClient(), List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + server.port, "-Doldfaithful.selftest.joinWorldChecks=true"));

@@ -3,6 +3,6 @@
   "minVersion": "0.8",
   "package": "org.studioquire.oldfaithful.saves.scenario.mixin",
   "compatibilityLevel": "JAVA_8",
-  "server": ["SpawnerRangeMixin", "WorldTickMixin"],
+  "server": ["SpawnSearchMixin", "SpawnerRangeMixin", "WorldTickMixin"],
   "injectors": { "defaultRequire": 1 }
 }

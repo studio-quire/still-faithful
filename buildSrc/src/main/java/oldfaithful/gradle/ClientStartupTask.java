@@ -90,6 +90,15 @@ public abstract class ClientStartupTask extends GameTestTask {
 	@Input
 	public abstract Property<Boolean> getOldFaithful();
 
+	/**
+	 * Milliseconds a game tick takes, 50 as in the game; less runs game time faster, for tests that wait on it
+	 * ({@code -Ptest.speed}, docs/building.md). The hidden clients run their ticks that fast in single player, and on a
+	 * server only when it says it does too: library servers with the harness probe, told the same here
+	 * ({@link LibraryTestTask#serverCommand}).
+	 */
+	@Input
+	public abstract Property<Integer> getTickMs();
+
 	/** Files written into the game's config folder before the main launch: name to contents (none by default). */
 	@Input
 	public abstract MapProperty<String, String> getConfigs();
@@ -105,6 +114,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 		getPlatform().convention("windows");
 		getWindowRuns().convention(getPlatform().map(p -> p.equals("windows")));
 		getOldFaithful().convention(false);
+		getTickMs().convention(50);
 	}
 
 	private static final String PRISM_WINDOW = "-Dorg.prismlauncher.window.dimensions=";
@@ -259,6 +269,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 		String natives = getNatives().get().getAsFile().getAbsolutePath();
 		List<String> jvm = new ArrayList<>(List.of("-Xmx1g", "-Doldfaithful.lwjgl.hidden=true", "-Doldfaithful.selftest.startup=true",
 				"-Djava.library.path=" + natives, "-Dorg.lwjgl.librarypath=" + natives, "--enable-native-access=ALL-UNNAMED"));
+		if (getTickMs().get() != 50) jvm.add("-Doldfaithful.test.tickMs=" + getTickMs().get());
 		jvm.addAll(extraJvmArgs);
 		List<String> javaCommand = javaCommand("net.fabricmc.loader.impl.launch.knot.KnotClient", jvm,
 				List.of("--username", "OldFaithfulTest", "--gameDir", game.toAbsolutePath().toString()));

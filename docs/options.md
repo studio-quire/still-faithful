@@ -41,7 +41,8 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   settings and world rules below, eight to a page. With no line of its own the page shows the mod's description. A mod
   that's off isn't running, so its page has only Enabled until it is; a mod in `mods/` with settings has its page without Enabled.
   A page can have one button of its own beside Enabled (`PageButton`): the core's **Lock Rules**, on every page with world rules while
-  a world is open, pairs with it in the top row on beta's two columns; alone, either sits in the middle.
+  a world is open, pairs with it in the top row on beta's two columns; alone, either sits in the middle. Whoever knows a mod must stay as it is says so with
+  `SettingsRegistry.holdMod`, which greys Enabled on its page and on any page whose mod's going off would take it (the core, inside a world's locked rules).
 - **What's there**: only what's installed. Each mod lists its switches through a small API
   (`oldfaithful-settings`: a `SettingsProvider` registered as the `oldfaithful-options:settings` entrypoint in its
   fabric.mod.json, loaded when a screen first asks and never on a server). A switch goes on its mod's own page unless the

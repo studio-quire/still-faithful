@@ -59,6 +59,8 @@ public final class FixesSettings implements SettingsProvider {
 			{"spawning.besideWater", "mobs", WORLD, "Spawning by Water",
 					"West and north of 0, 0, mobs didn't spawn beside water or lava on their west or north side."},
 			{"spawning.squidInWater", "mobs", WORLD, "Squid in Lava", "Squid could spawn in lava, and burn."},
+			{"squids.swimming", "mobs", WORLD, "Squid Swimming", "Squid sank to the bottom and stayed within half a block of it."},
+			{"squids.footsteps", "mobs", CLIENT, "Squid Footsteps", "Squid made footsteps on the sea floor, and lit redstone ore there."},
 			{"movement.stepUnderRoof", "players", CLIENT, "Steps Under Roofs",
 					"A step with a block low overhead could sink you into the floor, and you were shoved back out."},
 			{"movement.boxAgainstWalls", "players", CLIENT, "Rejoining by Walls",
@@ -103,7 +105,7 @@ public final class FixesSettings implements SettingsProvider {
 	/** Fixes that run only on a server: a client's switch would change nothing, so they're left to the server's file. */
 	static final Set<String> SERVER_ONLY = new HashSet<>(Arrays.asList(
 			"multiplayer.refusedBreaks", "multiplayer.trackAfterTeleport", "multiplayer.chunkOrder", "multiplayer.signUpdates",
-			"multiplayer.explosionPush", "multiplayer.tpFall", "multiplayer.drowningHeight"));
+			"multiplayer.explosionPush", "multiplayer.tpFall", "multiplayer.drowningHeight", "multiplayer.closedScreens"));
 
 	@Override
 	public void register(SettingsRegistry r) {

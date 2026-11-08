@@ -1,10 +1,13 @@
 package org.studioquire.oldfaithful.selftest;
 
 import net.minecraft.block.Block;
+import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.entity.MobSpawnerBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.play.UpdateSignPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.MathHelper;
@@ -21,6 +24,8 @@ public final class MultiplayerScenes {
 	public static final String CLIENT = "OldFaithfulTest";
 	/** The scenes' floor: high above most terrain, but inside the world (blocks end at y 127; "Sky" players fly at 130). */
 	public static final int FLOOR = 120;
+	/** #77: the top of the floor of the squid's tank, under the scene, 3 blocks of water. */
+	public static final int TANK_FLOOR = 101;
 
 	private MultiplayerScenes() {
 	}
@@ -54,6 +59,29 @@ public final class MultiplayerScenes {
 			PigEntity pig = new PigEntity(world);
 			pig.setPositionAndAngles(penX + 0.5 + i * 0.05, FLOOR + 1, pz + 0.5, 0, 0);
 			world.spawnEntity(pig);
+		}
+		// #76, #77: a tank of squid under the scene and east of it, water 3 deep, the squid starting on its floor.
+		for (int x = (px + 7) >> 4; x <= (px + 17) >> 4; x++) {
+			for (int z = (pz - 5) >> 4; z <= (pz + 5) >> 4; z++) world.chunkCache.loadChunk(x, z);
+		}
+		for (int x = px + 7; x <= px + 17; x++) {
+			for (int z = pz - 5; z <= pz + 5; z++) {
+				boolean wall = x == px + 7 || x == px + 17 || Math.abs(z - pz) == 5;
+				world.setBlock(x, TANK_FLOOR - 1, z, Block.STONE.id);
+				for (int y = TANK_FLOOR; y < TANK_FLOOR + 6; y++) {
+					if (wall) world.setBlock(x, y, z, Block.STONE.id);
+				}
+			}
+		}
+		for (int x = px + 8; x <= px + 16; x++) {
+			for (int z = pz - 4; z <= pz + 4; z++) {
+				for (int y = TANK_FLOOR; y < TANK_FLOOR + 6; y++) world.setBlock(x, y, z, y < TANK_FLOOR + 3 ? Block.WATER.id : 0);
+			}
+		}
+		for (int i = 0; i < 16; i++) {
+			SquidEntity squid = new SquidEntity(world);
+			squid.setPositionAndAngles(px + 9.5 + (i % 4) * 2, TANK_FLOOR, pz - 2.5 + (i / 4) * 2, 0, 0);
+			world.spawnEntity(squid);
 		}
 		System.out.println("[oldfaithful-selftest] scene built for " + player.name + " at " + px + " " + (FLOOR + 1) + " " + pz);
 	}
@@ -118,6 +146,43 @@ public final class MultiplayerScenes {
 				System.out.println("[oldfaithful-selftest] " + player.name + " in a pool at " + x + " " + feet + " " + z);
 				break;
 			}
+			case "chest": {
+				// #79: an empty inventory, a chest at x y z holding 8 cobblestone, and air 4 blocks south of it to place in.
+				int x = Integer.parseInt(a[1]), y = Integer.parseInt(a[2]), z = Integer.parseInt(a[3]);
+				for (int i = 0; i < player.inventory.main.length; i++) player.inventory.main[i] = null;
+				world.setBlock(x, y + 1, z, 0);
+				world.setBlock(x, y, z + 4, 0);
+				world.setBlock(x, y, z, Block.CHEST.id);
+				((ChestBlockEntity) world.getBlockEntity(x, y, z)).setStack(0, new ItemStack(Block.COBBLESTONE, 8));
+				player.currentScreenHandler.sendContentUpdates();
+				System.out.println("[oldfaithful-selftest] chest of cobblestone at " + x + " " + y + " " + z);
+				break;
+			}
+			case "give":
+				// #79: 3 dirt in slot 9, sent at once on whatever screen is open (as a pickup is).
+				player.inventory.main[9] = new ItemStack(Block.DIRT, 3);
+				player.currentScreenHandler.sendContentUpdates();
+				System.out.println("[oldfaithful-selftest] gave " + player.name + " 3 dirt");
+				break;
+			case "sync":
+				// #79: the whole inventory as the server has it.
+				player.onContentsUpdate(player.playerScreenHandler);
+				System.out.println("[oldfaithful-selftest] sent " + player.name + " their whole inventory");
+				break;
+			case "fences": {
+				// Still Faithful's #30: FenceScene at x z (FenceWalk asks for it 20 blocks north of where it joined).
+				int x = Integer.parseInt(a[1]), z = Integer.parseInt(a[2]);
+				for (int ch = (x - 4) >> 4; ch <= (x + FenceScene.CORNER + 6) >> 4; ch++) {
+					for (int cz2 = (z - 4) >> 4; cz2 <= (z + 7) >> 4; cz2++) world.chunkCache.loadChunk(ch, cz2);
+				}
+				FenceScene.build(world, x, FLOOR, z);
+				System.out.println("[oldfaithful-selftest] fence scene at " + x + " " + FLOOR + " " + z);
+				break;
+			}
+			case "tp":
+				// The player put at x feet z, facing yaw, as a teleport is sent (FenceWalk's starting places).
+				player.networkHandler.teleport(Double.parseDouble(a[1]), Double.parseDouble(a[2]), Double.parseDouble(a[3]), Float.parseFloat(a[4]), 0);
+				break;
 			case "unpig": {
 				int id = Integer.parseInt(a[1]);
 				for (Object o : world.entities) {

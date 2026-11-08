@@ -3,7 +3,7 @@
   "id": "stillfaithful-polish",
   "version": "${version}",
   "name": "Still Faithful Polish",
-  "description": "What later versions improved in b1.7.3 while it stayed beta: stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats, animals you've dealt with that stay, and more. Each has its own switch, in Options > Still Faithful... (with Old Faithful Options) or config/stillfaithful-polish.properties.",
+  "description": "What later versions improved in b1.7.3 while it stayed beta: stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats, animals that stay once you've looked after them, and more. Each has its own switch, in Options > Still Faithful... (with Old Faithful Options) or config/stillfaithful-polish.properties.",
   "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
   "contributors": ["Shoalstone (idea, direction and play-testing)"],
   "contact": {

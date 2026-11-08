@@ -1,8 +1,10 @@
 package org.studioquire.oldfaithful.selftest;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.MobSpawnerBlockEntity;
@@ -11,8 +13,10 @@ import net.minecraft.client.gui.screen.DisconnectedScreen;
 import net.minecraft.client.network.MultiplayerClientPlayerEntity;
 import net.minecraft.client.network.OtherPlayerEntity;
 import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.ClientWorld;
+import org.studioquire.oldfaithful.selftest.mixin.EntityWaterAccessor;
 import org.studioquire.oldfaithful.selftest.mixin.LivingEntityLerpAccessor;
 
 /**
@@ -28,9 +32,14 @@ import org.studioquire.oldfaithful.selftest.mixin.LivingEntityLerpAccessor;
  * two), and none of them coming back (the server accepted each break);</li>
  * <li>#50: another player ("SkyTurner", a raw client of the task) turned by the server in steps of 45 degrees; where
  * this client has them facing once the turn is done (beta: often a third short);</li>
+ * <li>#79: a chest closed and a block placed from what it gave just after, then a slot sent as it closes
+ * ({@link ClosedScreenCheck});</li>
  * <li>#49: this player dies, a pig is removed while they're dead, they respawn: the pig must be gone from this
  * client's world (beta: frozen there), the other one sent again;</li>
- * <li>#62, on joining: a cow spawner 20 blocks west shows a cow where both sides have the fix (beta: a pig).</li>
+ * <li>#62, on joining: a cow spawner 20 blocks west shows a cow where both sides have the fix (beta: a pig);</li>
+ * <li>#76, #77, sampled through the mining and turning: squid in a tank 3 deep, starting on its floor: how high this
+ * client sees them go (the server decides, as long as this client has #15; beta: about half a block), how far from the
+ * server's position, how often this client splashes them, and whether their steps run here (this client decides; beta: they do).</li>
  * </ul>
  */
 public final class MultiplayerCheck {
@@ -63,6 +72,13 @@ public final class MultiplayerCheck {
 	// #49
 	private int stalePig = -1, keptPig = -1;
 	private boolean frozenWhileDead;
+	// #76, #77
+	private int squidsSeen, squidSamples, squidDrySamples, squidSplashes;
+	private double squidHighest, squidDeviation;
+	private float squidWalked;
+	private final Map<Integer, Boolean> squidWet = new HashMap<>();
+	// #79
+	private ClosedScreenCheck closedScreens;
 
 	MultiplayerCheck(SelfTest results) {
 		this.results = results;
@@ -76,6 +92,7 @@ public final class MultiplayerCheck {
 			results.fail("multiplayer (" + label + "): disconnected in stage " + stage, new AssertionError());
 			return true;
 		}
+		if (stage >= 1 && stage <= 3) sampleSquids(mc);
 		switch (stage) {
 			case 0: // joined, the scene arrived
 				if (mc.world == null || mc.player == null || mc.currentScreen != null) return timeout(mc, 1200, "joining");
@@ -112,6 +129,7 @@ public final class MultiplayerCheck {
 					// enough to judge, up to a minute more.
 					if (pigSamples <= PIG_SAMPLES && ++pigExtraTicks < 1200) return false;
 					pigResults();
+					squidResults();
 					next();
 					return false;
 				}
@@ -124,7 +142,11 @@ public final class MultiplayerCheck {
 				if (++turn == TURNS.length) turnResults();
 				return false;
 			}
-			case 4: { // #49: die
+			case 4: // #79
+				if (closedScreens == null) closedScreens = new ClosedScreenCheck(results, fixedServer, label, px, Y, pz);
+				if (closedScreens.tick(mc)) next();
+				return false;
+			case 5: { // #49: die
 				if (ticks == 1) {
 					List<PigEntity> pigs = pigs(mc);
 					stalePig = pigs.get(0).id;
@@ -141,7 +163,7 @@ public final class MultiplayerCheck {
 				next();
 				return false;
 			}
-			case 5: // respawned
+			case 6: // respawned
 				if (mc.player.health <= 0 || mc.currentScreen != null) return timeout(mc, 400, "respawning");
 				if (ticks < 80) return false;
 				respawnResults(mc);
@@ -206,6 +228,46 @@ public final class MultiplayerCheck {
 			results.check("#15 control (" + label + "): beta's own physics moves them off the server's position (" + seen + ")",
 					pigSamples > PIG_SAMPLES && pigDeviation > 0.01);
 		}
+	}
+
+	/** #76, #77: the tank's squid as this client has them. */
+	private void sampleSquids(Minecraft mc) {
+		int seen = 0;
+		for (Object o : mc.world.entities) {
+			if (!(o instanceof SquidEntity)) continue;
+			SquidEntity squid = (SquidEntity) o;
+			if (squid.x < px + 7 || squid.x > px + 17 || Math.abs(squid.z - pz) > 5.5 || squid.y > MultiplayerScenes.TANK_FLOOR + 8) continue;
+			seen++;
+			squidHighest = Math.max(squidHighest, squid.boundingBox.minY - MultiplayerScenes.TANK_FLOOR);
+			squidWalked = Math.max(squidWalked, squid.horizontalSpeed);
+			squidSamples++;
+			if (!squid.isSubmergedInWater()) squidDrySamples++;
+			boolean wet = ((EntityWaterAccessor) squid).oldfaithful$submergedInWater();
+			Boolean was = squidWet.put(squid.id, wet);
+			if (was != null && wet && !was) squidSplashes++;
+			if (((LivingEntityLerpAccessor) squid).oldfaithful$lerpSteps() == 0) {
+				squidDeviation = Math.max(squidDeviation, Math.abs(squid.boundingBox.minY - squid.trackedPosY / 32.0));
+			}
+		}
+		squidsSeen = Math.max(squidsSeen, seen);
+	}
+
+	private void squidResults() {
+		String seen = String.format(Locale.ROOT, "%d squid, %d samples: highest %.2f over the floor, %.1f%% on the out-of-water branch here, %d splashes here, %.3f at most from the server's height",
+				squidsSeen, squidSamples, squidHighest, 100.0 * squidDrySamples / Math.max(1, squidSamples), squidSplashes, squidDeviation);
+		// Only with #15 does a client show where the server has them: a plain client's own physics takes its copies far from
+		// the floor and out of the water on any server (4 to 6 over the floor, over a hundred splashes, 2026-11-06).
+		if (!fixedClient) {
+			results.check("#77 (" + label + "): this client's own physics moves its squid, so their height isn't the server's (" + seen + ")", squidsSeen == 16);
+		} else if (fixedServer) {
+			results.check("#77 (" + label + "): squid leave the floor, and no splashes at the surface (" + seen + ")",
+					squidsSeen == 16 && squidHighest > 0.8 && squidSplashes == 0);
+		} else {
+			results.check("#77 control (" + label + "): beta's squid stay about the floor (" + seen + ")", squidsSeen == 16 && squidHighest < 0.8);
+		}
+		String steps = String.format(Locale.ROOT, "the distance their steps count, here: %.2f", squidWalked);
+		if (fixedClient) results.check("#76 (" + label + "): squid take no steps on this client (" + steps + ")", squidWalked == 0.0F);
+		else results.check("#76 control (" + label + "): beta's squid take steps on this client (" + steps + ")", squidWalked > 0.0F);
 	}
 
 	/**

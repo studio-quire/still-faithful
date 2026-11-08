@@ -3,9 +3,8 @@ package oldfaithful.gradle;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -47,11 +46,6 @@ public abstract class LibraryStaticTask extends DefaultTask {
 	@PathSensitive(PathSensitivity.NAME_ONLY)
 	public abstract ConfigurableFileCollection getEditions();
 
-	/** Lines of {@code <class.method> <mod> <mod>... | why}. */
-	@InputFile
-	@PathSensitive(PathSensitivity.NONE)
-	public abstract RegularFileProperty getAccepted();
-
 	@Input
 	@Optional
 	public abstract ListProperty<String> getExpected();
@@ -71,15 +65,9 @@ public abstract class LibraryStaticTask extends DefaultTask {
 		for (File jar : getSelftests().getFiles()) check.read(new LibraryStatic.Subject(jar.toPath(), false, true));
 		for (File jar : getEditions().getFiles()) check.read(new LibraryStatic.Subject(jar.toPath(), false));
 
-		Map<String, String> accepted = new TreeMap<>();
-		for (String line : Files.readAllLines(getAccepted().get().getAsFile().toPath())) {
-			if (line.isBlank() || line.startsWith("#")) continue;
-			String[] parts = line.split("\\|", 2);
-			accepted.put(parts[0].trim(), parts.length > 1 ? parts[1].trim() : "");
-		}
-
 		StringBuilder report = new StringBuilder();
-		List<String> failures = check.finish(accepted, report);
+		List<String> shared = new ArrayList<>();
+		List<String> failures = check.finish(report, shared);
 		Files.writeString(getReport().get().getAsFile().toPath(), report.toString(), StandardCharsets.UTF_8);
 
 		List<String> expected = getExpected().getOrElse(List.of());
@@ -97,6 +85,7 @@ public abstract class LibraryStaticTask extends DefaultTask {
 			getLogger().lifecycle("Every planted mistake was caught ({} failures).", failures.size());
 			return;
 		}
+		if (!shared.isEmpty()) getLogger().lifecycle("Methods more than one mod changes, for information:\n  {}", String.join("\n  ", shared));
 		getLogger().lifecycle("Library static check: {} failures. Report: {}", failures.size(), getReport().get().getAsFile());
 		if (!failures.isEmpty()) {
 			throw new GradleException("Library static check FAILED:\n  " + String.join("\n  ", failures.subList(0, Math.min(60, failures.size())))

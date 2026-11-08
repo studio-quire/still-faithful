@@ -54,6 +54,8 @@ final class SettingsCheck {
 	private final boolean library = Files.isDirectory(list.getParent());
 	/** A release's library pack (`libraryPackTest`): {@code on}, everything on, as shipped; {@code off}, nothing on; {@code absent}, the same with no list at all. */
 	private static final String PACK = System.getProperty("oldfaithful.selftest.libraryPack");
+	/** Mods a test pack carries past what a release pack does, by name (a session's pack has Stagehand): only `tools/pack_start.py` passes any, so a release pack's list stays exact. */
+	private static final List<String> PACK_EXTRA = extra(System.getProperty("oldfaithful.selftest.packExtraMods", ""));
 	private int startWidth, startHeight, startScale;
 	private final List<String> layoutProblems = new ArrayList<>();
 	private int layoutsChecked;
@@ -221,7 +223,7 @@ final class SettingsCheck {
 				steps.add(capture(at + "-blocks", null));
 				if (!library) continue;
 				steps.add(m -> {
-					layout(m, openMenu(m, "Mods"), at + " Mods");
+					layout(m, pageWith(m, "Mods", "World Rules..."), at + " Mods");
 					return true;
 				});
 				steps.add(capture(at + "-mods", "World Rules"));
@@ -294,7 +296,7 @@ final class SettingsCheck {
 		}
 		if (!library || PACK != null) return;
 		steps.add(m -> {
-			openMenu(m, "Mods");
+			pageWith(m, "Mods", "World Rules...");
 			return true;
 		});
 		steps.add(capture("levels/2-mods", "World Rules"));
@@ -531,7 +533,7 @@ final class SettingsCheck {
 				enabled.text.equals("Enabled: ON") && enabled.x == rules.width / 2 - 155 && enabled.y == rules.height / 6
 						&& lock.x == rules.width / 2 + 5 && lock.y == enabled.y && lock.active
 						&& ((ButtonWidgetAccessor) enabled).oldfaithful$width() == 150 && ((ButtonWidgetAccessor) lock).oldfaithful$width() == 150
-						&& keep.y == rules.height / 6 + 24 && has(rules, "Day Length: Normal"));
+						&& button(rules, "Mobs Break Blocks:").y == rules.height / 6 + 24 && has(rules, "Day Length: Normal"));
 		java.util.Set<String> before = new java.util.HashSet<>(Files.readAllLines(list));
 		press(rules, enabled);
 		List<String> off = Files.readAllLines(list);
@@ -572,8 +574,14 @@ final class SettingsCheck {
 		return true;
 	}
 
-	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Better Dungeons", "No Toasts", "Plain F3", "Water Bottles", "World Rules");
-	private static final List<String> PACK_IDS = java.util.Arrays.asList("better-dungeons", "no-toasts", "plain-f3", "water-bottles", "world-rules");
+	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "World Rules");
+	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "world-rules");
+
+	private static List<String> extra(String names) {
+		List<String> out = new ArrayList<>();
+		for (String n : names.split(",")) if (!n.trim().isEmpty()) out.add(n.trim());
+		return out;
+	}
 
 	private java.util.Set<String> listed() throws Exception {
 		java.util.Set<String> lines = new java.util.TreeSet<>();
@@ -581,6 +589,29 @@ final class SettingsCheck {
 			if (!line.trim().isEmpty()) lines.add(line.trim());
 		}
 		return lines;
+	}
+
+	/** Each loaded mod's world rules by the mod's name, as their buttons begin: what the core has declared, read where the core keeps them. */
+	private static java.util.Map<String, List<String>> rulesByMod() throws Exception {
+		java.util.Map<String, List<String>> rules = new java.util.HashMap<>();
+		Method id = Class.forName("org.studioquire.oldfaithful.core.api.Rule").getMethod("id");
+		for (Object rule : (java.util.Collection<?>) Class.forName("org.studioquire.oldfaithful.core.impl.Rules").getMethod("all").invoke(null)) {
+			String ruleId = (String) id.invoke(rule), mod = ruleId.substring(0, ruleId.indexOf(':'));
+			String name = FabricLoader.getInstance().getModContainer(mod).get().getMetadata().getName();
+			String label = net.minecraft.client.resource.language.TranslationStorage.getInstance().get("rule." + ruleId.replace(':', '.') + ".name");
+			rules.computeIfAbsent(name, k -> new ArrayList<>()).add(label + ":");
+		}
+		return rules;
+	}
+
+	/** Every button on a page and the pages after it, over the arrows. */
+	private static List<String> allTexts(Screen page) {
+		List<String> all = new ArrayList<>(texts(page));
+		while (has(page, ">") && button(page, ">").active) {
+			click(page, button(page, ">"));
+			all.addAll(texts(page));
+		}
+		return all;
 	}
 
 	/**
@@ -596,7 +627,7 @@ final class SettingsCheck {
 			allLoaded &= FabricLoader.getInstance().isModLoaded(id);
 		}
 		if (on) {
-			results.check("everything on: the core and all five mods are loaded", allLoaded);
+			results.check("everything on: the core and all the mods are loaded", allLoaded);
 		} else {
 			boolean coreClass = true;
 			try {
@@ -608,14 +639,35 @@ final class SettingsCheck {
 			results.check("nothing on: the list is " + (PACK.equals("absent") ? "absent" : "there and empty"), PACK.equals("absent") ? !Files.exists(list) : listed().isEmpty());
 		}
 		List<String> wanted = new ArrayList<>();
-		for (String name : PACK_NAMES) wanted.add(name + "...");
-		wanted.add("Done");
+		List<String> names = new ArrayList<>(PACK_NAMES);
+		names.addAll(PACK_EXTRA);
+		java.util.Collections.sort(names);
+		for (String name : names) wanted.add(name + "...");
 		Screen mods = openMenu(mc, "Mods");
-		results.check("Mods: a wide button for each mod: " + texts(mods), texts(mods).equals(wanted));
+		List<String> offered = new ArrayList<>();
+		while (true) {
+			for (String text : texts(mods)) {
+				if (text.endsWith("...")) offered.add(text);
+			}
+			if (!has(mods, ">") || !button(mods, ">").active) break;
+			click(mods, button(mods, ">"));
+		}
+		results.check("Mods: a wide button for each mod, over its pages: " + offered, offered.equals(wanted));
+		// With nothing on, a page is its on and off; with everything, its mod's rules too, and Lock Rules where there are any (in a world: this check runs in one).
+		java.util.Map<String, List<String>> rules = on ? rulesByMod() : java.util.Collections.emptyMap();
 		for (String name : PACK_NAMES) {
 			Screen page = openMod(mc, name);
-			boolean rulesHere = on && name.equals("World Rules");
-			results.check(name + "'s page: " + texts(page), button(page, "Enabled:").text.equals(on ? "Enabled: ON" : "Enabled: OFF") && (rulesHere ? has(page, "Keep Inventory:") && has(page, "Lock Rules") : texts(page).size() == 2));
+			String enabled = button(page, "Enabled:").text;
+			List<String> own = rules.getOrDefault(name, java.util.Collections.emptyList()), shown = new ArrayList<>(), stray = new ArrayList<>();
+			boolean lock = false;
+			for (String text : allTexts(page)) {
+				String rule = own.stream().filter(text::startsWith).findFirst().orElse(null);
+				if (rule != null) shown.add(rule);
+				else if (text.equals("Lock Rules")) lock = true;
+				else if (!text.startsWith("Enabled:") && !text.equals("Done") && !text.equals("<") && !text.equals(">")) stray.add(text);
+			}
+			results.check(name + "'s page: " + texts(page) + (own.isEmpty() ? "" : ", its rules " + own),
+					enabled.equals(on ? "Enabled: ON" : "Enabled: OFF") && shown.equals(own) && lock == !own.isEmpty() && stray.isEmpty());
 		}
 		if (on) {
 			java.util.Set<String> before = listed();
@@ -623,9 +675,11 @@ final class SettingsCheck {
 			ButtonWidget enabled = button(page, "Enabled:");
 			press(page, enabled);
 			String offText = enabled.text;
-			boolean gone = !listed().contains("mods-library/water-bottles.jar") && listed().contains("mods-library/faithful-core.jar");
+			boolean gone = !listed().contains("mods-library/water-bottles.jar") && !listed().contains("mods-library/alchemy.jar") && listed().contains("mods-library/faithful-core.jar");
 			press(page, enabled);
-			results.check("Water Bottles unticked, \"" + offText + "\", off the list with the core still on it; ticked, as it was", offText.equals("Enabled: OFF*") && gone && listed().equals(before));
+			Screen needing = openMod(mc, "Alchemy");
+			press(needing, button(needing, "Enabled:"));
+			results.check("Water Bottles unticked, \"" + offText + "\", off the list with Alchemy, which needs it, and the core still on it; both ticked, as it was", offText.equals("Enabled: OFF*") && gone && listed().equals(before));
 			mc.setScreen(null);
 			return true;
 		}
@@ -638,11 +692,15 @@ final class SettingsCheck {
 				&& one.equals(new java.util.TreeSet<>(java.util.Arrays.asList("mods-library/faithful-core.jar", "mods-library/water-bottles.jar"))));
 		press(page, enabled);
 		results.check("Water Bottles unticked, \"" + enabled.text + "\": the last mod off takes the core with it, the list empty: " + listed(), enabled.text.equals("Enabled: OFF") && listed().isEmpty());
+		Screen needing = openMod(mc, "Alchemy");
+		press(needing, button(needing, "Enabled:"));
+		results.check("Alchemy ticked: it brings Water Bottles, which it needs, and the core: " + listed(),
+				listed().equals(new java.util.TreeSet<>(java.util.Arrays.asList("mods-library/alchemy.jar", "mods-library/faithful-core.jar", "mods-library/water-bottles.jar"))));
 		for (String name : PACK_NAMES) {
 			Screen p = openMod(mc, name);
-			press(p, button(p, "Enabled:"));
+			if (button(p, "Enabled:").text.startsWith("Enabled: OFF")) press(p, button(p, "Enabled:"));
 		}
-		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == 6);
+		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == 10);
 		mc.setScreen(null);
 		return true;
 	}

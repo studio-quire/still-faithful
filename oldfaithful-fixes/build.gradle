@@ -36,7 +36,7 @@ def scenarioRemap = tasks.register('scenarioRemapJar', oldfaithful.gradle.RemapJ
 }
 
 tasks.named('test') {
-    useJUnitPlatform { excludeTags 'server' }
+    useJUnitPlatform { excludeTags 'server', 'squids' }
 }
 
 configurations {
@@ -70,5 +70,29 @@ tasks.register('serverTicksTest', Test) {
         systemProperty 'oldfaithful.fixes.mod', remapped.get().output.get().asFile.absolutePath
         systemProperty 'oldfaithful.fixes.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
         systemProperty 'oldfaithful.run', rootProject.file('local/run/fixes-server-test').absolutePath
+    }
+}
+
+// #76 and #77 measured on the real server, with this mod and without it: -Psquids.ticks (20 a second), local/run/squid-watch/.
+tasks.register('squidWatch', Test) {
+    group = 'verification'
+    description = 'Squid in tanks on the real server, with the fix mod and without it: their height over time, near the surface above all.'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'squids' }
+    maxHeapSize = '256m'
+    def remapped = tasks.named('remapJar')
+    dependsOn remapped, scenarioRemap
+    def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
+    inputs.files(serverClasspath)
+    outputs.upToDateWhen { false }
+    testLogging { showStandardStreams = true; exceptionFormat = 'full' }
+    doFirst {
+        systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
+        systemProperty 'oldfaithful.fixes.mod', remapped.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.fixes.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.run', rootProject.file('local/run/squid-watch').absolutePath
+        systemProperty 'oldfaithful.squids.ticks', providers.gradleProperty('squids.ticks').getOrElse('12000')
+        systemProperty 'oldfaithful.squids.labels', providers.gradleProperty('squids.labels').getOrElse('fixed,beta')
     }
 }

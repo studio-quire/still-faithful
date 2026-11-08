@@ -3,7 +3,7 @@
   "id": "purefaithful-display",
   "version": "${version}",
   "name": "Pure Faithful Display",
-  "description": "The game in its own resizable window on Pure Faithful's LWJGL (SDL3): off the old applet frame, sharp on high-density screens, borderless fullscreen, paste through SDL. Needs Pure Faithful's LWJGL component in place of LWJGL 2; without it, it does nothing.",
+  "description": "The game in its own resizable window on Pure Faithful's LWJGL (SDL3): off the old applet frame, sharp on high-resolution screens, borderless fullscreen, paste with Ctrl+V. Needs Pure Faithful's LWJGL component in place of LWJGL 2 (the packs set it up); without it, it does nothing.",
   "authors": ["Claude Opus 5.5 (Anthropic's AI), at Studio Quire"],
   "contributors": ["Shoalstone (idea, direction and play-testing)"],
   "contact": {

@@ -1,14 +1,16 @@
 package org.studioquire.oldfaithful.polish;
 
 /**
- * Tells a client which of Still Faithful's changes to mining a server has, as Old Faithful's fixes do (the same
- * format, so both mods' marks share the field): the name field of the server's login packet, which beta's server
- * sends empty and its client never reads. Up to 16 characters: the prefix, then one letter per change. Old Faithful's
- * fix mod uses 'm' and 's'; this mod's letters are its own.
+ * Tells a client which of Still Faithful's changes that both sides must agree on a server has (mining, collision), as
+ * Old Faithful's fixes do (the same format, so both mods' marks share the field): the name field of the server's login
+ * packet, which beta's server sends empty and its client never reads. Up to 16 characters: the prefix, then one letter
+ * per change. Old Faithful's fix mod uses 'm' and 's'; this mod's letters are its own. With 'g' and 'f' the field is
+ * full: a further change to mark needs another way.
  */
 public final class ServerMarker {
 	static final String PREFIX = "oldfaithful:";
 	public static final char GLOWSTONE = 'g';
+	public static final char FENCES = 'f';
 
 	private ServerMarker() {
 	}

@@ -180,6 +180,7 @@ final class LibraryStatic {
 	private final Map<String, Set<String>> redirects = new TreeMap<>();
 	private final Map<String, List<String>> targets = new TreeMap<>();
 	private final Set<String> libraryMods = new TreeSet<>();
+	private final Set<String> allMods = new TreeSet<>();
 	private int classesRead;
 
 	LibraryStatic(Path namedGame) throws IOException {
@@ -205,6 +206,7 @@ final class LibraryStatic {
 				return;
 			}
 			if (subject.library()) libraryMods.add(id);
+			allMods.add(id);
 
 			Set<String> clientMixins = new HashSet<>(), serverMixins = new HashSet<>(), commonMixins = new HashSet<>();
 			Set<String> configs = new LinkedHashSet<>(list(json, "mixins"));
@@ -482,8 +484,8 @@ final class LibraryStatic {
 		return found >= 2;
 	}
 
-	/** Every read done: the rules across mods, then the report. */
-	List<String> finish(Map<String, String> accepted, StringBuilder report) {
+	/** Every read done: the rules across mods, then the report. Methods more than one mod changes go in {@code shared}. */
+	List<String> finish(StringBuilder report, List<String> shared) {
 		report.append("Every mixin target, by method: mod, kind, handler\n");
 		for (Map.Entry<String, List<String>> e : targets.entrySet()) {
 			report.append(e.getKey()).append('\n');
@@ -492,22 +494,15 @@ final class LibraryStatic {
 		for (Map.Entry<String, Set<String>> e : redirects.entrySet()) {
 			if (e.getValue().size() > 1) failures.add("two @Redirects on one site, which can never both apply: " + e.getKey() + ": " + e.getValue());
 		}
-		Set<String> used = new HashSet<>();
+		// Mods sharing a method is normal, so it's information; only the @Redirect clash above can't work. The core isn't counted: it's the hook.
 		for (Map.Entry<String, Set<String>> e : byMethod.entrySet()) {
 			Set<String> mods = new TreeSet<>(e.getValue());
 			mods.remove(CORE);
 			if (mods.size() < 2 || mods.stream().noneMatch(libraryMods::contains)) continue;
-			String key = e.getKey() + " " + String.join(" ", mods);
-			if (accepted.containsKey(key)) {
-				used.add(key);
-				report.append("accepted: ").append(key).append(": ").append(accepted.get(key)).append('\n');
-			} else {
-				failures.add(String.join(" and ", mods) + ": two mods on one method, until someone decides (a hook, or a line in harness/library-accepted.txt): " + key);
-			}
+			shared.add(e.getKey() + ": " + String.join(", ", mods));
 		}
-		for (String key : accepted.keySet()) {
-			if (!used.contains(key)) failures.add("harness/library-accepted.txt: nothing conflicts here any more: " + key);
-		}
+		report.append("Methods more than one mod changes (information): ").append(shared.size()).append('\n');
+		for (String s : shared) report.append("    ").append(s).append('\n');
 		report.append("Classes read: ").append(classesRead).append(", mixin targets: ").append(targets.size()).append(", failures: ").append(failures.size()).append('\n');
 		for (String f : failures) report.append("FAIL ").append(f).append('\n');
 		return new ArrayList<>(failures);

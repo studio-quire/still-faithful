@@ -124,10 +124,15 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		Files.write(library.resolve("selection.txt"), selection);
 		prepare(game, false);
 		lines.add("--- single player");
-		lines.addAll(launch(game, false, List.of("-Dfabric.addMods=@mods-library/selection.txt"), failures));
+		lines.addAll(launch(game, false, List.of("-Dfabric.addMods=@mods-library/selection.txt", "-Doldfaithful.selftest.recordText=true"), failures));
 		// The first launch locked the world by the page's button.
 		lines.add("--- single player, reopened locked, with a rule a mod brought since");
-		lines.addAll(launch(game, false, List.of("-Dfabric.addMods=@mods-library/selection.txt", "-Dworldrules.test.phase=reopened", "-Dworldrules.test.lateRule=true"), failures));
+		// Off the list, so never loaded: pages for the switches. The self-test mod, which has the late rule, in the folder and depending on one with no rules.
+		writeListing(library.resolve("side-door-base.jar"), "side-door-base", "Side Door Base", "");
+		writeListing(library.resolve("world-rules-selftest.jar"), "world-rules-selftest", "World Rules self-test", ",\"depends\":{\"side-door-base\":\"*\"}");
+		writeListing(library.resolve("free-mod.jar"), "free-mod", "Free Mod", "");
+		lines.addAll(launch(game, false, List.of("-Dfabric.addMods=@mods-library/selection.txt", "-Dworldrules.test.phase=reopened", "-Dworldrules.test.lateRule=true",
+				"-Doldfaithful.selftest.recordText=true"), failures));
 		unlockByHand(game.resolve("saves").resolve("oldfaithful-startup").resolve("faithful-world.properties"));
 		lines.add("--- single player, unlocked by hand");
 		lines.addAll(launch(game, false, List.of("-Dfabric.addMods=@mods-library/selection.txt", "-Dworldrules.test.phase=unlocked"), failures));
@@ -332,16 +337,16 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 	private void lockOnServer(Path run, Path dir, int port) throws Exception {
 		Path file = dir.resolve("world").resolve("faithful-world.properties");
 		List<String> said = console("rule lock");
-		expect("rule lock asks to be sure, saying it can't be undone in game and how it is: " + said, says(said, "can't be undone") && says(said, "rules-locked=true")
+		expect("rule lock asks to be sure, saying it can't be undone in game and nothing of how to unlock: " + said, says(said, "can't be undone") && !says(said, "rules-locked")
 				&& says(said, "rule lock confirm"));
 		expect("and locks nothing yet", !Files.readString(file).contains("rules-locked"));
 		said = console("rule lock confirm");
-		expect("rule lock confirm locks, in the world's file: " + said, says(said, "rules are locked") && Files.readString(file).contains("rules-locked=true"));
+		expect("rule lock confirm locks, in the world's file: " + said, says(said, "rules are locked") && !says(said, "rules-locked") && Files.readString(file).contains("rules-locked=true"));
 		ruleRefused(file, "from the console");
 		said = console("rule");
 		expect("the rules can still be read, and say they're locked: " + said, says(said, "rules are locked") && says(said, "world-rules:keep_inventory = false"));
 		said = console("rule lock");
-		expect("locking again says it's already locked", says(said, "already locked"));
+		expect("locking again says it's already locked", says(said, "already locked") && !says(said, "rules-locked"));
 		try (RawClient core = new RawClient(port, "LockedCore").core(true)) {
 			expect("a client with the core still logs in to a locked server", core.login(60) == null);
 		}
@@ -349,19 +354,21 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		Path game = run.resolve("client-on-locked-server");
 		Files.createDirectories(game.resolve("mods"));
 		for (File mod : getMods().getFiles()) Files.copy(mod.toPath(), game.resolve("mods").resolve(mod.getName()));
+		// World Rules is loaded from mods/; this gives its page the library's switch.
+		writeListing(Files.createDirectories(game.resolve("mods-library")).resolve("world-rules.jar"), "world-rules", "World Rules", "");
 		prepare(game, false);
 		lines.add("--- client on the locked server");
 		lines.addAll(launch(game, false, List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, "-Doldfaithful.selftest.joinWorldChecks=true",
-				"-Dworldrules.test.serverLocked=true"), failures));
+				"-Dworldrules.test.serverLocked=true", "-Doldfaithful.selftest.recordText=true"), failures));
 		expect("an op's /rule from the client reached the server", server.lines().stream().anyMatch(l -> l.contains("OldFaithfulTest issued server command: rule keep_inventory true")));
 		expect("and changed nothing", Files.readString(file).equals(before));
 	}
 
-	/** {@code /rule} refused from the console, saying how to unlock, with the world's file as it was. */
+	/** {@code /rule} refused from the console, saying nothing of how to unlock, with the world's file as it was. */
 	private void ruleRefused(Path file, String when) throws Exception {
 		String before = Files.readString(file);
 		List<String> said = console("rule keep_inventory true");
-		expect("locked, " + when + ": the console's /rule is refused, saying how to unlock: " + said, says(said, "rules are locked") && says(said, "remove rules-locked=true")
+		expect("locked, " + when + ": the console's /rule is refused, saying nothing of how to unlock: " + said, says(said, "rules are locked") && !says(said, "rules-locked")
 				&& !says(said, "keep_inventory = true"));
 		expect("locked, " + when + ": the world's file as it was", Files.readString(file).equals(before));
 	}
@@ -380,6 +387,15 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		console("rule keep_inventory false");
 	}
 
+	/** A jar for the library's folder with only what the switches read; {@code more}: the rest of its json, from a comma. */
+	private static void writeListing(Path jar, String id, String name, String more) throws IOException {
+		try (OutputStream file = Files.newOutputStream(jar); ZipOutputStream zip = new ZipOutputStream(file)) {
+			zip.putNextEntry(new ZipEntry("fabric.mod.json"));
+			zip.write(("{\"schemaVersion\":1,\"id\":\"" + id + "\",\"version\":\"1\",\"name\":\"" + name + "\"" + more + "}").getBytes("UTF-8"));
+			zip.closeEntry();
+		}
+	}
+
 	private static void writeMatchMod(Path jar) throws IOException {
 		try (OutputStream file = Files.newOutputStream(jar); ZipOutputStream zip = new ZipOutputStream(file)) {
 			zip.putNextEntry(new ZipEntry("fabric.mod.json"));
@@ -393,12 +409,10 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 			String reason = vanilla.login(60);
 			expect("a vanilla client is refused, plainly: " + reason, reason != null && reason.contains("Faithful Library"));
 		}
-		Thread.sleep(5500); // between logins
 		try (RawClient core = new RawClient(port, "Agrees").core(true)) {
 			expect("a client that agrees gets in", core.login(60) == null);
 			expect("its hello says something must match", core.serverMustMatch());
 		}
-		Thread.sleep(5500);
 		try (RawClient core = new RawClient(port, "Disagrees").core(false)) {
 			String reason = core.login(60);
 			expect("a client that doesn't agree is let go: " + reason, reason != null);

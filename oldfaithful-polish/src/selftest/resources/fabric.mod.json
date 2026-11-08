@@ -5,7 +5,7 @@
   "name": "Still Faithful self-test (test harness only, not shipped)",
   "environment": "client",
   "entrypoints": {
-    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.polish.selftest.StillCheck", "org.studioquire.oldfaithful.polish.selftest.DuskCheck", "org.studioquire.oldfaithful.polish.selftest.SkinCheck"]
+    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.polish.selftest.StillCheck", "org.studioquire.oldfaithful.polish.selftest.FenceCheck", "org.studioquire.oldfaithful.polish.selftest.ChatCheck", "org.studioquire.oldfaithful.polish.selftest.DuskCheck", "org.studioquire.oldfaithful.polish.selftest.SkinCheck"]
   },
   "mixins": ["oldfaithful-polish-selftest.mixins.json"],
   "depends": {

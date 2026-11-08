@@ -79,6 +79,38 @@ public final class Scenario {
 		after = 0;
 	}
 
+	/**
+	 * #78, with {@code -Doldfaithful.saves.scenario.beingbuilt=true}: called at the start of a new overworld's spawn
+	 * search, still inside World's constructor, so ServerWorld's own fields are null. In place of the search's chance of
+	 * about 1 in 900 of decorating a spring beside a plant: a rose with flowing water ticked beside it, which breaks it at
+	 * once. Without a fix the server stops here.
+	 */
+	public static void beingBuilt(ServerWorld world) {
+		if (!Boolean.getBoolean("oldfaithful.saves.scenario.beingbuilt") || world.dimension.id != 0) return;
+		int x = 8, y = 120, z = 8;
+		world.eventProcessingEnabled = true;
+		world.getChunk(x >> 4, z >> 4);
+		world.setBlock(x, y - 1, z, Block.DIRT.id);
+		world.setBlock(x + 1, y - 1, z, Block.STONE.id);
+		world.setBlock(x + 2, y, z, Block.STONE.id);
+		world.setBlock(x + 1, y, z - 1, Block.STONE.id);
+		world.setBlock(x + 1, y, z + 1, Block.STONE.id);
+		world.setBlock(x, y, z, Block.ROSE.id);
+		world.setBlock(x + 1, y, z, Block.FLOWING_WATER.id);
+		world.instantBlockUpdateEnabled = true;
+		Block.FLOWING_WATER.onTick(world, x + 1, y, z, world.random);
+		world.instantBlockUpdateEnabled = false;
+		world.eventProcessingEnabled = false;
+		int roses = 0, alive = 0;
+		for (Object o : world.entities) {
+			if (o instanceof ItemEntity && ((ItemEntity) o).stack.itemId == Block.ROSE.id) {
+				roses++;
+				if (!((ItemEntity) o).dead) alive++;
+			}
+		}
+		say("being built: " + roses + " rose dropped, " + alive + " alive, water where it stood " + (world.getBlockId(x, y, z) == Block.FLOWING_WATER.id));
+	}
+
 	public static boolean isTestSpawner(BlockEntity be) {
 		return SPAWNER != null && be.x == SPAWNER[0] && be.y == SPAWNER[1] && be.z == SPAWNER[2];
 	}

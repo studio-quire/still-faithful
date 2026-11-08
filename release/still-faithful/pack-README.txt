@@ -25,10 +25,14 @@ Still Faithful's own, each on its own switch:
   the landscape at each one (Options > Still Faithful... > Changes > Polish > Dusk: Stepped keeps beta's steps, each changing
   the whole view at once). Smooth and Stepped need OpenGL 2.0 and have so far been tested only on NVIDIA graphics:
   if the sky or the landscape looks wrong, set Dusk to Beta, beta's own way, after a restart.
-- Animals you've dealt with stay: sheared, milked, saddled, dyed, ridden, carried in a minecart or hatched from
+- Animals you've looked after stay: sheared, milked, saddled, dyed, ridden, carried in a minecart or hatched from
   your egg. Wild ones still come and go as in beta.
 - Saving without the pause: the game's save every 2 seconds is compressed and written in the background, the same
   saves at the same moments, crash-safe as Pure Faithful's.
+- Fences are a post with arms to the fences beside them, as in later versions, instead of a whole block: you can stand
+  against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past posts
+  needs the server to have this too.
+- Each line of chat has a dark bar only as long as its text, not the chat's full width.
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
 - Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the

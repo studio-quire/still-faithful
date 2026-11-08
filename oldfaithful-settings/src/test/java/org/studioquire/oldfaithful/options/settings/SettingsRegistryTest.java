@@ -92,6 +92,18 @@ class SettingsRegistryTest {
 	}
 
 	@Test
+	void aModIsHeldForAsLongAsTheReasonSays(@TempDir Path dir) {
+		SettingsRegistry r = new SettingsRegistry(dir);
+		String[] reason = {"Held."};
+		r.register("the-core", "The Core", s -> s.holdMod("my-mod", () -> reason[0]));
+		r.seal();
+		assertEquals("Held.", r.heldReason("my-mod"));
+		reason[0] = null;
+		assertEquals(null, r.heldReason("my-mod"));
+		assertEquals(null, r.heldReason("another-mod"), "nobody held it");
+	}
+
+	@Test
 	void stepsWriteTheFileAndWaitForARestart(@TempDir Path dir) throws Exception {
 		Path file = dir.resolve("fixes.properties");
 		String original = "# header\n\n# explained\nrepeaters=true\n\n# more\nticks=TRUE\n";

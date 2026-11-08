@@ -100,6 +100,7 @@ public abstract class LibraryHooksTestTask extends ClientStartupTask {
 			scene("hooktest rewrite");
 			scene("hooktest start");
 			scene("hooktest chunks");
+			scene("hooktest beingbuilt");
 			scenes(port);
 			clientOnServer(run, port);
 		} finally {
@@ -132,6 +133,7 @@ public abstract class LibraryHooksTestTask extends ClientStartupTask {
 	}
 
 	private void scenes(int port) throws Exception {
+		int from = server.lineCount();
 		try (RawClient p = new RawClient(port, "HookTester")) {
 			expect("the scenes' player logs in", p.login(60) == null);
 			p.stand(20, 50);
@@ -164,19 +166,19 @@ public abstract class LibraryHooksTestTask extends ClientStartupTask {
 			scene("hooktest endthrows");
 			expect("the player is still in", !p.isClosed());
 		}
-		Thread.sleep(5500); // the server's per-address login throttle
+		// Vanilla's login throttle exempts 127.0.0.1, so logins follow at once; but the same name back before the server has let the
+		// first go would be another path (a kick for logging in from another location), so the relog waits for that.
+		if (server.awaitFrom(from, l -> l.contains("HookTester lost connection"), 30) == null) failures.add("the server didn't let HookTester go");
 		try (RawClient p = new RawClient(port, "HookTester")) {
 			expect("the player logs back in", p.login(60) == null);
 			p.stand(20, 50);
 			scene("hooktest relogged HookTester relog");
 		}
-		Thread.sleep(5500);
 		try (RawClient plain = new RawClient(port, "PlainPlayer")) {
 			expect("a vanilla client logs in", plain.login(60) == null);
 			plain.stand(20, 50);
 			scene("hooktest plain PlainPlayer");
 			expect("a vanilla client is sent no 250 packet", plain.await(r -> r.id() == 250, 1) == null);
-			Thread.sleep(5500);
 			try (RawClient core = new RawClient(port, "CoreHook").core(true)) {
 				expect("a client with the core logs in", core.login(60) == null);
 				core.stand(20, 50);
@@ -186,7 +188,6 @@ public abstract class LibraryHooksTestTask extends ClientStartupTask {
 				expect("a vanilla client still isn't sent anything", plain.await(r -> r.id() == 250, 1) == null);
 			}
 		}
-		Thread.sleep(5500);
 	}
 
 	private void clientOnServer(Path run, int port) throws Exception {
@@ -226,6 +227,7 @@ public abstract class LibraryHooksTestTask extends ClientStartupTask {
 			expect("a player logs in beside Still Faithful's mods", p.login(60) == null);
 			p.stand(20, 50);
 			for (String scene : List.of("blocks", "drops", "growth", "entities", "fire", "order")) scene("hooktest " + scene + " StillTester");
+			scene("hooktest beingbuilt");
 		} finally {
 			stop("beside Still Faithful");
 		}

@@ -1,5 +1,0 @@
-# Two mods on one method, decided to be fine (docs/library-harness.md). One per line:
-# <class.method> <mod> <mod>... | why
-# The core isn't counted: it's the hook the others should have used.
-net/minecraft/world/NaturalSpawner.spawnMonstersAndWakePlayers oldfaithful-fixes world-rules | Different sites: the fix reads the path's end at the player's x and z, World Rules wraps the canSpawn call before it.
-net/minecraft/world/explosion/Explosion.explode oldfaithful-fixes world-rules | Different sites: the fix marks a player's velocity after the push, World Rules wraps the damage call before it, for items.

@@ -11,6 +11,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
@@ -244,6 +245,15 @@ public final class LibrarySelection {
 			if (withNeeds(e).contains(entry)) found.add(e);
 		}
 		return found;
+	}
+
+	/** Why {@code entry}'s switch can't be pressed: what {@code held} says of it, or of anything its going off would take. Null if nothing's held. */
+	public String heldBy(Entry entry, Function<String, String> held) {
+		for (Entry e : withDependents(entry)) {
+			String reason = held.apply(e.id);
+			if (reason != null) return reason;
+		}
+		return null;
 	}
 
 	/** Chooses a mod or not, for the next launch, along with whatever that takes. */

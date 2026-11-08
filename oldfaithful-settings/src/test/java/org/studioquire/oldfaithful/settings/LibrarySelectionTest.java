@@ -99,6 +99,19 @@ class LibrarySelectionTest {
 	}
 
 	@Test
+	void aHeldModHoldsWhatItDependsOnButNotWhatDependsOnIt(@TempDir Path game) throws IOException {
+		chain(game);
+		LibrarySelection library = new LibrarySelection(game);
+		java.util.function.Function<String, String> holdingTools = id -> id.equals("tools") ? "Held." : null;
+		assertEquals("Held.", library.heldBy(entry(library, "tools"), holdingTools), "its own switch");
+		assertEquals("Held.", library.heldBy(entry(library, "materials"), holdingTools), "going off would take it");
+		assertEquals(null, library.heldBy(entry(library, "armoury"), holdingTools), "going off leaves it");
+		assertEquals(null, library.heldBy(entry(library, "ore-map"), holdingTools), "a neighbour on the same dependency");
+		assertEquals(null, library.heldBy(entry(library, "farm"), holdingTools), "nothing to do with it");
+		assertEquals(null, library.heldBy(entry(library, "tools"), id -> null), "nothing held");
+	}
+
+	@Test
 	void aDependencyGoingOffTakesWhatNeedsIt(@TempDir Path game) throws IOException {
 		chain(game);
 		LibrarySelection library = new LibrarySelection(game);

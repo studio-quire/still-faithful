@@ -87,7 +87,7 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# on one track bump, push and boost each other, and carts side by side on parallel tracks don't.\n"},
 			{"animals.keepTended", "animals",
 					"# #4: every cow, pig, sheep and chicken could despawn once you were far enough away, penned ones included.\n"
-					+ "# With this, animals a player has dealt with (sheared, milked, saddled, dyed, ridden, carried in a boat\n"
+					+ "# With this, animals a player has looked after (sheared, milked, saddled, dyed, ridden, carried in a boat\n"
 					+ "# or minecart, or hatched from a thrown egg) stay for good; the rest despawn as in beta. Kept animals still\n"
 					+ "# count towards how many animals the world spawns around you.\n"},
 			{"saves.backgroundAutosave", "autosave",
@@ -100,6 +100,14 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# stood free, sideways in a corner; you couldn't choose. With this, a chest you place faces you (a second\n"
 					+ "# chest beside it joins its facing). Chests placed before keep beta's rule, and a vanilla game draws every\n"
 					+ "# chest by it. In multiplayer, placed chests face you only on a server that has this change too.\n"},
+			{"blocks.fenceShape", "fences",
+					"# #30: a fence was a whole block to walk into and to aim at, whatever it joined. With this, it's a post with arms\n"
+					+ "# to the fences beside it, as in later versions, both to aim at and to bump into: you can stand against a post\n"
+					+ "# and walk past its corner, and still can't jump over it. In multiplayer, walking past posts needs a server with\n"
+					+ "# this change too (elsewhere fences stay whole to walk into); what you aim at is always yours.\n"},
+			{"render.chatBars", "chat",
+					"# Each line of chat had a dark bar behind it the full width of the chat, however short the line. With this,\n"
+					+ "# a line's bar ends just past its own text, as long as the line is.\n"},
 			{"skins.modern", "skins",
 					"# Beta read only the top half of a skin. With this, skins made for later versions show whole: jacket, sleeves\n"
 					+ "# and trousers, a left arm and leg of their own, and slim arms where the player's profile asks for them.\n"

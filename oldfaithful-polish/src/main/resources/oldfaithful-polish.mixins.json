@@ -14,6 +14,7 @@
     "boathandling.BoatEntityMixin",
     "boats.BoatEntityMixin",
     "chests.BlockMixin",
+    "fences.FenceBlockMixin",
     "glowstone.PlayerInventoryMixin",
     "lava.FlowingLiquidBlockMixin",
     "leaves.LeavesBlockItemMixin",
@@ -26,6 +27,7 @@
     "autosave.ChunkCacheMixin",
     "bow.PlayerEntityRendererMixin",
     "bow.UndeadEntityRendererMixin",
+    "chat.InGameHudMixin",
     "chests.ChestBlockMixin",
     "dusk.ChunkBuilderMixin",
     "dusk.GameRendererMixin",
@@ -38,6 +40,8 @@
     "edition.BrandingMixin",
     "edition.OptionsScreenMixin",
     "edition.SettingsScreenMixin",
+    "fences.ClientNetworkHandlerMixin",
+    "fences.WorldRendererMixin",
     "glowstone.ClientNetworkHandlerMixin",
     "itemsize.ItemRendererMixin",
     "skins.HeldItemRendererMixin",
@@ -50,6 +54,7 @@
   ],
   "server": [
     "autosave.ServerChunkCacheMixin",
+    "fences.ServerLoginNetworkHandlerMixin",
     "glowstone.ServerLoginNetworkHandlerMixin"
   ],
   "injectors": {

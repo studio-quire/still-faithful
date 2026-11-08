@@ -66,12 +66,15 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 59 | `mobs.headNod` | world | A mob turning its head steps from its flipped pitch |
 | 60 | `multiplayer.tpFall` | server | /tp clears the fall the player had built up (only /tp, not the server's own teleports back) |
 | 61 | `multiplayer.drowningHeight` | server | Whether a player's eyes are in a fluid is measured 1.74 above the feet, as clients and single player measure |
+| 79 | `multiplayer.closedScreens` | server | When the client closes a container, the player's own screen takes its copies of what was sent for the slots both show; a slot it sent within the last second is sent again at once (`ClosedScreens`) |
 | 62 | `multiplayer.spawnerMobs` | both | Server: a spawner's update packet carries its entity id (`SpawnerMobs`). Client: that id shown in the spawner |
 | 64 | `spawning.besideWater` | world | The fluid-in-a-box test reads only the box's own blocks west and north of 0, 0 too |
 | 66 | `spawning.squidInWater` | world | A water creature's place must be water, not any fluid |
 | 67 | `blocks.fallingSandKeepsKind` | world | Falling sand clears a block of its kind on its first tick only; a server sends kept blocks again |
 | 74 | `movement.stepUnderRoof` | wherever the entity moves: a player's client; mobs in the world | A step-up comes down as far as it rose, not always the whole step height; the same number with nothing overhead |
 | 75 | `movement.boxAgainstWalls` | both; every entity | `setPosition` moves a side face that lands just past a sixteenth (within 1e-7) back onto it; the position itself is left alone |
+| 76 | `squids.footsteps` | both | A squid's moves take no steps: no footsteps (the client plays those), nothing stepped on |
+| 77 | `squids.swimming` | world; a client's only for its animation | A squid's water test asks about its middle, a flat box at half its height under the water's real surface, not an inside-out box |
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 
@@ -98,12 +101,14 @@ vanilla server never receives one. #67's server sends a kept block again because
 falling block still clears it in that client's world. #57 is the client's alone: the player's own client moves the
 player, and a server repeating the move with beta's two trims finds the shorter step supported. #58, #60 and #61 are
 server-only and change nothing a vanilla client can't take (a velocity packet, no damage, the same drowning height the
-client already uses).
+client already uses). So is #79: fewer slot packets after a container closes, and for a slot sent just before the
+close, the same slot packet on the player's own window at once rather than a tick later.
 #74 and #75 need nothing from the other side and send nothing different. A server's player has no step height, so #74 on a
 client changes only the client's own moves, which stay within what a vanilla server accepts, and on a server only its mobs. #75
 changes a box, never a position, and rebuilds are each side's own: a fixed client is safe on a vanilla server's login and
 corrections, and a vanilla client on a fixed server is as before. Why #75 sits in `setPosition` for every entity rather than
 only at a load: `docs/bugs.md` #75.
+#76 and #77 need nothing from the other side and send nothing different. A remote squid on a client only interpolates, so where it swims is the server's (#77 on the server); #77 on the client only picks its animation (its tentacles and tilt), and #76 on the client is what stops the footsteps you hear, which a vanilla client on a fixed server still plays.
 #42 changes the save format only by adding `TileTicks` to chunks, which vanilla ignores: a world played with the fix
 opens in vanilla (its pending ticks are lost there, as always), and a vanilla world opens with the fix (nothing to
 restore). The multiplayer client's world keeps vanilla's queue; only the world that saves (the server, single player)
@@ -142,10 +147,12 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   real server, with this mod and then without it (each must show beta's bug there), each in a new world, by the
   scenario mod's `WorldFixes`: a lone door top on a chest beside a new redstone torch (#55), pigs dropped from 12 to 31
   blocks into one-deep water (#56), a pig turning its head to something 45 degrees up (#59), pigs on grass with water
-  beside their west or north side either side of 0, 0 (#64), the squid's place test on lava and water (#66), a falling
+  beside their west or north side either side of 0, 0 (#64), the squid's place test on lava and water (#66), a squid moved
+  along redstone ore (#76: none lit), its water test up a column of water (#77: never dry, against a quarter of the heights), a falling
   sand some ticks into its fall in a cell of sand (#67), and on a zombie through its own move: 400 walks across a trench
   under a roof and in the open (#74: 0 sank with the fix, 64 without; the open air identical), 1000 walks to a wall past x 1024,
   then written and read (#75: 0 left inside, 10 without).
+- `./gw :oldfaithful-fixes:squidWatch [-Psquids.ticks=12000]` (#76, #77; 2026-11-06): a measurement, not a pass or fail (`SquidWatch`, `SquidWatchRun`). The real server with this mod and without it, side by side, each a new world with real squid in tanks: water 30 deep starting on the floor and at any height, 3 deep, 1 deep, a trough of thinning flow, dry land. Their height over time, footsteps, splashes and how they behave at the surface, in `local/run/squid-watch/<label>-<time>/watch.txt`. As long as its ticks at 20 a second; the numbers in `docs/bugs.md` #77.
 - `./gw :harness:fixesMultiplayerTest` (2026-11-02): the multiplayer fixes on the server package, in all four mixes:
   a server with and without this mod, each joined by the real client (hidden on a private desktop, as the start-up
   test) with and without it. The client (`MultiplayerCheck`) joins a scene the self-test mod builds it high above the
@@ -158,7 +165,10 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   quarter second earlier (#58: the push is sent), a player 10 blocks into a fall moved by the console's /tp and landing
   (#60: no damage), a player standing 20 s where the water's surface lies between the two eye heights (#61: no
   drowning). And on joining, the hidden client reads a cow spawner 20 blocks off (#62: a cow only where both sides have
-  the fix). Where the
+  the fix), and through the mining and turning it watches squid in a tank 3 deep under the scene (#77, on a client with #15: above about half a block only on a fixed server, and no splashes; #76: steps only on a client without the fix). Then a chest
+  is closed and a block placed from what it gave half a second later, with the client's reading held back meanwhile (#79:
+  7 left on a fixed server, beta's resend puts back 8), and 3 dirt sent on the chest's window as it closes must still
+  arrive (the client drops that packet; both servers send it again). Where the
   side that matters lacks the fix, each check expects beta's bug instead (all seen: pigs 0.06 to 0.15 blocks off, 5
   dead ticks, turns 15 to 30 degrees short, the pig left frozen, no block, no spawn, the west edge first, no sign
   text). About 6 minutes; `-Pfixesmp.rawOnly=true` runs only the raw-client part (about 3 minutes). Runs in

@@ -103,8 +103,9 @@ public final class ChunkLoad {
 				return new Result(true, null);
 			case IO_ERROR:
 				protectedChunks.add(key);
-				Notices.chunk(chunkX, chunkZ, "couldn't be read from " + writes.file.getName() + " (" + raw.detail
-						+ "). It shows as new terrain for now, which won't be saved, so the original stays on disk.");
+				Notices.chunk(chunkX, chunkZ, "couldn't be read from " + writes.file.getName() + ". It shows as new terrain for now,"
+						+ " which won't be saved, so the original stays on disk.", "couldn't be read from " + writes.file.getName()
+						+ " (" + raw.detail + "). It shows as new terrain for now, which won't be saved, so the original stays on disk.");
 				return new Result(true, null);
 			case OK:
 			case OVERSIZED:
@@ -248,8 +249,9 @@ public final class ChunkLoad {
 			// time; without a copy, never saved over this session.
 			if (copy != null) chunk.markDirty();
 			else protectedChunks.add(key(dir, chunkX, chunkZ));
-			Notices.chunk(chunkX, chunkZ, "had damaged parts (" + String.join("; ", repairs) + "). The rest loaded; the original is kept"
-					+ (copy != null ? " in " + Notices.shortPath(copy) : "") + ".");
+			String what = "had damaged parts (" + String.join("; ", repairs) + "). The rest loaded; the original is kept"
+					+ (copy != null ? " in " + Notices.shortPath(copy) : "") + ".";
+			Notices.chunk(chunkX, chunkZ, what, what);
 		}
 		return chunk;
 	}
@@ -363,12 +365,15 @@ public final class ChunkLoad {
 		File copy = Backups.chunk(dir, chunkX, chunkZ, bytes, why);
 		if (copy == null) {
 			protectedChunks.add(key(dir, chunkX, chunkZ));
-			Notices.chunk(chunkX, chunkZ, "in " + regionFile.getName() + " couldn't be read (" + why + "), and a copy couldn't be"
+			Notices.chunk(chunkX, chunkZ, "in " + regionFile.getName() + " couldn't be read, and a copy couldn't be kept (see the"
+					+ " log). It shows as new terrain for now, which won't be saved, so the original stays on disk.",
+					"in " + regionFile.getName() + " couldn't be read (" + why + "), and a copy couldn't be"
 					+ " kept (see the log). It shows as new terrain for now, which won't be saved, so the original stays on disk.");
 			return;
 		}
-		Notices.chunk(chunkX, chunkZ, "in " + regionFile.getName() + " couldn't be read (" + why + "), so it was generated anew."
-				+ " The original is kept in " + Notices.shortPath(copy) + ".");
+		Notices.chunk(chunkX, chunkZ, "in " + regionFile.getName() + " couldn't be read, so it was generated anew. The original is"
+				+ " kept in " + Notices.shortPath(copy) + ".", "in " + regionFile.getName() + " couldn't be read (" + why + "), so it was"
+				+ " generated anew. The original is kept in " + Notices.shortPath(copy) + ".");
 	}
 
 	/** The record as it sits in the region (length, compression type, payload), for a backup that can be put back. */

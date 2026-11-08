@@ -12,6 +12,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.mob.SlimeEntity;
 import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.entity.vehicle.BoatEntity;
@@ -73,6 +74,7 @@ final class FixesCheck {
 		sneakOffCorner(mc, world);
 		stepUnderRoof(mc, world);
 		boxAgainstWall(mc, world);
+		squids(world);
 
 		// #19: water right above a torch standing on stone, ticked once now: in this new world the scheduled tick would
 		// wait behind the generator's backlog (some 9,000 liquid ticks, past the 1,000 a tick the world works through).
@@ -302,6 +304,45 @@ final class FixesCheck {
 		mc.player.velocityX = mc.player.velocityY = mc.player.velocityZ = 0.0;
 		results.check("fixes #57: sneaking diagonally off an inside corner keeps a block underfoot (stopped at " + at + ", feet at "
 				+ String.format("%.2f", feet - Y) + ")", held && Math.abs(feet - Y) < 0.01);
+	}
+
+	/**
+	 * #76: a squid moved 8 blocks along a floor of redstone ore through its own move (beta: it steps on it, and the ore
+	 * lights). #77: its water test at feet heights from the floor up a column of water 3 deep (beta: dry a quarter of the
+	 * way up each block). Its movement over time is measured on the real server (`:oldfaithful-fixes:squidWatch`).
+	 */
+	private void squids(World world) {
+		int x0 = bx + 40, z = bz + 30, floor = Y + 10;
+		for (int x = x0 - 1; x <= x0 + 12; x++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				world.setBlockWithoutNotifyingNeighbors(x, floor, z + dz, Block.REDSTONE_ORE.id, 0);
+				world.setBlockWithoutNotifyingNeighbors(x, floor + 1, z + dz, Block.WATER.id, 0);
+			}
+		}
+		SquidEntity squid = new SquidEntity(world);
+		squid.setPositionAndAnglesKeepPrevAngles(x0 + 0.5, floor + 1, z + 0.5, 0.0F, 0.0F);
+		for (int t = 0; t < 40; t++) squid.move(0.2, -0.05, 0.0);
+		int lit = 0;
+		for (int x = x0 - 1; x <= x0 + 12; x++) {
+			for (int dz = -1; dz <= 1; dz++) {
+				if (world.getBlockId(x, floor, z + dz) == Block.LIT_REDSTONE_ORE.id) lit++;
+			}
+		}
+		results.check("fixes #76: a squid moved " + String.format("%.1f", squid.x - x0) + " blocks along redstone ore lights none (" + lit + ")",
+				lit == 0 && squid.x - x0 > 7.0);
+
+		int cz = z + 4;
+		world.setBlockWithoutNotifyingNeighbors(x0, floor, cz, Block.STONE.id, 0);
+		for (int y = floor + 1; y <= floor + 3; y++) world.setBlockWithoutNotifyingNeighbors(x0, y, cz, Block.WATER.id, 0);
+		int dry = 0;
+		for (int i = 0; i < 96; i++) {
+			squid.setPosition(x0 + 0.5, floor + 1 + i * 0.025, cz + 0.5);
+			if (!squid.isSubmergedInWater()) dry++;
+		}
+		squid.setPosition(x0 + 0.5, floor + 1 + 2.45, cz + 0.5);
+		boolean over = squid.isSubmergedInWater();
+		results.check("fixes #77: a squid's water test holds all the way up the water (" + dry + " of 96 heights dry) and not with its middle over the surface",
+				dry == 0 && !over);
 	}
 
 	/**

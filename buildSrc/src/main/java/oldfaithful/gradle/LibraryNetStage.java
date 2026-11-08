@@ -117,7 +117,6 @@ final class LibraryNetStage implements Stage {
 							server.scene("hprobe scenarios Keeper");
 						}
 					}
-					Thread.sleep(5500);
 					Path game = dir.resolve("client");
 					Files.createDirectories(game);
 					List<String> client = new ArrayList<>(t.probeFlags(game.resolve("out")));
@@ -158,20 +157,15 @@ final class LibraryNetStage implements Stage {
 		int port = server.port;
 		List<Path> full = plus(t.clientMods(t.subjects, true), match);
 		expect("the same mods", tryServer("same", port, full), "admitted");
-		Thread.sleep(5500);
-		expect("a client missing a mod", tryServer("missing", port, t.clientMods(t.subjects, true)), "MismatchScreen", "Missing: " + MATCH);
-		Thread.sleep(5500);
-		expect("a client with an extra", tryServer("extra", port, plus(full, extra)), "MismatchScreen", "Extra: " + EXTRA);
-		Thread.sleep(5500);
-		expect("a different network version", tryServer("network", port, plus(t.clientMods(t.subjects, true), other)), "MismatchScreen", "Different: " + MATCH);
-		Thread.sleep(5500);
+		expect("a client missing a mod", tryServer("missing", port, t.clientMods(t.subjects, true)), "MismatchScreen", "The server needs: Harness Match");
+		expect("a client with an extra", tryServer("extra", port, plus(full, extra)), "MismatchScreen", "Turn off to join: Harness Extra");
+		expect("a different network version", tryServer("network", port, plus(t.clientMods(t.subjects, true), other)), "MismatchScreen", "Needs another version: Harness Match");
 		List<Path> vanilla = new ArrayList<>();
 		t.getMods().getFiles().forEach(f -> {
 			String name = f.getName();
 			if (!name.startsWith("faithful-core") && !name.startsWith("oldfaithful-settings")) vanilla.add(f.toPath());
 		});
 		expect("a client with no core", tryServer("vanilla", port, vanilla), "Faithful Library");
-		Thread.sleep(5500);
 	}
 
 	private static byte[] section(int id, byte[] body, int claimed) {

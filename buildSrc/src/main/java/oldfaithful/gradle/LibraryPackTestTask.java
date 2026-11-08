@@ -58,7 +58,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	private static final String LIST = "mods-library/selection.txt";
 	private static final Pattern JVM_ARGS = Pattern.compile("\"\\+jvmArgs\"\\s*:\\s*\\[(.*?)]", Pattern.DOTALL);
 	private static final Pattern QUOTED = Pattern.compile("\"([^\"]+)\"");
-	private static final List<String> SERVER_MODS = List.of("world-rules", "better-dungeons");
+	private static final List<String> SERVER_MODS = List.of("world-rules", "hearty-food", "item-repair");
 
 	private final List<String> lines = new ArrayList<>();
 	private final List<String> failures = new ArrayList<>();
@@ -83,7 +83,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
 		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
-		for (String id : List.of("faithful-core", "better-dungeons", "no-toasts", "plain-f3", "water-bottles", "world-rules")) {
+		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "world-rules")) {
 			expect("as shipped: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
 		}
 		expect("the new world's file has seen Water Bottles", Files.isRegularFile(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties"))
@@ -96,7 +96,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		played = launch(plain, false, args("-Doldfaithful.selftest.libraryPack=off", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
 		expect("nothing ticked: the loader lists no library mod", loadedNothing(played));
-		expect("the ticks were written for the next launch", Files.readAllLines(plain.resolve(LIST)).size() == 6);
+		expect("the ticks were written for the next launch", Files.readAllLines(plain.resolve(LIST)).size() == 10);
 		expect("a plain client's login is a vanilla client's", loginSeed(run, "login-plain", instance, "") == 0L);
 
 		Path absent = game(run, "no-list", instance);
@@ -114,15 +114,15 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		int port = freePort();
 		Path dir = serverFolder(run, "server", port);
 		Path mods = dir.resolve("mods");
-		expect("the server package has the core, the settings and three mods on",
-				nameOf(mods, "faithful-core") != null && nameOf(mods, "oldfaithful-settings") != null && nameOf(mods, "water-bottles") != null && SERVER_MODS.stream().allMatch(m -> nameOf(mods, m) != null));
+		expect("the server package has the core, the settings and every server-side mod on",
+				nameOf(mods, "faithful-core") != null && nameOf(mods, "oldfaithful-settings") != null && nameOf(mods, "water-bottles") != null && nameOf(mods, "alchemy") != null && SERVER_MODS.stream().allMatch(m -> nameOf(mods, m) != null));
 		expect("and no client-only mod", nameOf(mods, "plain-f3") == null && nameOf(mods, "no-toasts") == null);
 
 		// Its own folder, so these worlds never see Water Bottles.
 		Path plainDir = serverFolder(run, "server-plain", port);
 		Path plainMods = plainDir.resolve("mods"), held = plainDir.resolve("held");
 		Files.createDirectories(held);
-		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "world-rules", "better-dungeons")) {
+		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "hearty-food", "item-repair")) {
 			Files.move(plainMods.resolve(nameOf(plainMods, mod)), held.resolve(nameOf(plainMods, mod)));
 		}
 		start(plainDir, "every library jar out");
@@ -134,9 +134,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 				vanilla.stand(20, 50);
 				expect("and is sent no 250 packet", vanilla.await(r -> r.id() == 250, 1) == null);
 			}
-			Thread.sleep(5500);
 			expect("the plain pack plays there", tryServer(run, "plain-on-plain", instance, "", port).startsWith("admitted"));
-			Thread.sleep(5500);
 			expect("the pack as shipped plays there", tryServer(run, "shipped-on-plain", instance, allOn(), port).startsWith("admitted"));
 		} finally {
 			stop("every library jar out");
@@ -145,17 +143,15 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Files.move(held.resolve(nameOf(held, "faithful-core")), plainMods.resolve(nameOf(held, "faithful-core")));
 		Files.move(held.resolve(nameOf(held, "oldfaithful-settings")), plainMods.resolve(nameOf(held, "oldfaithful-settings")));
 		for (String mod : SERVER_MODS) Files.move(held.resolve(nameOf(held, mod)), plainMods.resolve(nameOf(held, mod)));
-		start(plainDir, "all but Water Bottles");
+		start(plainDir, "all but the mods with content");
 		try {
 			try (RawClient vanilla = new RawClient(port, "PlainPlayer")) {
-				expect("World Rules and Better Dungeons on: a vanilla client logs in", vanilla.login(60) == null);
+				expect("World Rules and Hearty Food on: a vanilla client logs in", vanilla.login(60) == null);
 			}
-			Thread.sleep(5500);
 			expect("the plain pack plays there", tryServer(run, "plain-on-others", instance, "", port).startsWith("admitted"));
-			Thread.sleep(5500);
 			expect("a pack with everything on plays there", tryServer(run, "all-on-others", instance, allOn(), port).startsWith("admitted"));
 		} finally {
-			stop("all but Water Bottles");
+			stop("all but the mods with content");
 		}
 
 		Path bottles = mods.resolve(nameOf(mods, "water-bottles"));
@@ -165,27 +161,28 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 				String reason = vanilla.login(60);
 				expect("Water Bottles on: a vanilla client is refused, plainly: " + reason, reason != null && reason.contains("Faithful Library"));
 			}
-			Thread.sleep(5500);
 			String shown = tryServer(run, "plain-on-all", instance, "", port);
 			expect("a plain pack is refused the same way: " + shown, shown.contains("Faithful Library"));
-			Thread.sleep(5500);
 			Path partial = game(run, "one-on-all", instance);
 			Files.writeString(partial.resolve(LIST), "mods-library/faithful-core.jar\nmods-library/plain-f3.jar\n");
 			List<String> played = launch(partial, false, args("-Doldfaithful.selftest.tryServer=127.0.0.1:" + port, "-Doldfaithful.selftest.recordText=true", "-Doldfaithful.selftest.useServerSet=true"), failures);
 			lines.addAll(played);
 			shown = said(played, "[library-harness] SCREEN ");
-			expect("a pack with another mod on is told what's missing: " + shown, shown.contains("MismatchScreen") && shown.contains("water-bottles"));
+			expect("a pack with another mod on is told what's missing: " + shown, shown.contains("MismatchScreen") && shown.contains("The server needs: Water Bottles"));
 			String set = said(played, "[library-harness] SET ");
 			String list = Files.readString(partial.resolve(LIST));
-			expect("Use This Server's Set says to restart (" + set + ") and turns it on, keeping Plain F3: " + list.replace('\n', ' '),
+			expect("Match This Server's Mods says to restart (" + set + ") and turns it on, keeping Plain F3: " + list.replace('\n', ' '),
 					set.contains("restart") && list.contains("water-bottles") && list.contains("plain-f3") && list.contains("faithful-core"));
-			Thread.sleep(5500);
 			expect("the pack as shipped plays there", tryServer(run, "all-on-all", instance, allOn(), port).startsWith("admitted"));
 		} finally {
 			stop("as it comes");
 		}
 
+		// Alchemy goes with it, as it needs it: the loader wouldn't start with one and not the other.
 		Files.delete(bottles);
+		Files.delete(mods.resolve(nameOf(mods, "alchemy")));
+		Files.delete(mods.resolve(nameOf(mods, "buried-towers")));
+		Files.delete(mods.resolve(nameOf(mods, "blue-flowers")));
 		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
 		List<String> command = windows ? List.of("cmd", "/c", dir.resolve("start.bat").toString()) : List.of("sh", dir.resolve("start.sh").toString());
 		List<String> refused;
@@ -258,12 +255,12 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 
 	/** What the loader's mod list said: nothing of the library's, by id. */
 	private static boolean loadedNothing(List<String> output) {
-		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- better-dungeons ")
+		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- blue-flowers ") || l.contains("- buried-towers ") || l.contains("- hearty-food ") || l.contains("- item-repair ") || l.contains("- alchemy ") || l.contains("- blue-flowers ")
 				|| l.contains("- plain-f3 ") || l.contains("- no-toasts "));
 	}
 
 	private String allOn() throws IOException {
-		return String.join("\n", "mods-library/better-dungeons.jar", "mods-library/faithful-core.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
+		return String.join("\n", "mods-library/alchemy.jar", "mods-library/blue-flowers.jar", "mods-library/buried-towers.jar", "mods-library/faithful-core.jar", "mods-library/hearty-food.jar", "mods-library/item-repair.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
 				"mods-library/water-bottles.jar", "mods-library/world-rules.jar", "");
 	}
 

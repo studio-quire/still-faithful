@@ -358,10 +358,44 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
+}
+// Still Faithful's fences (#30) between the real client and server in every mix (FencesMultiplayerTestTask): Still
+// Faithful's client mods with and without the polish mod, the server package with and without it.
+if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
+    def polishJar = project(':oldfaithful-polish').tasks.named('remapJar')
+    def clientMods = [testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods]
+    tasks.register('fencesMultiplayerTest', oldfaithful.gradle.FencesMultiplayerTestTask) {
+        group = 'verification'
+        description = "Still Faithful's fences on the real server and the real client (hidden), with and without the polish mod on each side."
+        dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(clientMods, stillMods)
+        clientModsWithoutPolish.from(clientMods)
+        serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+        serverJar = mc.serverJar
+        harnessMod = tasks.named('remapJar').flatMap { it.output }
+        polishMod = polishJar.flatMap { it.output }
+        stillEdition = "${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString()
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/fences-multiplayer-test')
+        windowRuns = false
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// -Ptest.speed=N: game time N times as fast in every hidden client's single player, and on library servers (with the
+// harness probe) and the clients that join them; anything else stays at 20 ticks a second (ClientStartupTask's tickMs,
+// docs/building.md).
+def testSpeed = providers.gradleProperty('test.speed')
+tasks.withType(oldfaithful.gradle.ClientStartupTask).configureEach {
+    if (testSpeed.isPresent()) tickMs = Math.max(1, Math.round(50 / (testSpeed.get() as double)) as int)
 }
 // Pictures of the real game for the site (SceneShot, docs/release.md): Old Faithful's mods, a 1440x900 hidden
 // window, lava lying in caves near the spawn of -PsceneSeed (default 7373), shots in local/run/scene-shot/shots/.
@@ -603,10 +637,9 @@ if (findProject(':oldfaithful-core') != null) {
         task.group = 'verification'
         task.gameJar = mc.namedJar
         task.editions.from(editionProjects.collect { it.tasks.named('jar') })
-        task.accepted = rootProject.layout.projectDirectory.file('harness/library-accepted.txt')
     }
     tasks.register('libraryStatic', oldfaithful.gradle.LibraryStaticTask) {
-        description = "Reads the library's jars: what they hold, what common code reaches, every mixin target, two mods on one method."
+        description = "Reads the library's jars: what they hold, what common code reaches, every mixin target, methods mods share."
         staticSettings(it)
         library.from(libraryProjects.collect { it.tasks.named('jar') })
         selftests.from(libraryProjects.findAll { it.tasks.names.contains('selftestJar') }.collect { it.tasks.named('selftestJar') })
@@ -620,8 +653,7 @@ if (findProject(':oldfaithful-core') != null) {
             absent = ['MarkedMethods']
             expected = ['static-bad: nothing outside assets/', 'static-bad: no @Overwrite', 'static-bad: common code reaches the client only', 'static-bad: client code reaches the server only',
                         'static-bad: common code reaches the server only', 'static-bad: common code reaches LWJGL', 'static-bad: reads Chunk.blocks directly',
-                        'static-bad: compares stacks by hand', 'static-bad: a common mixin targets a client-only class', 'two @Redirects on one site',
-                        'two mods on one method']
+                        'static-bad: compares stacks by hand', 'static-bad: a common mixin targets a client-only class', 'two @Redirects on one site']
             report = layout.buildDirectory.file('reports/library-static-bad.txt')
         }
     }
@@ -771,6 +803,7 @@ if (findProject(':library:harness-probe') != null) {
         dependsOn 'libraryStatic'
         stages = ['selftest']
         serverOnly = providers.gradleProperty('library.serverOnly').isPresent()
+        singlePlayerOnly = providers.gradleProperty('library.singlePlayerOnly').isPresent()
         subjects.each { p ->
             it.subjects.from(p.tasks.named('remapJar'))
             // What a named mod depends on comes along, but only named mods' tests run.
@@ -821,56 +854,76 @@ if (findProject(':library:api-check') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-if (findProject(':library:dungeon-check') != null) {
-    evaluationDependsOn(':library:dungeon-check')
-    evaluationDependsOn(':library:better-dungeons')
-    // Pictures of a real dungeon for looking at, by the coordinates betterDungeonsTest found: -PsceneViews, -PsceneSeed as sceneShotStill's, and every light level shown as daylight.
-    tasks.register('sceneShotDungeons', oldfaithful.gradle.ClientStartupTask) {
+if (findProject(':library:tower-check') != null) {
+    evaluationDependsOn(':library:tower-check')
+    evaluationDependsOn(':library:buried-towers')
+    // Pictures in a real tower, by coordinates: -PsceneViews, -PsceneSeed as sceneShotStill's, -PsceneBright=false for the tower's own light.
+    // Each view is shot once it's built within 64 blocks of the camera (SceneShot's sceneSettle; -PsceneSettleRadius=N), 240
+    // ticks at most; -PsceneSettle=false holds every view the whole 240, for more of the far land in views from outside.
+    tasks.register('sceneShotTowers', oldfaithful.gradle.ClientStartupTask) {
         group = 'oldfaithful'
-        description = 'Takes pictures of given places underground in a new world with Better Dungeons, unseen.'
+        description = 'Takes pictures of given places in a new world with Buried Towers, unseen.'
         dependsOn extractLwjgl3Natives
         gameJar = mc.clientJar
         intermediaryMappings = mc.intermediaryMappings
         loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
-        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, project(':oldfaithful-core').tasks.named('remapJar'), project(':library:better-dungeons').tasks.named('remapJar'))
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, project(':oldfaithful-core').tasks.named('remapJar'), project(':library:buried-towers').tasks.named('remapJar'))
         natives = lwjgl3NativesDir
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
         privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
-        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/scene-shot-dungeons')
+        // -PsceneRun=local/run/<folder> for a run folder of one's own, as the default is shared by every worktree.
+        def runDirectory = rootProject.layout.projectDirectory.dir(providers.gradleProperty('sceneRun').getOrElse('local/run/scene-shot-towers'))
         runDir = runDirectory
         oldFaithful = findProject(':oldfaithful-options') != null
         windowRuns = false
         def views = providers.gradleProperty('sceneViews').getOrElse('')
-        def seconds = 120 + 30 * Math.max(1, views.split(';').length)
+        // -PspawnWatch="cx cz radius floorY floorH ticks;..." counts what a tower's floors spawn instead (SpawnWatch).
+        def watch = providers.gradleProperty('spawnWatch').getOrElse('')
+        // -PsceneTowers=complex makes the new world's towers complex, as Create World's page would; simple by default.
+        configs = ['faithful-rules.properties': "rule.buried-towers.style=${providers.gradleProperty('sceneTowers').getOrElse('simple')}\n".toString()]
+        def watchSeconds = watch.isEmpty() ? 0 : watch.split(';').collect { (it.trim().split(/\s+/)[5] as int).intdiv(20) + 20 }.sum()
+        // -PcartRide="sx sy sz ex ey ez lx ly lz times;..." rides a tower's cart run instead (CartRide): the top station's brake, the bottom's, the lever.
+        def ride = providers.gradleProperty('cartRide').getOrElse('')
+        def rideSeconds = ride.isEmpty() ? 0 : ride.split(';').collect { def v = it.trim().split(/\s+/); 10 + 40 * (v.length > 9 ? v[9] as int : 1) }.sum()
+        def seconds = 120 + 30 * Math.max(1, views.split(';').length) + watchSeconds + rideSeconds
         timeoutSeconds = seconds
         extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1440x900', '-Doldfaithful.selftest.expectSize=1440x900',
                         "-Doldfaithful.selftest.stallMs=${(seconds - 30) * 1000}".toString(),
                         "-Doldfaithful.selftest.scene=${runDirectory.dir('shots').asFile.absolutePath}".toString(),
-                        "-Doldfaithful.selftest.sceneViews=${views}".toString(), '-Doldfaithful.selftest.sceneViewTicks=240', '-Doldfaithful.selftest.sceneBright=true',
+                        "-Doldfaithful.selftest.sceneViews=${views}".toString(), '-Doldfaithful.selftest.sceneViewTicks=240',
+                        "-Doldfaithful.selftest.sceneSettle=${providers.gradleProperty('sceneSettle').getOrElse('true')}".toString(),
+                        "-Doldfaithful.selftest.sceneSettleRadius=${providers.gradleProperty('sceneSettleRadius').getOrElse('64')}".toString(),
+                        "-Doldfaithful.selftest.spawnWatch=${watch}".toString(),
+                        "-Doldfaithful.selftest.cartRide=${ride}".toString(),
+                        "-Doldfaithful.selftest.sceneBright=${providers.gradleProperty('sceneBright').getOrElse('true')}".toString(),
                         "-Doldfaithful.selftest.sceneSeed=${providers.gradleProperty('sceneSeed').getOrElse('31337')}".toString()]
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
-    tasks.register('betterDungeonsTest', oldfaithful.gradle.BetterDungeonsTestTask) {
+    tasks.register('buriedTowersTest', oldfaithful.gradle.BuriedTowersTestTask) {
         group = 'verification'
-        description = "Better Dungeons on really generated worlds: the same dungeons whatever the order, sealed and whole, and nothing else in the seed changed."
+        description = "Buried Towers on really generated worlds, on the real server."
         dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
         gameJar = mc.clientJar
         intermediaryMappings = mc.intermediaryMappings
         loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
         mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'))
-        serverMods.from(project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'), project(':library:dungeon-check').tasks.named('remapJar'))
-        dungeonMod.from(project(':library:better-dungeons').tasks.named('remapJar'))
+        serverMods.from(project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'), project(':library:tower-check').tasks.named('remapJar'))
+        towerMod.from(project(':library:buried-towers').tasks.named('remapJar'))
         editionMods.from(fixedMods, stillMods)
         serverPackage = rootProject.layout.projectDirectory.dir('local/server-package/OldFaithful-server')
         serverJar = mc.serverJar
-        seeds = providers.gradleProperty('dungeons.seeds').map { it.split(',').collect { s -> s as long } }.orElse([1733L, 20261105L, -7L])
-        size = providers.gradleProperty('dungeons.size').map { it as int }.orElse(40)
+        seeds = providers.gradleProperty('towers.seeds').map { it.split(',').collect { s -> s as long } }.orElse([1733L, 20261105L])
+        size = providers.gradleProperty('towers.size').map { it as int }.orElse(48)
+        mode = providers.gradleProperty('towers.mode').orElse('check')
+        towers = providers.gradleProperty('towers.count').map { it as int }.orElse(6)
+        at = providers.gradleProperty('towers.at')
+        style = providers.gradleProperty('towers.style')
         natives = lwjgl3NativesDir
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
         privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
         windowRuns = false
         timeoutSeconds = 120
-        runDir = rootProject.layout.projectDirectory.dir('local/run/better-dungeons-test')
+        runDir = rootProject.layout.projectDirectory.dir(providers.gradleProperty('towers.run').getOrElse('local/run/buried-towers-test'))
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }

@@ -21,7 +21,8 @@
   "server": [
     "AlphaWorldStoragePlayersMixin",
     "ReadOnlyServerWorldMixin",
-    "ServerChunkCacheMixin"
+    "ServerChunkCacheMixin",
+    "ServerWorldMixin"
   ],
   "injectors": {
     "defaultRequire": 1

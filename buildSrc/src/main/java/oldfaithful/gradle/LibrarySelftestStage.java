@@ -13,6 +13,8 @@ import oldfaithful.gradle.LibraryTestTask.Stage;
 /**
  * Mods' own tests (docs/library-authoring.md > Testing): all of the set's, one after another in one world, so each also meets the others. Single player, then a real server with a hidden client
  * joined, each fresh and again after a save and a restart. A FAIL from a mod's test, on either side, fails the run under its name, and so does a mod with a test that checked nothing.
+ * Two halves can run alone, for iterating on one side: {@code serverOnly} (world tests on a server, a raw client for a player, no game client) and
+ * {@code singlePlayerOnly} (single player, fresh and reopened, no server).
  */
 final class LibrarySelftestStage implements Stage {
 	private final LibraryTestTask t;
@@ -53,6 +55,10 @@ final class LibrarySelftestStage implements Stage {
 		}
 		Path dir = t.run.resolve(t.stage);
 		String planted = LibraryTestTask.flag("faithful.bad", t.planted);
+		if (t.getServerOnly().get() && t.getSinglePlayerOnly().get()) {
+			t.fail("harness", "options", "library.serverOnly and library.singlePlayerOnly each leave out what the other runs: pick one");
+			return;
+		}
 		if (t.getServerOnly().get()) {
 			serverOnly(tests, server, dir, planted);
 			return;
@@ -74,6 +80,11 @@ final class LibrarySelftestStage implements Stage {
 		t.client("single player, restarted", game, client, List.of("-Doldfaithful.selftest.worldChecksOnly=true", "-Doldfaithful.selftest.recordText=true", "-Dfaithful.test=restarted", stall, planted));
 		keepLog(game, "restarted");
 		counted("single player, restarted");
+		if (t.getSinglePlayerOnly().get()) {
+			t.notes.add("selftest: single player only (library.singlePlayerOnly): no server joined, no servers without the set");
+			t.longLaunch = 0;
+			return;
+		}
 
 		try (HarnessServer host = new HarnessServer(t, dir.resolve("server"))) {
 			host.mods(server).properties(Map.of("spawn-animals", "true", "level-seed", String.valueOf(t.getSeed().get())));

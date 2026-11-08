@@ -5,6 +5,24 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.2 (2026-11-08)
+
+Released with Still Faithful 0.3.0, which carries it; on Pure Faithful 0.1.4, which brings its own fix (see its
+changelog): a rare crash when a server makes a new world. Two new fixes, each on its own switch, under Mobs:
+
+- Squid sank to the bottom and stayed within about half a block of it: at some heights their test for being in water
+  failed, and they couldn't swim past those. They now swim all through the water, up to the surface (Squid Swimming).
+- Squid made footsteps on the sea floor, and lit redstone ore as they went (Squid Footsteps).
+
+And one for servers, on the switch `multiplayer.closedScreens` in the server's `config/oldfaithful-fixes.properties`
+(players with any client get it):
+
+- Placing a block, or using any item, a moment after closing a chest, furnace, dispenser or workbench could leave your
+  screen showing one more of it than you had, until that slot changed again.
+
+For the Faithful Library: while a world's rules are locked, the settings' Mods menu doesn't switch off a library mod
+that has rules. Without the library nothing changes.
+
 ## 0.2.1 (2026-11-06)
 
 Released with Still Faithful 0.2.2, which carries it; still on Pure Faithful 0.1.3. Two new fixes, each on its own
@@ -19,8 +37,8 @@ switch, under Players and Vehicles:
 
 A correction: Old Faithful 0.1.3 said that rejoining a world far from its spawn, the walls around you were solid from
 the first moment, and its README said you couldn't walk into one and suffocate. That was wrong. Testing since shows
-the game doesn't move you until the land near you has loaded, at any distance from spawn, so that change didn't
-address the problem it was made for. What was reported then may well have been the rounding slip fixed here, though
+the game doesn't move you until the land near you has loaded, so that change didn't
+address the problem it was made for. What was reported then may have been the rounding slip fixed here, though
 we can't be certain. In our tests the change made no difference a player would notice, so its switch (Rejoining Worlds,
 `world.rejoinTerrain`) is gone; a config file that still names it loads as before.
 

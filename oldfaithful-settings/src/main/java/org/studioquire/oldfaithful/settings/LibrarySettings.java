@@ -32,7 +32,7 @@ public final class LibrarySettings implements SettingsProvider {
 				public String said() {
 					return also;
 				}
-			}).running(() -> String.valueOf(FabricLoader.getInstance().isModLoaded(e.id))));
+			}).running(() -> String.valueOf(FabricLoader.getInstance().isModLoaded(e.id))).lockedWhen(() -> library.heldBy(e, settings::heldReason)));
 		}
 	}
 }

@@ -7,6 +7,34 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.3.0 (2026-11-08)
+
+On Old Faithful 0.2.2 and Pure Faithful 0.1.4. In Still Faithful's own mod, each on its own switch under Polish:
+
+- Fences are a post with arms to the fences beside it, as in later versions, instead of a whole block: you can stand
+  right up against a post, walk past its corner, and aim past it at what's behind, and the outline shows the post and
+  arms. They're still too high to jump over. On a server, walking past posts needs the server to have this too
+  (elsewhere fences stay whole to walk into, so you're never pulled back); what you aim at is yours anywhere (Fence
+  Shape). In builds you already have, posts that only touch diagonally no longer close a gap: a player, wolf, chicken,
+  zombie, skeleton or creeper fits between them, as in later versions, while pigs, cows and sheep still don't. Builds
+  that relied on the whole block (the "smart farm" trick, which kept crops from being trampled) work only with the
+  switch off.
+- Each line of chat has a dark bar only as long as its own text, instead of the chat's full width, in play and with
+  the chat open (Chat Bars).
+
+Pure Faithful 0.1.4 fixes a rare crash when a server makes a new world. From Old Faithful 0.2.2, each on its own
+switch, under Fixes > Mobs:
+
+- Squid sank to the bottom and stayed within about half a block of it: at some heights their test for being in water
+  failed, and they couldn't swim past those. They now swim all through the water, up to the surface (Squid Swimming).
+- Squid made footsteps on the sea floor, and lit redstone ore as they went (Squid Footsteps).
+
+And one for servers, on the switch `multiplayer.closedScreens` in the server's `config/oldfaithful-fixes.properties`
+(players with any client get it):
+
+- Placing a block, or using any item, a moment after closing a chest, furnace, dispenser or workbench could leave your
+  screen showing one more of it than you had, until that slot changed again.
+
 ## 0.2.2 (2026-11-06)
 
 On Old Faithful 0.2.1 and Pure Faithful 0.1.3. Still Faithful's own mod is unchanged.
@@ -22,8 +50,8 @@ From Old Faithful 0.2.1, each on its own switch, under Fixes > Players and Vehic
 
 A correction: Still Faithful 0.1.1 and Old Faithful 0.1.3 said that rejoining a world far from its spawn, the walls around you were solid from
 the first moment, and Old Faithful's README said you couldn't walk into one and suffocate. That was wrong. Testing since shows
-the game doesn't move you until the land near you has loaded, at any distance from spawn, so that change didn't
-address the problem it was made for. What was reported then may well have been the rounding slip fixed here, though
+the game doesn't move you until the land near you has loaded, so that change didn't
+address the problem it was made for. What was reported then may have been the rounding slip fixed here, though
 we can't be certain. In our tests the change made no difference a player would notice, so its switch (Rejoining Worlds,
 `world.rejoinTerrain`) is gone; a config file that still names it loads as before.
 

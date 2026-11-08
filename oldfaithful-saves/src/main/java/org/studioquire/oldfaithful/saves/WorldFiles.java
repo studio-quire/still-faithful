@@ -53,6 +53,8 @@ public final class WorldFiles {
 		if (!allKept) {
 			protectedFiles.add(current.getAbsolutePath());
 			Notices.say("This world's level.dat couldn't be read, and couldn't be copied aside (see the log). The game runs it with"
+					+ " new world settings for now, but won't save level.dat, so the original stays as it is.",
+					"This world's level.dat couldn't be read, and couldn't be copied aside (see above). The game runs it with"
 					+ " new world settings for now, but won't save level.dat, so the original stays as it is.");
 			return;
 		}

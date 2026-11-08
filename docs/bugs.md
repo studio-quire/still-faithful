@@ -4,7 +4,7 @@ Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves al
 says it may be the user's call to take into Purist. Old Faithful (Fixed) is narrow (user, 2026-11-02): beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
-not to Fixed. Fixed so far: forty-six entries in `oldfaithful-fixes` (`docs/fixes.md`), with forty-nine switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
+not to Fixed. Fixed so far: forty-nine entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-two switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
 
 Sources:
 - The decompiled game (`local/decomp/b1.7.3-named`, Babric's names), read for causes.
@@ -69,7 +69,7 @@ Key:
 | 27 | Falling through the boat when getting out (boats whose top is just under y 64, 32, 16...) | bug | OF | low-mid | fixed (OF) |
 | 28 | Sleeping view: listed as turned the wrong way; traced, the first-person view is the bed's own and ignores the mouse | not found | none | low | T |
 | 29 | Saddled pigs don't drop the saddle | bug | OF | low | fixed (OF) |
-| 30 | Fences: dark bottom face; hitbox too big (the "smart farm" trick) | bug, ask | OF / SF | low | fixed (OF): the face; hitbox L |
+| 30 | Fences: dark bottom face; hitbox too big (the "smart farm" trick) | bug, ask | OF / SF | low | fixed (OF): the face; the shape (SF) |
 | 31 | Minecarts: stopped by items and arrows; a slip in cart-on-cart collisions | bug, ask | OF / SF | low-mid | fixed (OF): items; the slip built (SF) |
 | 33 | Crash on a slab or dye item with a bad data value | bug | OF | low | fixed (OF) |
 | 34 | Small visual bugs (list in the entry) | bug, ask | OF / SF | low | fixed (OF): four; the rest T or L |
@@ -114,6 +114,10 @@ Key:
 | 73 | Create New World and Rename World: in a big window the title comes down among the fields (seen by the user) | bug | OF | low | fixed (OF) |
 | 74 | Under a block 2 above the floor, a step-up sinks the player 0.3 into the floor or a ledge, then the push-out shoves them out | bug | OF | mid | fixed (OF) |
 | 75 | Rejoining while touching a wall can put the box a rounding step inside it: the player walks in, suffocates if the wall reaches the eye, and is pushed out | bug | OF | low-mid | fixed (OF) |
+| 76 | Squid make footsteps on the sea floor, and step on what's there (redstone ore lights) | bug | OF | low | fixed (OF) |
+| 77 | Squid sink to the bottom and stay within half a block of it: their water test is inside out, and fails at some heights | bug | OF | mid | fixed (OF) |
+| 78 | A new world on a server can crash as it starts, about 1 time in 900: a spring's water in the spawn search breaks a plant, and the drop finds the server world half built | bug | Pure | low | fixed (Pure and Faithful Core) |
+| 79 | Multiplayer: an item used just after closing a chest, furnace or workbench (a block placed within about a round trip) comes back on the player's screen, one more than they have, until the slot next changes | bug | OF | low-mid (MP) | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -194,7 +198,7 @@ tamed wolf (`WolfEntity`). So penned cows, pigs (saddled ones too), sheep and ch
 wanders off. Beta 1.8 stopped passive mobs despawning. Players rebuilt farms around this for years; whether it's a bug
 or beta's design is the user's call (a fix: passive mobs never despawn, or only naturally spawned ones away from
 players' builds; Beta 1.8's way pairs with its changed animal spawning). **Built in Still Faithful** (2026-11-02,
-`animals.keepTended`): animals a player has dealt with stay (`docs/still-faithful.md` says what counts).
+`animals.keepTended`): animals a player has looked after stay (`docs/still-faithful.md` says what counts).
 
 ### 5. Ghost blocks in multiplayer (T)
 `ServerPlayNetworkHandler.handlePlayerAction`: a start or finish of mining more than 6 blocks (squared distance 36)
@@ -517,6 +521,8 @@ lighting (`renderSmooth`) takes every face's light from outside the block, so th
 both modes. Only raised undersides change: fence bars, and the inner faces of pistons pushing down. Smooth lighting's
 other faces of partial blocks (a slab's top under a ceiling) keep beta's way: not listed, and how smooth lighting treats
 partial blocks as a whole is a bigger question than a slip.
+**The shape in Still Faithful** (the user's ask, 2026-11-07, `blocks.fenceShape`): a post with arms, as later versions
+have it, to aim at and to walk into; `docs/still-faithful.md` > Fences.
 
 ### 31. Minecarts (T, ask)
 Items and arrows: not `onCollision` (a cart calls it only for other carts, and mobs for themselves), but
@@ -1142,6 +1148,98 @@ exact (1.79 million rebuilds with a camera offset, 0 below the floor). A wall th
 Digests: S differs in about a third of its cells, by design, since each holds 100 reads. Elsewhere only a placing can show it: 2 of 60
 cells in F, a scene's start landing 7e-8 past a sixteenth by chance (replayed). A and W identical. A multiplayer login beside a
 wall wasn't run; it's the same rebuild.
+
+### 76. Squid walk (T, seen)
+`Entity.move` plays footsteps and calls the block's `onSteppedOn` for anything whose `bypassesSteppingEffects()` is true (the
+mapped name reads backwards: it means "can trigger walking"). Spiders, wolves, items, boats, minecarts, TNT and falling
+blocks override it to false; `SquidEntity` doesn't. Beta's squid, kept at the floor by #77, made 18 to 20 footsteps a
+minute each (below), and redstone ore lit under them.
+**Fixed in Old Faithful** (2026-11-06, `squids.footsteps`): false for squid. Runs on each side for that side's copy: what you
+hear is your client's own, so a vanilla client on a fixed server still plays them. Nothing else reads the counter it stops
+for squid (`horizontalSpeed`). Checked on the real server (`ServerWorldFixesTest`: 8 blocks along ore, none lit), single
+player (`FixesCheck`) and each mix (`fixesMultiplayerTest`).
+
+### 77. Squid sink and can't rise (T, measured)
+`SquidEntity.isSubmergedInWater` asks `world.updateMovementInFluid(boundingBox.expand(0, -0.6F, 0), WATER, this)`, but a squid is
+0.95 tall, so the box is inside out, its top 0.25 below its bottom. That test's loop runs from `floor(minY)` to below
+`floor(maxY + 1)`, so with the fraction of the squid's feet height in [0.40, 0.65) it covers no block and the answer is no;
+under 0.40 it asks the block at the feet, over 0.65 the block above. On a no, `tickMovement` applies gravity and zeroes the
+sideways speed. A swim is at most 0.1 a tick, so going up a squid enters that band, stops and falls back; going down it falls
+through. It only ever goes down, then hops about the floor. Traced by reading and a rough simulation (2026-11-06), then measured.
+**Fixed in Old Faithful** (2026-11-06, `squids.swimming`): the test asks about the squid's middle. The world's test gets a flat
+box at half its height, so the flow pushes it as before, and the water's real surface decides, not only its block (with water
+over it a block counts as full). Where the movement is decided: the world's side, so a fixed server's squid swim for
+any client. A client on a server only interpolates: there the test only picks the animation (tentacles, tilt).
+Measured on the real server (`:oldfaithful-fixes:squidWatch`, 12,000 ticks, 2026-11-06), 16 squid in each 30-deep tank, starting
+on the floor or at random heights:
+| Mean height over the floor | t=0 | 1 min | 2 min | 3 min | 5 min | 10 min | Squid per 5 blocks of height at the end, from the floor |
+|---|---|---|---|---|---|---|---|
+| Beta, from the floor | 0 | 0.20 | 0.22 | 0.21 | 0.18 | 0.22 | 32 0 0 0 0 0 (both tanks together) |
+| Beta, from random heights | about 15 | 3.97 | 0.91 | 0.12 | 0.20 | 0.18 | |
+| Fixed, from the floor | 0 | 3.69 | 5.44 | 6.59 | 9.31 | 12.81 | 5 5 4 3 8 7 (both tanks together) |
+| Fixed, from random heights | about 15 | 12.68 | 11.85 | 11.70 | 15.13 | 20.03 | |
+Beta's highest squid, once settled, was 0.50 over the floor. The fixed tanks' means in the second half: 11.4 still rising, and 16.4.
+At the surface (fixed, near it meaning the middle within a block of the surface; going by the block alone, the first thing tried, for comparison):
+| | By the real surface | By the block alone |
+|---|---|---|
+| Splashes a squid-minute, tank 30 deep / 3 deep / 1 deep | 0 / 0 / 0 | 0.06-0.08 / 0.58 / 1.06 |
+| Body out of the water, on average / at most | 27-31% / 62% | 29-42% / 74% |
+| Feet, at their highest | 0.36 under the surface | 0.25 under |
+| Longest run in the out-of-water branch | 3 ticks | 3 ticks |
+Never wholly out of the water. A squid at the top bobs: 11 to 16% of its ticks near the surface are in the out-of-water branch, each
+a tick or up to 3 long, so in that branch's gravity it drops back a little and swims up again, with a one-tick change of tentacles.
+That's the same hop beta's squid did at the floor all the time (about 200 changes of branch a minute, and 194 a minute for a fixed
+squid kept at the top by a 1-deep pool); how it looks is the user's check. Elsewhere, the same as beta: water 1 deep (mean height 0.19 both, the
+second half); a trough of flowing water thinning out, all 6 squid carried off its end onto dry stone within the first minute and left
+there, in both; on land they stay where they are, unhurt.
+On a client (`fixesMultiplayerTest`, a tank 3 deep, about 20 s): with the fixes on both sides its squid are exactly at the server's height (0.000), reach 2.50 over the floor, and make no
+splashes; on a beta server the same client has them at 0.50 at most. A client with none of Old Faithful's fixes doesn't show the server's height on either server: over two runs its copies went up to 4.05 on a beta server and 6.03 on a fixed one (the top of the tank's walls, so they climb them),
+out of the water, with 139 and 120 splashes on the beta server, 179 and 234 on the fixed one. So it's beta's own, somewhat busier with squid that swim. #15 is the likely cause, since that switch is what stops a remote mob's own move, though it wasn't tested alone. The fix doesn't cure it for such a client.
+What else asks a squid's `isSubmergedInWater`: nothing that changes, read 2026-11-06. `LivingEntity.travel` and `tickLiving` and `MobEntity.tickLiving` hold
+the other calls, and a squid overrides all three without calling up. `LivingEntity.tickMovement` asks every tick, only to use it
+while `jumping`, which a squid never sets; that call's one effect is the flow's push. Air and drowning go by `isInFluid` and
+`canBreatheInWater` (true for a squid), and `isWet` and the re-pick of a swim direction by the `submergedInWater` field that
+`baseTick` sets, none of it this method.
+
+### 78. A new server world crashes in its spawn search, about 1 in 900 (T, measured; Pure)
+Seen 2026-11-07 as the library harness's `failed-to-start`. `World`'s constructor runs `initializeSpawnPoint`, whose walk loads chunks until it finds sand, and any four that meet get decorated. A water `SpringFeature` flows at once (`instantBlockUpdateEnabled`), through still water too, and what it reaches drops: `FlowingLiquidBlock.spreadTo` > `Block.dropStacks` > `World.spawnEntity` > `ServerWorld.notifyEntityAdded`, whose `entitiesById` is null, as `ServerWorld`'s own fields come after `super(...)`. The server stops with "Unexpected exception" at "Preparing level". Single player doesn't override that method, so it never happens there.
+Not ours: 5 of 6,000 worlds built with the real, unmodified server jar, and 28 of 24,400 with the merged jar and no mods, together 1 in about 900. It's mostly cave mushrooms, then seeds and dandelions (of 14: 8 brown mushrooms, 1 red, 3 seeds, 2 dandelions). It isn't a property of the seed: the walk is on `World.random`, unseeded, so of fourteen seeds that crashed once, eight didn't in forty more tries and none did more than three times. A restart nearly always gets through, but with `level-seed` empty the world gets a new seed over the region files the failed start left.
+**Fixed in Faithful Core** (2026-11-07, `ServerWorldMixin`, as the library's servers should start every time): a null map means no crash, and the entity is marked dead, as the server adds its tracker's listener only after the constructor, so nothing could be tracking it. Nothing changes in a run that didn't crash. Checked by `libraryHooksTest`'s `beingbuilt` scene: a world built with a real water spread over a rose in place of its search, which fails without the mixin (Claude Opus 5.5).
+**Fixed in Pure Faithful** (2026-11-07, `oldfaithful-saves`' `ServerWorldMixin`, the same wrap, beside #53; so in Old and Still Faithful too): a crash that loses a world's first start is reliability, and nothing a player sees changes. Core keeps its own for the library on a server without the saves mod. With both, the two wraps chain, and whichever is outer marks the drop dead without calling through, so the other never sees the null map; `libraryHooksTest` runs `beingbuilt` with both, alone and beside Still Faithful. `serverSaveTest`'s `newWorldSurvivesADropInItsSpawnSearch` forces the case on the real server's own first start (the scenario mod puts a rose and a spring's water at the head of the overworld's spawn search) and checks the drop is dead and the world starts and saves cleanly; `newWorldCrashesInItsSpawnSearchWithoutTheMod`, the same with only the scenario mod, expects beta's null map, so the scenario still reaches the case. Run once with Faithful Core and Settings added (2026-11-07): beside the saves mod it passed, and in place of it the server started with the drop dead, so Core's wrap holds alone. It ships with the next Pure Faithful release (Claude Opus 5.5).
+
+### 79. An item used just after closing a container comes back (T, seen)
+Found by the library harness's monkey (2026-11-07, reported as Alchemy's `inventory-differs`: planks placed four ticks
+after a dispenser closed; commit 34a6221). A server player's screens each keep a copy of what they last sent per slot
+(`ScreenHandler.trackedStacks`), and `ServerPlayerEntity.tick` runs `sendContentUpdates` on the open one only. While a
+chest, double chest, furnace, dispenser or workbench is open, that screen sends the player's 36 inventory slots (it
+shows them too), and the player's own screen's copies keep what it sent before it opened. The close
+(`ServerPlayNetworkHandler.onCloseScreen` > `onHandledScreenClosed`) makes the player's screen the open one again, and
+on the next tick it sends every slot that changed meanwhile (moved by clicks, shift-clicks, picked up), though the
+client already has them. A use the client made in between (placing a block, eating, throwing: anything through
+`onPlayerInteractBlock`, which the client predicts) is undone on the client when that resend arrives after it: 8 to 7,
+then 8 again. The server then does the use (8 to 7) and confirms it without a packet (`skipPacketSlotUpdates`), sending
+a correction only if its result differs from the stack in the client's packet, also 7. So the client shows one item
+too many until the slot next changes; using it shows a block that comes back, or a last item that isn't there. Needs
+the use to reach the server after its first tick past the close but before the resend reaches the client: about a
+round trip, a fifth of a second on a local server. Single player has no network, so never there. OF, low-mid (MP).
+**Fixed in Old Faithful** (2026-11-07, `multiplayer.closedScreens`, server only; vanilla clients get it too, as only
+the server's packets change): when the client closes a screen, the player's own screen takes the closed one's copies
+for the slots both show (`ClosedScreens`), so the next tick sends only what the client wasn't told (anything changed
+after the closed screen last sent, or by its closing). A slot the closed screen sent within the last second is sent
+again at once on the player's window instead: the client drops a packet for a window it has closed, and that packet
+may have crossed the close (an item picked up as the chest shut, or the full resend after a click the server refused);
+beta's resend covered that by accident. Armour and the crafting grid aren't on the other screens and keep beta's
+copies, so armour worn down while a chest was open is still sent. Sends a screen makes as it opens aren't counted as
+recent: they follow the open packet, so the client has them before it can close. A screen the server closes (out of
+reach, a portal) keeps beta's resend, as the client's clicks in flight are dropped there and its slots aren't known.
+Left: a slot the server itself changed (a pickup) within the second before the close is resent, and a use from that
+very slot within a round trip after the close meets the same race, now only there. Checked by `fixesMultiplayerTest`
+in all four mixes, the hidden client's reading held back half a second so the order is the same every run: a chest's
+8 cobblestone clicked into the hotbar, the chest closed and a block placed from it half a second later; on a fixed
+server the client shows 7, on beta's 8 (the resend read after its own 7), and a full resend then shows the server's 7
+in both. Then 3 dirt given to the player on the chest's window as it closes (the packet the client drops) reaches the
+client on either server; with the second's window set to nothing, it didn't on the fixed server, so the check sees a
+lost packet (Claude Opus 5.5).
 
 ## The piston hunt
 

@@ -60,6 +60,8 @@ public final class SettingsRegistry {
 	private final Map<String, Properties> parsed = new HashMap<>();
 	/** For settings waiting on a restart without a {@code running} of their own: the value when first read. */
 	private final Map<Setting, String> firstSeen = new HashMap<>();
+	/** By mod id: why it has to stay as it is just now, or null when it needn't. */
+	private final Map<String, Supplier<String>> holds = new HashMap<>();
 	/** The mod whose provider is running, and so whose page {@link #add(Setting)} means. */
 	private String owner, ownerName;
 	private boolean sealed;
@@ -139,6 +141,21 @@ public final class SettingsRegistry {
 		Group g = mods.get(id);
 		if (g.pageButton == null) g.pageButton = button;
 		else System.out.println("[oldfaithful-options] WARN a second button for " + id + "'s page; keeping the first");
+	}
+
+	/**
+	 * While {@code reason} gives one, nothing on the screen may switch this mod: not its own Enabled, nor another's whose going off would take it too.
+	 * For whoever knows why, which needn't be whoever registers the switch: the core, for a world's locked rules.
+	 */
+	public void holdMod(String id, Supplier<String> reason) {
+		if (sealed) throw new IllegalStateException("registered after the screen was built");
+		holds.put(id, reason);
+	}
+
+	/** Why this mod is held just now; null if it isn't. */
+	public String heldReason(String id) {
+		Supplier<String> reason = holds.get(id);
+		return reason == null ? null : reason.get();
 	}
 
 	private void put(Group group, Setting setting) {
