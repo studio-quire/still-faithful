@@ -10,7 +10,9 @@ load a square of chunks in an order, `--per-tick` a tick, as a player's walk wou
 (decorating the neighbours it completes included) and prints total, mean, p50, p99 and worst; with --jfr, a profile of
 the server thread over just the generation, by method, ours and beta's (Biny names): JFR samples every 10 ms here, so
 it wants a few seconds of work. Results in local/run/gen-bench/LABEL/result.txt. `towers` is Buried Towers alone; `all`
-every library mod in the packs. --plans is how to show two builds draw the same towers (docs/buried-towers.md > Speed).
+every library mod in the packs. --plans is how to show two builds draw the same towers: `--size 2 --plans -12,-12,24`
+(and again with `--style complex`), then compare its plans.txt with library/tower-check/reference/plans-1733-simple.txt
+(or -complex), 576 squares as Buried Towers 0.2.0 drew them.
 Claude Opus 5.5, 2026-11-08.
 """
 import argparse

@@ -29,7 +29,8 @@ Pure Faithful 0.1.5's servers make new land faster. From Old Faithful 0.2.3, on 
 
 - A mob that had died stayed solid for the second it took to fall over: it pushed you and other mobs, they pushed it,
   and arrows bounced off it, though nothing could hurt it any more. Now a dying mob pushes nothing, nothing pushes
-  it, and arrows, snowballs, eggs and fishing lines fly through it (Dying Mobs).
+  it, and arrows, snowballs, eggs and fishing lines fly through it (Dying Mobs). On a server it's the server's
+  switch, except whether a dying mob pushes you, which your own game decides.
 
 ## 0.3.0 (2026-11-08)
 

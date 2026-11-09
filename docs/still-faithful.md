@@ -154,7 +154,8 @@ Dying mobs that aren't solid, built here the same day, went to Old Faithful at t
 - **Skeleton arrows** (`mobs.skeletonArrows`, off by default: the user's call the same day, after trying it). `SkeletonEntity.attack` makes the arrow where `ArrowEntity` puts any
   shooter's, at the eyes less 0.1, then adds 1.4 to its height, leaving it over the skeleton's head (and inside a
   ceiling under a two-high roof). Here it isn't lifted; the aim is worked out from where the arrow is, as beta's sum
-  already does, and speed and spread are beta's. The server's.
+  already does, and speed and spread are beta's. Later versions start a skeleton's arrow there too, as any mob's: at the
+  shooter's eyes less 0.1. The server's.
 
 ### Shift-click (the user's ask, 2026-11-09)
 
