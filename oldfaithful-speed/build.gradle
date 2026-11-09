@@ -4,4 +4,6 @@ plugins { id 'oldfaithful.mod' }
 // the game's launcher supplies it at runtime.
 dependencies {
     compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+    // TickSetTest checks the set against HashSet with the game's own BlockEvent.
+    testImplementation files(rootProject.oldfaithfulMinecraft.namedJar)
 }

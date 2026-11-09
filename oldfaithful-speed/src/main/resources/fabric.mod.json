@@ -13,7 +13,7 @@
   },
   "license": "MIT",
   "icon": "assets/purefaithful-speed/icon.png",
-  "environment": "client",
+  "environment": "*",
   "mixins": ["oldfaithful-speed.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15.0",

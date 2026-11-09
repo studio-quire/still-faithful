@@ -35,8 +35,8 @@ def testedMods = [project(':oldfaithful-hardening').tasks.named('remapJar'), pro
                   tasks.named('remapJar')]
 // The benchmark keeps its baseline as measured (hardening and the self-test only).
 def benchMods = [project(':oldfaithful-hardening').tasks.named('remapJar'), tasks.named('remapJar')]
-// The speed mod (client only) joins every client test; the benchmark's sdl and lwjgl2 configurations leave it out,
-// as vanilla's baseline, and its `speed` configuration adds it to sdl.
+// The speed mod joins every client test and the server test; the benchmark's sdl and lwjgl2 configurations leave it
+// out, as vanilla's baseline, and its `speed` configuration adds it to sdl.
 def speedMod = project(':oldfaithful-speed').tasks.named('remapJar')
 // The Fixed edition's own mods join the server test and the client audits, which check that every mixin applies;
 // `clientStartupTestFixed` runs them in a world.
@@ -53,7 +53,7 @@ tasks.register('serverTest', oldfaithful.gradle.ServerTestTask) {
     gameJar = mc.serverJar
     intermediaryMappings = mc.intermediaryMappings
     loaderClasspath.from(configurations.loaderRuntime)
-    mods.from(testedMods, fixedMods, stillMods)
+    mods.from(testedMods, speedMod, fixedMods, stillMods)
     runDir = rootProject.layout.projectDirectory.dir('local/run/server-test')
     if (gameJava.isPresent()) javaExecutable = gameJava
 }
@@ -358,7 +358,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'mobs.skeletonArrows', 'inventory.shiftClick'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -438,7 +438,8 @@ if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
         natives = lwjgl3NativesDir
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
         privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
-        def runDirectory = rootProject.layout.projectDirectory.dir('local/run/scene-shot-still')
+        // -PsceneRun=local/run/<folder> for a run folder of one's own: each run replaces its folder, pictures included.
+        def runDirectory = rootProject.layout.projectDirectory.dir(providers.gradleProperty('sceneRun').getOrElse('local/run/scene-shot-still'))
         runDir = runDirectory
         oldFaithful = findProject(':oldfaithful-options') != null
         windowRuns = false

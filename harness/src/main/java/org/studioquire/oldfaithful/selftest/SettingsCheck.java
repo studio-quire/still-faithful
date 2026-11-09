@@ -514,7 +514,7 @@ final class SettingsCheck {
 		walk(mc, "Changes", titles);
 		boolean still = FabricLoader.getInstance().isModLoaded("stillfaithful-polish");
 		results.check("Changes: " + titles, titles.equals(still
-				? java.util.Arrays.asList("Changes: Polish (1/3)", "Changes: Polish (2/3)", "Changes: Window and Mouse (3/3)")
+				? java.util.Arrays.asList("Changes: Polish (1/4)", "Changes: Polish (2/4)", "Changes: Polish (3/4)", "Changes: Window and Mouse (4/4)")
 				: java.util.Collections.singletonList("Changes: Window and Mouse")));
 		return true;
 	}

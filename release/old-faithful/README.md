@@ -26,7 +26,8 @@ back (after a restart).
   they're hit. Mobs that wake you can't reach you through a wall. Saddled pigs drop their saddle. Minecarts pass
   through dropped items and arrows. A fish is reeled in to your feet. Getting out of a boat no longer drops you
   through it. Water one block deep breaks a fall from any height. Sneaking stops you at an inside corner too. Mobs
-  look at you without nodding. Mobs spawn beside water west and north of 0, 0 as they do elsewhere, and squid no
+  look at you without nodding. A mob that has died no longer pushes or is pushed while it falls over, and arrows fly
+  through it instead of bouncing off. Mobs spawn beside water west and north of 0, 0 as they do elsewhere, and squid no
   longer spawn in lava. Squid swim all through the water rather than sinking to the bottom, and make no footsteps. Falling sand and gravel no longer delete blocks of their own kind. With a block low
   overhead, a step no longer sinks you into the floor and shoves you back out. Rejoining a world right against a wall,
   a rounding slip no longer lets you walk into it and suffocate until pushed out.
@@ -95,8 +96,8 @@ says how to install them.
 
 ## Servers
 
-`OldFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening and saves mods and Old
-Faithful's fixes and lighting: bring Mojang's server jar (the scripts check it's genuine) and run `start.bat` or
+`OldFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening, saves and speed mods and
+Old Faithful's fixes and lighting: bring Mojang's server jar (the scripts check it's genuine) and run `start.bat` or
 `start.sh`. Players can join with vanilla beta 1.7.3, Pure Faithful or Old Faithful; its README says which fixes
 need Old Faithful on the player's side too.
 

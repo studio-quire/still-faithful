@@ -19,6 +19,10 @@
     "WorldRegionMixin",
     "WorldRendererAccessor"
   ],
+  "server": [
+    "ScheduledTicksMixin",
+    "ServerChunkCacheMixin"
+  ],
   "injectors": {
     "defaultRequire": 0
   }

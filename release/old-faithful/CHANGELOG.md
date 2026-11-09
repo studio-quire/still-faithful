@@ -5,6 +5,15 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.3 (2026-11-09)
+
+Released with Still Faithful 0.4.0, which carries it; on Pure Faithful 0.1.5, whose servers make new land faster (see
+its changelog). One new fix, on its own switch, under Mobs:
+
+- A mob that had died stayed solid for the second it took to fall over: it pushed you and other mobs, they pushed it,
+  and arrows bounced off it, though nothing could hurt it any more. Now a dying mob pushes nothing, nothing pushes
+  it, and arrows, snowballs, eggs and fishing lines fly through it (Dying Mobs).
+
 ## 0.2.2 (2026-11-08)
 
 Released with Still Faithful 0.3.0, which carries it; on Pure Faithful 0.1.4, which brings its own fix (see its

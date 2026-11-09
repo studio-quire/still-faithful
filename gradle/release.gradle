@@ -15,7 +15,7 @@ def componentAssetName = "purefaithful-lwjgl-${pureVersion}.jar"
 def staging = layout.buildDirectory.dir('release')
 
 def pureMods = ['oldfaithful-hardening', 'oldfaithful-saves', 'oldfaithful-speed', 'oldfaithful-display']
-def pureServerMods = ['oldfaithful-hardening', 'oldfaithful-saves']
+def pureServerMods = ['oldfaithful-hardening', 'oldfaithful-saves', 'oldfaithful-speed']
 // Old Faithful's own mods. Pure Faithful's public snapshot has none of them (settings.gradle), so neither the edition
 // nor its tasks exist there.
 def fixedMods = ['oldfaithful-fixes', 'oldfaithful-lighting', 'oldfaithful-options', 'oldfaithful-settings']
@@ -34,7 +34,7 @@ if (hasFixed) {
 ext.releaseEditions = [
     pure: [name: release_name, fileName: release_file_name, tagline: release_tagline, repo: release_repo,
            homepage: release_homepage, version: pureVersion, icon: 'purefaithful', licenceFolder: 'pure-faithful',
-           mods: pureMods, serverMods: pureServerMods, serverModsText: 'hardening and saves',
+           mods: pureMods, serverMods: pureServerMods, serverModsText: 'hardening, saves and speed',
            packReadme: 'release/pack-README.txt', serverReadme: 'server/README.txt',
            packHeader: 'release/notices/00-header-pack.txt', serverHeader: 'release/notices/00-header-server.txt',
            out: "local/release/${pureVersion}"],
@@ -44,7 +44,7 @@ if (hasFixed) releaseEditions.fixed = [
     homepage: fixed_release_homepage, version: fixed_edition_version, icon: 'oldfaithful', licenceFolder: 'old-faithful',
     openalSources: "sources/openal-soft-${openal_version}-sources.zip".toString(),
     mods: pureMods + fixedMods, serverMods: pureServerMods + fixedServerMods,
-    serverModsText: 'hardening, saves, fixes and lighting',
+    serverModsText: 'hardening, saves, speed, fixes and lighting',
     packReadme: 'release/old-faithful/pack-README.txt', serverReadme: 'release/old-faithful/server-README.txt',
     packHeader: 'release/old-faithful/notices-header-pack.txt', serverHeader: 'release/old-faithful/notices-header-server.txt',
     out: "local/release/old-faithful-${fixed_edition_version}"]

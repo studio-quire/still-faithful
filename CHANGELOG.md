@@ -7,6 +7,30 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.4.0 (2026-11-09)
+
+On Old Faithful 0.2.3 and Pure Faithful 0.1.5. In Still Faithful's own mod, each on its own switch under Polish:
+
+- Chests pair as in later versions (Chest Pairs, which needs Chest Facing on): a chest you place joins one beside it
+  only if that one faces the same way, stands to its left or right and isn't joined already, and never while you
+  sneak. A chest can go anywhere, beside a double chest too, so double chests can stand side by side in a row. Chests
+  placed before keep the pairs they had. On a server this is the server's switch; players without Still Faithful see
+  a row of these double chests drawn oddly, though they open as they should.
+- A double chest has one lid across both halves, as in later versions, made from your texture pack's own chest lid,
+  instead of a border down the middle (Chest Lids).
+- Shift-click works where beta's stopped short (Shift-Click): in a dispenser both ways, as in a chest; into a furnace,
+  what smelts to the top slot (logs too) and fuel to the bottom, unless that slot holds something else; and armour
+  from your inventory onto you, where that place is empty. It's made of the clicks you could make yourself, so it
+  works on any server.
+- Skeletons can shoot their arrows from their eyes, as in later versions, instead of from well above their heads,
+  with beta's speed and aim (Skeleton Arrows). Off unless you turn it on; on a server, the server's switch.
+
+Pure Faithful 0.1.5's servers make new land faster. From Old Faithful 0.2.3, on its own switch under Fixes > Mobs:
+
+- A mob that had died stayed solid for the second it took to fall over: it pushed you and other mobs, they pushed it,
+  and arrows bounced off it, though nothing could hurt it any more. Now a dying mob pushes nothing, nothing pushes
+  it, and arrows, snowballs, eggs and fishing lines fly through it (Dying Mobs).
+
 ## 0.3.0 (2026-11-08)
 
 On Old Faithful 0.2.2 and Pure Faithful 0.1.4. In Still Faithful's own mod, each on its own switch under Polish:

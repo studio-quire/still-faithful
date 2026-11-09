@@ -44,9 +44,13 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). At the surface, vertical speed × 0.8 a tick (rides steadily instead of bobbing). Paddling is beta's: same top speed, acceleration, turning |
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
 | 4 | `animals.keepTended` | world | Animals a player has looked after never despawn (`KeptAnimals`, below) |
-| 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule |
+| 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule. With `blocks.chestPairs`, placing goes by its rule instead |
+| | `blocks.chestPairs` | world (drawn on the client) | Chests pair as later versions pair them (below): a chest placed joins one beside it only if that one faces the same way, stands to its left or right and isn't joined, and never while sneaking; a chest can go anywhere, beside a double chest too. A chest joined so says who to in its data (6 to 13). Needs `blocks.chestsFaceYou`, as pairs go by facing |
+| | `render.chestLids` | client | A double chest's top and bottom are one lid: four half-lids made from the texture pack's lid in tiles beta leaves as placeholders (below) |
+| | `mobs.skeletonArrows` | world | A skeleton's arrow starts at its eyes, where `ArrowEntity` puts any shooter's, instead of 1.4 blocks higher, over its head; aimed from there by beta's own sum, at beta's speed (0.6) and spread (12). Off by default (the user's call, 2026-11-08, after trying it) |
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
 | | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
+| | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
 | | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
@@ -113,6 +117,69 @@ joins only fences beside it in beta (`renderFence`), so the arms follow that, an
   wolf, chicken or a zombie, skeleton or creeper (0.6 wide) fits between two such posts, as in later versions; pigs,
   cows and sheep (0.9) still don't. The "smart farm" (the whole box over farmland, #30) goes with it. Path finding is
   beta's, which treats a fence block as solid either way; mobs only stop snagging on posts as they cut corners.
+
+### Chests (the user's ask, 2026-11-08)
+
+The user asked for chests that "connect their textures and handle doubling in a similar way to modern minecraft". Built
+by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
+- **Pairs** (`blocks.chestPairs`). Beta joins any two chests side by side and forbids a third beside a pair, so rows of
+  double chests need gaps. Here a placed chest faces you (#69) and joins a chest on its left or right that faces the same
+  way and isn't joined already (the clockwise side first, as 1.13 looks), never while sneaking; nothing stops a chest
+  going anywhere. Later versions keep which side a chest's partner is on in its block state; here it's the data: 6 + (facing
+  - 2) * 2 + side, side 0 for a partner clockwise of the front, and two chests pair only if each says the other. Every
+  other chest (data 0, or a facing alone, from before or placed alone) keeps beta's rule, joined to the first such chest
+  beside it in beta's order, so pairs in existing worlds, Buried Towers' included, stay as they were. A chest placed
+  beside one of those without joining it says it's joined toward a side with no partner, or beta's rule would join them;
+  and chests beside a new one that are drawn by beta's rule from the blocks around write the front they're drawn with
+  into their data first, or the new chest would turn them. Opening goes by the partner too, the west or north half on
+  top as in beta, and shut while a solid block stands on either half. 1.13's other sneak behaviour, clicking a chest's
+  side to join it, isn't here: beta opens a chest you click, sneaking or not.
+- **Lid** (`render.chestLids`). Beta draws both halves of a pair with the single chest's lid (tile 25), a border down
+  the middle of the top and bottom. Four half-lids are made from whatever lid the texture pack has (`ChestLids`), each
+  from the tile's outer half and then its middle, so the border stays round the outside and the middle joins with no
+  dark band (copying the column beside the border left one: the lid shades in toward its border), into tiles 250 to 253,
+  placeholders beta never draws, as terrain.png is loaded and again after a pack is chosen. A chest's top and bottom both
+  lay a tile out by world x and z, so one set serves both. A mod that also writes into those placeholder tiles would
+  clash; none we know of does. A drawn lid of our own was tried the same day, twice (streaks, then the original's own
+  grain shapes), and the user chose this one made from the pack's lid over both (in history: 84d8cb6, 6086323).
+- **Multiplayer.** Which chests join, and what opens, is the server's; a client draws by the data it's sent, so a client
+  without the change draws chests joined the new way by beta's rule (a row of doubles looks like one long chest broken
+  oddly), and opens what the server opens. A client with the change on a server without it may show a chest placed
+  beside a double chest for a moment before the server takes it back, as for any refused placement; nothing for that
+  needs the server marker, whose field is full anyway.
+
+### Skeleton arrows (the user's ask, 2026-11-08)
+
+Dying mobs that aren't solid, built here the same day, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
+- **Skeleton arrows** (`mobs.skeletonArrows`, off by default: the user's call the same day, after trying it). `SkeletonEntity.attack` makes the arrow where `ArrowEntity` puts any
+  shooter's, at the eyes less 0.1, then adds 1.4 to its height, leaving it over the skeleton's head (and inside a
+  ceiling under a two-high roof). Here it isn't lifted; the aim is worked out from where the arrow is, as beta's sum
+  already does, and speed and spread are beta's. The server's.
+
+### Shift-click (the user's ask, 2026-11-09)
+
+Only where beta's own shift-click stopped short, nothing it couldn't do (the user's call): it moved a stack between a
+container and the inventory, or the inventory and the hotbar, but did nothing in a dispenser, never put anything into a
+furnace and never put armour on. `inventory.shiftClick`, with nothing held:
+- **Dispenser**: both ways, as a chest's (out to the hotbar's end first).
+- **Furnace**, from the inventory: what smelts (`SmeltingRecipeManager`) to the top slot, else fuel (the furnace's own
+  `getFuelTime`, so other mods' fuels count) to the bottom; if that slot holds something else, nothing moves, as in later
+  versions. Logs go on top. Anything else, beta's.
+- **Armour**, on the inventory screen: an `ArmorItem` goes on where its place is empty; else beta's. Not pumpkins (the
+  user's call): they're carried in stacks.
+
+Made of beta's own clicks (`ShiftClicks`, hooked where `HandledScreen.mouseClicked` sends a shift-click): pick the stack
+up, put it down slot by slot as beta's `insertItem` would (onto the same item, then an empty slot), put back what didn't
+fit, each click checked after it's made, anything unexpected ending the move where it stands. Not a change to the
+screens' `quickMove`: a server accepts a click by comparing only the clicked slot's stack and then sends the clicker
+nothing (`skipPacketSlotUpdates`), so a client whose shift-click went elsewhere than the server's would keep items that
+aren't there. Clicks are what any server already checks, so it works on any server and a server needs nothing. Merges
+follow Faithful Core's rule where it's installed (stack data). Only vanilla's own screens; another mod's are beta's.
+
+Later versions' other handling (dragging to spread a stack, double-click to gather, the drop key over a slot, crafting
+many batches at once, the crafting table's grid taking shift-clicks, keeping what's held when a screen closes) stays
+beta's: built the same day and undone at the user's word, for only beta's gaps and no new capabilities (in history:
+c71d112 to 88007b9, undone by 7a24fe9).
 
 ### Modern skins
 
@@ -243,6 +310,11 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 
 ## Tests
 
+- `ShiftClickCheck` (in the same run, 2026-11-09): mouse and key events put into our LWJGL component's queues, read by
+  the open screen as the real ones are. A helmet from the inventory and boots from the hotbar go on; a second helmet
+  and a stack of pumpkins move as beta's; in a furnace iron ore goes on top, coal below, gold ore stays put beside the
+  iron, dirt goes to the hotbar, logs on top; arrows into a dispenser and back to the hotbar's end. With
+  `-Pstill.beta`, beta's result each time.
 - `./gw :harness:clientStartupTestStill`: the hidden start-up test with all three editions' mods and the polish
   mod's test-only `selftest` mod (`StillCheck`, a `WorldCheck`), after Old Faithful's `FixesCheck`; then the options
   and settings checks (the Polish section, "Still Faithful...", every label fitting). Each check expects the change
@@ -328,6 +400,13 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   "moved wrongly" or floating line in a server's log. Not tested: a vanilla client by itself (the client without the
   polish mod has Old Faithful's, none of which touch collision) and mobs or boats seen across mixed sides (the server
   moves them; a client without the change only sees them pass closer to a post than its own fences would let it).
+- `StillCheck`'s chest, mob and skeleton scenes (2026-11-08), in the same run: #69's double chest placed looking along
+  the first stays two singles under `blocks.chestPairs`; four chests in a row placed facing north make two doubles
+  side by side (data 6, 7, 6, 7), each showing the end of its own front where they meet; one placed sneaking stays
+  single, one facing east beside one facing north doesn't join, and a pair of beta's (data 0) keeps its pair and its
+  front with a chest placed beside it. Beta: the third chest of the row and the one beside beta's pair aren't placed.
+  Lids: a pair along x and one along z get tiles 250 to 253 (beta: 25), and terrain.png read back from the GPU holds the
+  half-lids `ChestLids` makes from the pack's sheet, pixel for pixel. A skeleton's arrow starts 0.1 below its eyes (beta: 1.3 above).
 - `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves`: the saves mod's real-server test with the polish mod beside
   it (damaged chunks; the server killed outright 8 times during bursts of save-all, every chunk and level.dat read
   back with vanilla's reader after each, nothing gone): passed 2026-11-02 with the background writer doing the

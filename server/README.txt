@@ -1,10 +1,11 @@
 Pure Faithful server
 ====================
 
-Minecraft beta 1.7.3's own server, run through Fabric Loader with Pure Faithful's hardening and saves mods. It plays
-as the vanilla server does. The difference: it's hardened against malicious clients, and a crash or power cut can't
-damage the world: saves are written whole or not at all, and a chunk that can't be read is kept in the world's
-corrupt/ folder and reported, not silently regenerated. Online-mode logins are checked with Mojang over HTTPS.
+Minecraft beta 1.7.3's own server, run through Fabric Loader with Pure Faithful's hardening, saves and speed mods. It
+plays as the vanilla server does. The difference: it's hardened against malicious clients, and a crash or power cut
+can't damage the world: saves are written whole or not at all, and a chunk that can't be read is kept in the world's
+corrupt/ folder and reported, not silently regenerated. Online-mode logins are checked with Mojang over HTTPS. And it
+generates new terrain faster: the same terrain, in less time.
 
 What it can't change, because it's how beta 1.7.3's online mode works: a server a player joins could pass that
 player's login on to another server, so online mode isn't proof against a hostile server operator. Players should
@@ -20,7 +21,7 @@ Setting up
 
 A vanilla beta 1.7.3 server's world and server.properties work as they are: copy them in.
 
-mods/ holds our two mods. libraries/ holds Fabric Loader (Apache-2.0), Mixin (MIT), ASM (BSD-3-Clause) and Babric's
+mods/ holds our three mods. libraries/ holds Fabric Loader (Apache-2.0), Mixin (MIT), ASM (BSD-3-Clause) and Babric's
 intermediary mappings (CC0), unmodified. THIRD-PARTY-NOTICES.txt lists them with their licences (in licenses/), and
 sources/ has the source code their licences ask to come with them.
 

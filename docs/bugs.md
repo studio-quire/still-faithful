@@ -118,6 +118,8 @@ Key:
 | 77 | Squid sink to the bottom and stay within half a block of it: their water test is inside out, and fails at some heights | bug | OF | mid | fixed (OF) |
 | 78 | A new world on a server can crash as it starts, about 1 time in 900: a spring's water in the spawn search breaks a plant, and the drop finds the server world half built | bug | Pure | low | fixed (Pure and Faithful Core) |
 | 79 | Multiplayer: an item used just after closing a chest, furnace or workbench (a block placed within about a round trip) comes back on the player's screen, one more than they have, until the slot next changes | bug | OF | low-mid (MP) | fixed (OF) |
+| 80 | A dark hairline down the seam between two blocks side by side, seen with the camera almost in line with the seam (half a block off it, 4 away, looking down a little): chests and planks alike | ? | ? | low | seen in pictures, not looked into |
+| 81 | A mob that has died stays solid while it falls over: it pushes you and other mobs and is pushed, and arrows bounce off it though nothing can hurt it | bug | OF | low | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -1082,6 +1084,29 @@ frames at each of the three places without it, 0 with it (the stray pixel went t
 pixels change (875 to 963 of 1.44 million in each view's first frame), nearly all by under 25 levels of 255: pixels
 on a texel boundary inside a face taking the neighbouring texel. Its cost is a few comparisons per quad while chunks
 are built (reasoned, not benchmarked).
+
+### 80. A dark hairline down the seam between two blocks (seen in pictures, not looked into)
+Seen by Claude Opus 5.5 in `:harness:sceneShotStill` pictures (2026-11-08, checking Still Faithful's chest lids): with
+the camera half a block off the plane where two blocks meet, 4 blocks away and 25 degrees down, a thin dark line runs
+down the seam across both the top and the front, the same on a double chest of the new pairing, a pair of beta's
+chests and two plain plank blocks (`local/run/scene-shot-still/shots/view-18.png` to `view-20.png` on this machine).
+From 6 away, level, there's none. The faces between two opaque blocks aren't drawn in beta, so it isn't those showing
+through. Not yet known: whether Pure Faithful or vanilla shows it (only Still Faithful's mods were in), or whether it's
+#72's kind (an edge reading past its tile) or a crack in the geometry. ? (only seen, low).
+
+### 81. A dying mob stays solid while it falls over (T, read in the source)
+The user's ask (2026-11-08), first for Still Faithful, then for Old Faithful once the evidence was weighed. A mob at 0
+health stays 20 ticks, falling over, before it's removed (`LivingEntity.tick`: `deathTime`, then `markDead`), and
+`isPushable` and `isCollidable` are `!dead`, true until then: it pushed and was pushed, and projectiles struck it while
+its `damage` refused every hit (`health <= 0` returns false), so an arrow bounced back (`ArrowEntity.tick`'s failed-damage
+branch) and was lost. For a mistake: the class has `isAlive` (`!dead && health > 0`) and uses it a few lines away for
+suffocation and drowning, so the dying state was thought of there; `!dead` is the test boats and minecarts use, whose
+only end is removal, so it reads as a pattern carried over; and later versions push and shoot by being alive. Against:
+nothing shows intent either way, a body that's solid until it vanishes is a reading of its own, and it lasts a second, so
+little could rely on it (a crowd at a trap shoved for a second, arrows soaked up by the first to die). OF, low.
+**Fixed in Old Faithful** (2026-11-08, `mobs.dyingBodies`): `docs/fixes.md`. Checked by `FixesCheck` (a dying pig not
+pushable, pushing nothing, an arrow through it); with the fix off, both as beta (Still Faithful's all-off run, when it
+was polish, 2026-11-08: pushable, pushed, the arrow bounced back).
 
 ### 74. A step-up under a low roof sinks into the floor (T, seen)
 Asked about by the user (2026-11-06), who remembered being moved slightly into a block and pushed out on a simple

@@ -61,6 +61,7 @@ public final class FixesSettings implements SettingsProvider {
 			{"spawning.squidInWater", "mobs", WORLD, "Squid in Lava", "Squid could spawn in lava, and burn."},
 			{"squids.swimming", "mobs", WORLD, "Squid Swimming", "Squid sank to the bottom and stayed within half a block of it."},
 			{"squids.footsteps", "mobs", CLIENT, "Squid Footsteps", "Squid made footsteps on the sea floor, and lit redstone ore there."},
+			{"mobs.dyingBodies", "mobs", WORLD, "Dying Mobs", "A mob that had died still pushed you and other mobs while it fell, and arrows bounced off it."},
 			{"movement.stepUnderRoof", "players", CLIENT, "Steps Under Roofs",
 					"A step with a block low overhead could sink you into the floor, and you were shoved back out."},
 			{"movement.boxAgainstWalls", "players", CLIENT, "Rejoining by Walls",

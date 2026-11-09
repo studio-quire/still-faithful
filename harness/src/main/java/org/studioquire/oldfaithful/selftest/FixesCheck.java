@@ -14,6 +14,7 @@ import net.minecraft.entity.mob.SlimeEntity;
 import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.FishingBobberEntity;
 import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.entity.vehicle.MinecartEntity;
@@ -75,6 +76,7 @@ final class FixesCheck {
 		stepUnderRoof(mc, world);
 		boxAgainstWall(mc, world);
 		squids(world);
+		dyingMobs(world);
 
 		// #19: water right above a torch standing on stone, ticked once now: in this new world the scheduled tick would
 		// wait behind the generator's backlog (some 9,000 liquid ticks, past the 1,000 a tick the world works through).
@@ -304,6 +306,38 @@ final class FixesCheck {
 		mc.player.velocityX = mc.player.velocityY = mc.player.velocityZ = 0.0;
 		results.check("fixes #57: sneaking diagonally off an inside corner keeps a block underfoot (stopped at " + at + ", feet at "
 				+ String.format("%.2f", feet - Y) + ")", held && Math.abs(feet - Y) < 0.01);
+	}
+
+	/**
+	 * #81: a pig at 0 health, as a mob lies while it falls over, beside a living one: it isn't pushable and its own push
+	 * loop leaves the other alone; an arrow flown at it from three blocks goes through (beta: it bounced back).
+	 */
+	private void dyingMobs(World world) {
+		int x = bx - 8, y = Y + 12, z = bz - 30;
+		for (int dx = -3; dx <= 3; dx++) {
+			for (int dz = -6; dz <= 3; dz++) world.setBlock(x + dx, y - 1, z + dz, Block.STONE.id);
+		}
+		PigEntity dying = new PigEntity(world), alive = new PigEntity(world);
+		dying.setPositionAndAnglesKeepPrevAngles(x + 0.5, y, z + 0.5, 0.0F, 0.0F);
+		alive.setPositionAndAnglesKeepPrevAngles(x + 0.8, y, z + 0.5, 0.0F, 0.0F);
+		world.spawnEntity(dying);
+		world.spawnEntity(alive);
+		dying.health = 0;
+		alive.velocityX = alive.velocityZ = 0;
+		dying.tickMovement();
+		boolean pushed = alive.velocityX != 0 || alive.velocityZ != 0;
+		results.check("fixes #81: a dying pig is " + (dying.isPushable() ? "" : "not ") + "pushable and " + (pushed ? "pushed" : "didn't push") + " the pig beside it, a living pig still is",
+				!dying.isPushable() && !pushed && alive.isPushable());
+		// The living pig stands in the arrow's line, so it goes first.
+		alive.markDead();
+		ArrowEntity arrow = new ArrowEntity(world, dying.x, y + 0.5, dying.z - 3.0);
+		arrow.setVelocity(0.0, 0.0, 1.0, 1.5F, 0.0F);
+		world.spawnEntity(arrow);
+		for (int i = 0; i < 4; i++) arrow.tick();
+		boolean through = arrow.z > dying.z + 1.0 && arrow.velocityZ > 0;
+		results.check(String.format("fixes #81: an arrow at the dying pig %s (z %.2f against the pig's %.2f)", through ? "flew through" : "bounced off", arrow.z, dying.z), through);
+		arrow.markDead();
+		dying.markDead();
 	}
 
 	/**

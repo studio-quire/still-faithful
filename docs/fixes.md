@@ -75,6 +75,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 75 | `movement.boxAgainstWalls` | both; every entity | `setPosition` moves a side face that lands just past a sixteenth (within 1e-7) back onto it; the position itself is left alone |
 | 76 | `squids.footsteps` | both | A squid's moves take no steps: no footsteps (the client plays those), nothing stepped on |
 | 77 | `squids.swimming` | world; a client's only for its animation | A squid's water test asks about its middle, a flat box at half its height under the water's real surface, not an inside-out box |
+| 81 | `mobs.dyingBodies` | both, each its own | A mob at 0 health isn't pushable and its push loop in `tickMovement` passes over everything; arrows, snowballs, eggs, fishing lines and fireballs skip it (`dyingmobs`). A client decides whether a dying mob pushes its player (it hears the death from the server), the server everything else. The crosshair still meets it, as in later versions. Built in Still Faithful's polish first and moved here the same day (the user, 2026-11-08) |
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 

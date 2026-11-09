@@ -109,7 +109,8 @@ open question a quick before/after answers.
 ## oldfaithful-speed (2026-11-02)
 
 The mod for speed work, in both editions: everything in it changes nothing the game does or shows, so Purist takes it
-whole. Client only for now (the server package is phase 6). Narrow injections throughout (no `@Overwrite`, no
+whole. Two-sided since 2026-11-08: the client's changes are client mixins, and the dedicated server has two of its own
+(The server, below), in every edition's server package. Narrow injections throughout (no `@Overwrite`, no
 `@Redirect`); checked against the popular mods in `harness/linkcheck-mods.json`: UniTweaks wraps the cloud height
 call inside the same cloud method (compatible), SmoothBeta replaces the same chunk map with its own and reads it
 (we leave a non-vanilla map alone) and hooks the tessellator inside rebuild (untouched by us).
@@ -117,18 +118,20 @@ call inside the same cloud method (compatible), SmoothBeta replaces the same chu
 | Change | Why it's pure |
 |---|---|
 | **Clouds in one draw per pass** (`FancyCloudsMixin`) | Each pass drew its 36 cells with the same GL state; every cell sets colour, normal and texture, so the tessellator's client state is the same for the batch. Same vertices in the same order in one `glDrawArrays`: the same primitives, so the same pixels (GL draws primitives in order, each from its vertices and the state). Whole quads per cell keep the quad-to-triangle conversion aligned. The batch is drawn where the next pass changes the colour mask, and at the colour reset that ends the method |
-| **Chunk maps hashed properly** (`ChunkMap`, `ChunkCacheMixin`, `MultiplayerChunkCacheMixin`) | Same keys (ChunkPos.hashCode, collisions and all), same equality, same answers; only the bucket hash mixes all the key's bits and the last hit is remembered. Unit-tested against HashMap through 400,000 random operations. Only replaces a map that is still vanilla's HashMap |
+| **Chunk maps hashed properly** (`ChunkMap`, `ChunkCacheMixin`, `MultiplayerChunkCacheMixin`; the server's below) | Same keys (ChunkPos.hashCode, collisions and all), same equality, same answers; only the bucket hash mixes all the key's bits and the last hit is remembered. Unit-tested against HashMap through 400,000 random operations. Only replaces a map that is still vanilla's HashMap |
 | **Light memoised per chunk rebuild** (`WorldRegionMixin`, `ChunkBuilderMixin`, `LightCache`) | Smooth lighting asks the rebuild's region for the same positions' light many times per block. The value is a function of the position while the rebuild runs (nothing changes the world during meshing), so the first answer stands. On only for the region `rebuild` makes, off when it returns; regions made anywhere else never cache |
 | **The unused frustum skipped** (`GameRendererFrustumMixin`) | `renderFrame` computes the frustum (two `glGetFloatv`, each a sync with the driver) and drops it; the `FrustumCuller` made a few lines later computes it again from the then-current matrices, and that is the one culling uses. Nothing reads it in between (sky and fog setup only) |
 | **Double slabs mesh no hidden top** (`DoubleSlabFacesMixin`, 2026-11-02, `docs/bugs.md` #47) | `SlabBlock.isSideVisible` computes the full block's answer for the double slab, drops it (a missing `return`) and applies the half slab's rule, which always shows the top. Answered with the full block's rule, only the top under an opaque block goes: it lies between two opaque blocks, whose side faces enclose it, and the block above draws no face there (culled against the opaque double slab), so depth hid it from every outside view. Half slabs and modded slabs keep their rule. Reasoned, not measured: generated worlds have no double slabs |
 
-Robustness (2026-11-02, after an outside review): injectors are `require 0`, so another mod reshaping a target
-turns that optimisation off instead of stopping the game. Each handler falls back to vanilla when its partners didn't
-apply (the clouds' batch checks the tessellator itself: a cell whose start or draw wasn't ours draws as vanilla, and
-a batch left open is closed at the next frame's start). `SpeedMixinPlugin` logs `[oldfaithful-speed] WARN ... didn't
+Robustness (2026-11-02, after an outside review): injectors are `require 0`, so another mod reshaping a target turns
+that optimisation off instead of stopping the game. Each handler falls back to vanilla when its partners didn't apply
+(the clouds' batch checks the tessellator itself: a cell whose start or draw wasn't ours draws as vanilla, and a
+batch left open is closed at the next frame's start). `SpeedMixinPlugin` logs `[oldfaithful-speed] WARN ... didn't
 apply` for core Mixin handlers; MixinExtras' injectors apply after its check, so the game tests run with
 `-Dmixin.debug.countInjections=true`, which fails any injector of either kind that found nothing (checked by breaking
-one of each). `ChunkMap` is safe for readers on other threads (threaded minimaps): each key and value travel in one
+one of each). The WARN caught one for real (2026-11-08): on a class both jars have, the remapper turns a bare
+`<init>` into the merged jar's first constructor, a client one for `World`, so a server mixin names its constructor
+in full. `ChunkMap` is safe for readers on other threads (threaded minimaps): each key and value travel in one
 immutable entry, the table is published whole, and the last-hit cache is one reference, so a racing reader can miss
 an entry but never pair one chunk's key with another's chunk. `FramePacing` builds nothing extra on Power saver or
 after a frame where vanilla slept for lacking focus.
@@ -210,11 +213,43 @@ even as vanilla's or more so. At Max
 FPS with vsync vanilla itself stutters (11-17% of frames over 25 ms; heavy loading per frame), and with the mod it was
 5-6% with two to three times the rebuilds, though those runs began on a busy PC and are indicative only.
 
+### The server (2026-11-08)
+
+`tools/gen_bench.py` (the real server from the server package, `library/tower-check` loading a square of new chunks,
+`--jfr` profiling the server thread) found over half of beta's server thread in `HashMap` lookups while it generated:
+`ServerChunkCache.chunksByPos` is the client's badly spread map again, and every block a light update or decoration
+reads or writes looks its chunk up there (`World.getBrightness` asks `hasChunk`, then `getChunk`). Next came World's
+set of scheduled block ticks, whose `BlockEvent.hashCode` repeats every 128 blocks along x, so ticks share hash codes
+outright. Both fixes are server mixins, in every edition's server package.
+
+| Change | Why it's pure |
+|---|---|
+| **The server's chunk map** (`ServerChunkCacheMixin`) | `ChunkMap`, as on the client: same keys, same answers. Nothing iterates it. Everything touching it runs on the server thread (the console and login threads only hand work over; saves run there too). The unload queue beside it, a HashSet of the same keys, stays vanilla's: it's drained in iteration order, which decides which chunks wait a tick longer |
+| **Scheduled ticks hashed properly** (`TickSet`, `ScheduledTicksMixin`) | The set only answers whether a block already has a tick queued; the due-time `TreeSet` beside it orders the ticks and is untouched. `TickSet` hashes the four fields `BlockEvent.equals` compares, so equality and answers are the same (unit-tested against HashSet with the game's own `BlockEvent`s). Its iteration order differs: vanilla iterates it once, to move every tick by the same time, and Old Faithful's tick saving iterates the TreeSet |
+
+A single-player world has the same tick set, but generation is a few percent of a client frame, so the client keeps
+vanilla's.
+
+Results (2026-11-08, `--mods none`, seed 1733, 72x72 chunks from chunk 64,64; the user's Minecraft running on the PC):
+
+| | 8 chunks a tick (as a walk): server thread busy | of it in map lookups | loads alone | 64 a tick (flat out): wall, two runs |
+|---|---|---|---|---|
+| without | 15.5 s | 54% | 13.9 s | 28.6, 26.5 s |
+| with | 8.1 s | 35% | 10.9 s | 17.4, 16.7 s |
+
+The light updates took most of the gain (a quarter to a third of their time left); generating flat out takes about
+37% less time. Run to run, the busy time's parts swing by 20% or so; the flat-out totals agree within 8%. What's left
+in lookups is `ChunkMap` itself, about 30% of the thread: no trees now, just a lookup for every block access, and the
+profile puts most of it on the miss path of the one-entry last-hit cache (light reads alternate between chunks at
+their edges). A second cached entry or keys held in the table itself might take a good part of that; not tried. The
+rest is beta's generator (`PerlinNoiseSampler.create` about 30%, Left, and why > Terrain generation).
+
 ## Plan
 
 ### Done (pure wins, above)
 
-Clouds; chunk maps; light per rebuild; the duplicate frustum; chunk building under vsync.
+Clouds; chunk maps; light per rebuild; the duplicate frustum; chunk building under vsync; the server's chunk map and
+scheduled ticks.
 
 ### Left, and why
 

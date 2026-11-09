@@ -192,8 +192,8 @@ public final class SceneShot {
 		if (v[0].equals("dig") || v[0].equals("put")) {
 			// Scheduled block ticks don't run in this world (sand put in mid-air stays put, 2026-11-08), so what follows from a change, a crust of sand coming down, isn't seen here.
 			int dx = Integer.parseInt(v[1]), dy = Integer.parseInt(v[2]), dz = Integer.parseInt(v[3]), id = mc.world.getBlockId(dx, dy, dz);
-			int put = v[0].equals("put") ? Integer.parseInt(v[4]) : 0;
-			mc.world.setBlock(dx, dy, dz, put);
+			int put = v[0].equals("put") ? Integer.parseInt(v[4]) : 0, meta = v.length > 5 ? Integer.parseInt(v[5]) : 0;
+			mc.world.setBlock(dx, dy, dz, put, meta);
 			results.pass("scene: view-" + view + (put == 0 ? " dug out block " + id : " put block " + put) + " at " + dx + " " + dy + " " + dz);
 			view++;
 			return false;

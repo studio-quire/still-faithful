@@ -11,8 +11,11 @@ content. Nothing new to collect or craft; beta's world, made kinder to live in.
 Still Faithful's own, each on its own switch:
 - Stairs drop themselves, not a plank or a cobblestone.
 - Leaves you place never decay; leaves on trees still do.
-- Chests face you when you place them, and a second chest beside one joins its facing (chests placed before keep
-  beta's rule).
+- Chests face you when you place them, and pair as in later versions: only with a chest to the left or right that
+  faces the same way and isn't joined already, never while you sneak, so double chests can stand side by side. A
+  double chest has one lid across both halves. Chests placed before keep beta's rules.
+- Shift-click works in a dispenser both ways, into a furnace (what smelts to the top, fuel to the bottom), and puts
+  armour on, from your inventory. It works on any server.
 - Glowstone drops by hand or with any tool, as from 1.0.
 - Lava cut off from its source thins out instead of lingering for good, and water between two sources becomes a
   source over still water too.
@@ -33,6 +36,8 @@ Still Faithful's own, each on its own switch:
   against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past posts
   needs the server to have this too.
 - Each line of chat has a dark bar only as long as its text, not the chat's full width.
+- Skeletons can shoot from their eyes instead of from well above their heads (Skeleton Arrows, off unless you turn
+  it on).
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
 - Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the
@@ -51,7 +56,7 @@ Old Faithful too (there, placed leaves can decay again and kept animals can desp
 Settings: in the game, Options > Still Faithful... has every switch, in beta's own style; Still Faithful's are under
 Changes > Polish. Most changes take effect after a restart (the screen marks one that's waiting); Dusk's Smooth and Stepped
 switch at once. The same settings are files in .minecraft/config:
-- stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on.
+- stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on but Skeleton Arrows.
 - oldfaithful-fixes.properties, oldfaithful-lighting.properties, oldfaithful-options.properties: Old Faithful's.
 - purefaithful-display.properties and purefaithful-hardening.properties: Pure Faithful's.
 

@@ -9,14 +9,15 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * A drop-in Map for b1.7.3's chunk maps (ChunkCache's Integer keys, MultiplayerChunkCache's ChunkPos keys).
+ * A drop-in Map for b1.7.3's chunk maps (ChunkCache's and the server's ServerChunkCache's Integer keys,
+ * MultiplayerChunkCache's ChunkPos keys).
  * <p>
- * Both key on ChunkPos.hashCode, which packs x into the high half and z into the low half; HashMap folds the halves
+ * All key on ChunkPos.hashCode, which packs x into the high half and z into the low half; HashMap folds the halves
  * together with xor, so chunks along a diagonal share a bucket and the buckets turn into trees. This map mixes the
  * same hashCode properly and probes an open table, and remembers the last key it found. Same keys, same equality,
  * same answers: only the lookup is faster.
  * <p>
- * Writes come from the game thread only, as vanilla's. Other threads may read (a threaded minimap, say), as HashMap
+ * Writes come from the game thread only (the server thread on a server), as vanilla's. Other threads may read (a threaded minimap, say), as HashMap
  * tolerates in practice: a reader can miss or see a stale entry while the map changes, but never pairs one chunk's key
  * with another's value. Each key and value travel together in one immutable {@link Entry}, the table is replaced
  * whole when it grows, and the last-hit cache is one Entry reference.

@@ -13,7 +13,7 @@ account. Nothing of Mojang's is in this repository or in our downloads. For Wind
 
 ## What it changes
 
-Every change has its own switch, all on: in the game under **Options > Still Faithful... > Changes > Polish**, or in
+Every change has its own switch, all on but Skeleton Arrows: in the game under **Options > Still Faithful... > Changes > Polish**, or in
 `config/stillfaithful-polish.properties`. Switch one off to have beta's behaviour back (after a restart).
 
 - **Dusk and dawn without the steps.** Beta darkens the world in eleven steps, and at each one the chunks around you
@@ -23,9 +23,14 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   takes a restart.
 - **Stairs** drop themselves, not a plank or a cobblestone.
 - **Leaves you place** never decay; leaves on trees still do.
-- **Chests** face you when you place them, and a second chest beside one joins its facing. Beta worked a chest's
-  front out from the blocks around it (south when standing free, sideways in a corner); chests placed before keep
-  that.
+- **Chests** face you when you place them, and pair as in later versions: a chest joins one beside it only if that
+  one faces the same way, stands to its left or right and isn't joined already, and never while you sneak, so double
+  chests can stand side by side in a row. A double chest has one lid across both halves, made from your texture
+  pack's lid. Beta worked a chest's front out from the blocks around it (south when standing free, sideways in a
+  corner) and joined any two chests side by side; chests placed before keep that.
+- **Shift-click** works where beta's stopped short: in a dispenser both ways, into a furnace (what smelts to the top
+  slot, fuel to the bottom), and armour from your inventory onto you. It's made of clicks you could make yourself, so
+  it works on any server.
 - **Glowstone** drops its dust when broken by hand or with any tool, and breaks at the speed it had from 1.0.
 - **Lava** cut off from its source thins out instead of lingering for good. **Water** between two sources becomes a
   source over still water too, not only over solid ground.
@@ -44,6 +49,8 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   posts needs the server to have this too; aiming past them works anywhere. Posts that only touch diagonally no longer
   close a gap to players and the narrower mobs.
 - **Chat** lines each have a dark bar only as long as their text, not the chat's full width.
+- **Skeletons** can shoot their arrows from their eyes instead of from well above their heads, with beta's speed and
+  aim, as in later versions. Off unless you turn it on (Skeleton Arrows).
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
 - **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and
@@ -91,11 +98,12 @@ its LWJGL.
 
 ## Servers
 
-`StillFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening and saves mods, Old
-Faithful's fixes and lighting, and Still Faithful's polish mod: bring Mojang's server jar (the scripts check it's
+`StillFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening, saves and speed mods,
+Old Faithful's fixes and lighting, and Still Faithful's polish mod: bring Mojang's server jar (the scripts check it's
 genuine) and run `start.bat` or `start.sh`. Players can join with vanilla beta 1.7.3 or any of the three editions; the
-server's changes (drops, leaves, water, lava, boats, carts, animals, saving) work for everyone, and faster glowstone
-mining needs Still Faithful on both sides.
+server's changes (drops, leaves, water, lava, boats, carts, animals, saving, chest pairs) work for everyone, though
+players without Still Faithful see the new double chests drawn oddly, and faster glowstone mining needs Still Faithful
+on both sides.
 
 ## Problems
 

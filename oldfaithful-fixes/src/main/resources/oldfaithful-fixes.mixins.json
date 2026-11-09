@@ -10,6 +10,8 @@
     "crafting.CraftingQuickMoveMixin",
     "dismount.EntityMixin",
     "doors.DoorBlockMixin",
+    "dyingmobs.LivingEntityMixin",
+    "dyingmobs.ProjectileMixin",
     "fallingsand.FallingBlockEntityMixin",
     "fishing.FishingBobberEntityMixin",
     "furnace.FurnaceBlockEntityMixin",

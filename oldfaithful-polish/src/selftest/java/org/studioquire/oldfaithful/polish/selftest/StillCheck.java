@@ -1,5 +1,7 @@
 package org.studioquire.oldfaithful.polish.selftest;
 
+import java.awt.image.BufferedImage;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.Random;
 
@@ -7,6 +9,8 @@ import net.minecraft.block.Block;
 import net.minecraft.client.InteractionManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.passive.PigEntity;
@@ -20,14 +24,20 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.studioquire.oldfaithful.polish.BackgroundSaves;
+import org.studioquire.oldfaithful.polish.ChestLids;
+import org.studioquire.oldfaithful.polish.Chests;
 import org.studioquire.oldfaithful.polish.KeptAnimals;
 import org.studioquire.oldfaithful.polish.PolishConfig;
 import org.studioquire.oldfaithful.polish.scenario.CartScenes;
 import org.studioquire.oldfaithful.polish.scenario.Tracks;
 import org.studioquire.oldfaithful.polish.selftest.mixin.ChunkCacheStorage;
 import org.studioquire.oldfaithful.polish.selftest.mixin.LivingEntityInvoker;
+import org.studioquire.oldfaithful.polish.selftest.mixin.SkeletonEntityInvoker;
 import org.studioquire.oldfaithful.selftest.SelfTest;
 import org.studioquire.oldfaithful.selftest.WorldCheck;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import javax.imageio.ImageIO;
 
 /**
  * Still Faithful's changes in a running single-player world, from the harness's start-up test
@@ -66,6 +76,9 @@ public final class StillCheck implements WorldCheck {
 		stairs();
 		leaves(mc);
 		chests(mc);
+		chestPairs(mc);
+		chestLids(mc);
+		skeletonArrows();
 		glowstone(mc);
 		lava();
 		water();
@@ -190,7 +203,7 @@ public final class StillCheck implements WorldCheck {
 
 	/** #69: chests placed with the item at a set yaw, alone and in pairs, and a chest of beta's beside a wall. */
 	private void chests(Minecraft mc) {
-		boolean on = PolishConfig.applied("blocks.chestsFaceYou");
+		boolean on = PolishConfig.applied("blocks.chestsFaceYou"), pairs = PolishConfig.applied("blocks.chestPairs");
 		int y = Y, x0 = bx + 20, z0 = bz + 20, tex = Block.CHEST.textureId;
 		float yaw = mc.player.yaw;
 		// Alone, the player looking west: faces east (5); beta: south (3), data 0.
@@ -207,11 +220,16 @@ public final class StillCheck implements WorldCheck {
 		placeChest(mc, x + 1, y, z, 90.0F);
 		int a = world.getBlockMeta(x, y, z), b = world.getBlockMeta(x + 1, y, z);
 		int an = Block.CHEST.getTextureId(world, x, y, z, 2), bn = Block.CHEST.getTextureId(world, x + 1, y, z, 2);
-		int as = Block.CHEST.getTextureId(world, x, y, z, 3);
-		results.check("still #69: a double chest, the second half placed looking along it: data " + a + " and " + b + ", north faces "
-				+ an + " and " + bn + " (" + (on ? "2 and 2, the double front on the north" : "beta: 0 and 0, the front on the south") + ")",
-				on ? a == 2 && b == 2 && an == tex + 16 && bn == tex + 15 && as == tex + 31
-						: a == 0 && b == 0 && as == tex + 15 && an == tex + 32);
+		int as = Block.CHEST.getTextureId(world, x, y, z, 3), be = Block.CHEST.getTextureId(world, x + 1, y, z, 5);
+		if (pairs) {
+			results.check("still pairs: a chest placed looking along one facing north doesn't join it: data " + a + " and " + b + ", fronts north and east ("
+					+ an + ", " + be + ")", a == 2 && b >= 6 && b <= 13 && Chests.partner(world, x, y, z, Block.CHEST.id) == 0 && an == tex + 1 && be == tex + 1);
+		} else {
+			results.check("still #69: a double chest, the second half placed looking along it: data " + a + " and " + b + ", north faces "
+					+ an + " and " + bn + " (" + (on ? "2 and 2, the double front on the north" : "beta: 0 and 0, the front on the south") + ")",
+					on ? a == 2 && b == 2 && an == tex + 16 && bn == tex + 15 && as == tex + 31
+							: a == 0 && b == 0 && as == tex + 15 && an == tex + 32);
+		}
 		// Beta's chest (data 0) against a wall on the south: beta's rule turns it north, either way.
 		x = x0 + 8;
 		world.setBlock(x, y, z + 1, Block.STONE.id);
@@ -223,9 +241,140 @@ public final class StillCheck implements WorldCheck {
 		placeChest(mc, x + 1, y, z, 80.0F);
 		a = world.getBlockMeta(x, y, z);
 		b = world.getBlockMeta(x + 1, y, z);
-		results.check("still #69: a chest placed beside one from before: data " + a + " and " + b + " (" + (on ? "2 and 2" : "beta: 0 and 0") + ")",
-				on ? a == 2 && b == 2 : a == 0 && b == 0);
+		if (pairs) {
+			// It faces east, the old one on its back: no join, and the old one keeps the north it was drawn with, now in its data.
+			results.check("still pairs: a chest placed beside one from before, looking along them: data " + a + " and " + b + " (2, and joined to nobody)",
+					a == 2 && b >= 6 && b <= 13 && Chests.partner(world, x, y, z, Block.CHEST.id) == 0 && Block.CHEST.getTextureId(world, x, y, z, 2) == tex + 1);
+		} else {
+			results.check("still #69: a chest placed beside one from before: data " + a + " and " + b + " (" + (on ? "2 and 2" : "beta: 0 and 0") + ")",
+					on ? a == 2 && b == 2 : a == 0 && b == 0);
+		}
 		mc.player.yaw = yaw;
+	}
+
+	/**
+	 * Chest pairs (blocks.chestPairs, later versions' rule): four chests in a row placed facing north make two doubles;
+	 * a sneaking placement stays single; one facing another way beside a single doesn't join; a pair from before, two
+	 * chests of beta's, stays one with a chest placed beside it. Beta: the third chest can't be placed at all.
+	 */
+	private void chestPairs(Minecraft mc) {
+		boolean on = PolishConfig.applied("blocks.chestPairs");
+		int y = Y, x = bx + 20, z = bz + 26, id = Block.CHEST.id, tex = Block.CHEST.textureId;
+		float yaw = mc.player.yaw;
+		for (int i = 0; i < 4; i++) placeChest(mc, x + i, y, z, 0.0F);
+		boolean third = world.getBlockId(x + 2, y, z) == id, fourth = world.getBlockId(x + 3, y, z) == id;
+		if (!on) {
+			results.check("still pairs: beta: a chest can't go beside a double chest (the third of a row wasn't placed)", !third);
+		} else {
+			int[] metas = new int[4], partners = new int[4];
+			for (int i = 0; i < 4; i++) {
+				metas[i] = world.getBlockMeta(x + i, y, z);
+				partners[i] = Chests.partner(world, x + i, y, z, id);
+			}
+			results.check("still pairs: four chests in a row facing north are two doubles side by side: data " + java.util.Arrays.toString(metas) + ", partners "
+					+ java.util.Arrays.toString(partners) + " (east, west, east, west)", third && fourth && partners[0] == 5 && partners[1] == 4 && partners[2] == 5 && partners[3] == 4);
+			int n1 = Block.CHEST.getTextureId(world, x + 1, y, z, 2), n2 = Block.CHEST.getTextureId(world, x + 2, y, z, 2);
+			results.check("still pairs: where the two doubles meet, each shows the end of its own front (" + n1 + ", " + n2 + ")", n1 == tex + 15 && n2 == tex + 16);
+		}
+		// Sneaking beside a single chest facing the same way: stays single.
+		int sx = x, sz = z + 4;
+		placeChest(mc, sx, y, sz, 0.0F);
+		mc.player.input.sneaking = true;
+		placeChest(mc, sx + 1, y, sz, 0.0F);
+		mc.player.input.sneaking = false;
+		if (on) {
+			results.check("still pairs: a chest placed sneaking beside one facing the same way stays single (data " + world.getBlockMeta(sx + 1, y, sz) + ")",
+					Chests.partner(world, sx, y, sz, id) == 0 && Chests.partner(world, sx + 1, y, sz, id) == 0 && Block.CHEST.getTextureId(world, sx + 1, y, sz, 2) == tex + 1);
+		}
+		// Facing another way, beside a single one: no join; the old one stays single.
+		int fx = x + 6, fz = z + 4;
+		placeChest(mc, fx, y, fz, 0.0F);
+		placeChest(mc, fx + 1, y, fz, 90.0F);
+		if (on) {
+			results.check("still pairs: a chest facing east beside one facing north doesn't join it",
+					Chests.partner(world, fx, y, fz, id) == 0 && Chests.partner(world, fx + 1, y, fz, id) == 0 && Block.CHEST.getTextureId(world, fx + 1, y, fz, 5) == tex + 1);
+		}
+		// A pair from before (two chests of beta's) with a chest placed beside it: still one pair, and the new one alone.
+		int ox = x + 10, oz = z + 4;
+		world.setBlock(ox, y - 1, oz, Block.STONE.id);
+		world.setBlock(ox + 1, y - 1, oz, Block.STONE.id);
+		world.setBlock(ox, y, oz, id);
+		world.setBlock(ox + 1, y, oz, id);
+		int before = Block.CHEST.getTextureId(world, ox, y, oz, 3);
+		placeChest(mc, ox + 2, y, oz, 0.0F);
+		if (on) {
+			results.check("still pairs: a pair from before stays a pair with a chest placed beside it, which stays alone, and its front doesn't move ("
+					+ before + ", " + Block.CHEST.getTextureId(world, ox, y, oz, 3) + ")",
+					world.getBlockId(ox + 2, y, oz) == id && Chests.partner(world, ox, y, oz, id) == 5 && Chests.partner(world, ox + 1, y, oz, id) == 4
+							&& Chests.partner(world, ox + 2, y, oz, id) == 0 && Block.CHEST.getTextureId(world, ox, y, oz, 3) == before);
+		} else {
+			results.check("still pairs: beta: no chest beside a pair from before", world.getBlockId(ox + 2, y, oz) == 0);
+		}
+		mc.player.yaw = yaw;
+	}
+
+	/** render.chestLids: a pair's top and bottom from the joined lid's halves, which terrain.png holds as the pack's lid rearranged. */
+	private void chestLids(Minecraft mc) {
+		boolean on = PolishConfig.applied("render.chestLids");
+		int y = Y, x = bx + 20, z = bz + 34, id = Block.CHEST.id, tex = Block.CHEST.textureId;
+		world.setBlock(x, y, z, id);
+		world.setBlock(x + 1, y, z, id);
+		world.setBlock(x + 4, y, z, id);
+		world.setBlock(x + 4, y, z + 1, id);
+		int[] got = {Block.CHEST.getTextureId(world, x, y, z, 1), Block.CHEST.getTextureId(world, x + 1, y, z, 1), Block.CHEST.getTextureId(world, x + 4, y, z, 0),
+				Block.CHEST.getTextureId(world, x + 4, y, z + 1, 0)};
+		int[] want = on ? new int[] {Chests.LIDS, Chests.LIDS + 1, Chests.LIDS + 2, Chests.LIDS + 3} : new int[] {tex - 1, tex - 1, tex - 1, tex - 1};
+		results.check("still lids: a pair along x's tops and one along z's bottoms are " + java.util.Arrays.toString(got) + " (" + (on ? "the joined lid's halves" : "beta: the lid")
+				+ ")", java.util.Arrays.equals(got, want));
+		if (!on) return;
+		try {
+			BufferedImage pack = ImageIO.read(mc.texturePacks.selected.getResource("/terrain.png"));
+			BufferedImage expected = ChestLids.withLids(pack);
+			int size = pack.getWidth(), n = size / 16;
+			ByteBuffer pixels = BufferUtils.createByteBuffer(size * size * 4);
+			mc.textureManager.bindTexture(mc.textureManager.getTextureId("/terrain.png"));
+			GL11.glGetTexImage(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, pixels);
+			int wrong = 0;
+			for (int slot = Chests.LIDS; slot < Chests.LIDS + 4; slot++) {
+				for (int v = 0; v < n; v++) {
+					for (int u = 0; u < n; u++) {
+						int px = slot % 16 * n + u, py = slot / 16 * n + v, at = (py * size + px) * 4;
+						int argb = expected.getRGB(px, py);
+						int r = pixels.get(at) & 255, g = pixels.get(at + 1) & 255, b = pixels.get(at + 2) & 255;
+						if (r != (argb >> 16 & 255) || g != (argb >> 8 & 255) || b != (argb & 255)) wrong++;
+					}
+				}
+			}
+			int seam = expected.getRGB(Chests.LIDS % 16 * n + n - 1, Chests.LIDS / 16 * n + n / 2), border = pack.getRGB(25 % 16 * n + n - 1, 25 / 16 * n + n / 2);
+			results.check("still lids: terrain.png in the game holds the joined lid's halves (" + wrong + " pixels differ), the west half without the lid's east border",
+					wrong == 0 && seam != border);
+		} catch (java.io.IOException e) {
+			results.check("still lids: the pack's terrain.png read: " + e, false);
+		}
+	}
+
+	/** mobs.skeletonArrows: where a skeleton's arrow starts, against its eyes. */
+	private void skeletonArrows() {
+		boolean on = PolishConfig.applied("mobs.skeletonArrows");
+		int x = bx - 30, y = Y, z = bz + 30;
+		fill(x - 3, y - 1, z - 8, x + 3, y - 1, z + 3, Block.STONE.id);
+		SkeletonEntity skeleton = new SkeletonEntity(world);
+		PigEntity target = new PigEntity(world);
+		skeleton.setPositionAndAnglesKeepPrevAngles(x + 0.5, y, z + 0.5, 180.0F, 0.0F);
+		target.setPositionAndAnglesKeepPrevAngles(x + 0.5, y, z - 5.5, 0.0F, 0.0F);
+		world.spawnEntity(skeleton);
+		world.spawnEntity(target);
+		((SkeletonEntityInvoker) skeleton).oldfaithful$attack(target, 6.0F);
+		ArrowEntity arrow = null;
+		for (Object e : world.getEntities(skeleton, skeleton.boundingBox.expand(3.0, 3.0, 3.0))) {
+			if (e instanceof ArrowEntity && ((ArrowEntity) e).owner == skeleton) arrow = (ArrowEntity) e;
+		}
+		double above = arrow == null ? Double.NaN : arrow.y - (skeleton.y + skeleton.getEyeHeight());
+		results.check(String.format("still skeletons: the arrow started %.2f above the skeleton's eyes (%s)", above, on ? "-0.1, at them" : "beta: 1.3, over its head"),
+				arrow != null && Math.abs(above - (on ? -0.1 : 1.3)) < 0.01);
+		skeleton.markDead();
+		target.markDead();
+		if (arrow != null) arrow.markDead();
 	}
 
 	private void placeChest(Minecraft mc, int x, int y, int z, float yaw) {

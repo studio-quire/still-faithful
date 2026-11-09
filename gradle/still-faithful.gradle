@@ -27,7 +27,7 @@ releaseEditions.still = [
     homepage: stillProp('still_release_homepage'), version: stillVersion, icon: 'stillfaithful', licenceFolder: 'still-faithful',
     openalSources: fixed.openalSources,
     mods: fixed.mods + stillMods, serverMods: fixed.serverMods + stillMods,
-    serverModsText: 'hardening, saves, fixes, lighting and polish',
+    serverModsText: 'hardening, saves, speed, fixes, lighting and polish',
     packReadme: 'release/still-faithful/pack-README.txt', serverReadme: 'release/still-faithful/server-README.txt',
     packHeader: 'release/still-faithful/notices-header-pack.txt', serverHeader: 'release/still-faithful/notices-header-server.txt',
     out: "local/release/still-faithful-${stillVersion}"]

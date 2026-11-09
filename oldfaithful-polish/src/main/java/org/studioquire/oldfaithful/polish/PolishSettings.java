@@ -32,8 +32,13 @@ public final class PolishSettings implements SettingsProvider {
 			{"animals.keepTended", WORLD, "Kept Animals", "Animals you'd sheared, saddled or ridden despawned when you went away."},
 			{"saves.backgroundAutosave", WORLD, "Autosave", "Every 2 seconds the game paused to write the chunks that had changed."},
 			{"blocks.chestsFaceYou", WORLD, "Chest Facing", "A chest faced away from the block behind it, or south; never the way you chose."},
+			{"blocks.chestPairs", WORLD, "Chest Pairs",
+					"Any two chests side by side joined, and none could go beside a double chest. Needs Chest Facing."},
+			{"render.chestLids", CLIENT, "Chest Lids", "A double chest's lid had a border down the middle, one lid to each half."},
+			{"mobs.skeletonArrows", WORLD, "Skeleton Arrows", "Skeletons shot their arrows from well above their heads."},
 			{"blocks.fenceShape", CLIENT, "Fence Shape",
 					"Fences were whole blocks to walk into and aim at. On a server, walking past posts needs this change there too."},
+			{"inventory.shiftClick", CLIENT, "Shift-Click", "Shift-click did nothing in a dispenser, and never filled a furnace or put armour on."},
 			{"render.chatBars", CLIENT, "Chat Bars", "Every line of chat had a dark bar the chat's full width behind it, however short the line."},
 			{"render.droppedItemSize", CLIENT, "Dropped Blocks", "Dropped stairs, fences and other part-blocks lay at twice the size."},
 			{"menu.texturePacks", CLIENT, "Texture Packs", "The title screen's Mods and Texture Packs button only ever held texture packs."},
@@ -53,7 +58,7 @@ public final class PolishSettings implements SettingsProvider {
 				r.add(GROUP, dusk(row));
 				continue;
 			}
-			Setting s = Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], "true", "false", "Beta", "true", "Polished")
+			Setting s = Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], PolishConfig.defaultValue(row[0]), "false", "Beta", "true", "Polished")
 					.running(() -> String.valueOf(PolishConfig.applied(row[0])));
 			r.add(GROUP, WORLD.equals(row[1]) ? s.serverDecides() : s);
 		}

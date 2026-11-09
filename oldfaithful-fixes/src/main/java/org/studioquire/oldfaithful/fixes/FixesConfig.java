@@ -180,6 +180,10 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"squids.swimming", "squidswim",
 					"# #77: squid sank to the bottom and stayed within half a block of it: their test for being in water failed at\n"
 					+ "# some heights, and they couldn't swim across those. With this, they swim all through the water.\n"},
+			{"mobs.dyingBodies", "dyingmobs",
+					"# #81: a mob that had died stayed solid while it fell over: it pushed you and other mobs, they pushed it, and\n"
+					+ "# arrows bounced off it, though nothing could hurt it any more. With this, a dying mob pushes nothing, nothing\n"
+					+ "# pushes it, and arrows, snowballs, eggs and fishing lines fly through it.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

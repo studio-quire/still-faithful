@@ -25,6 +25,8 @@ dependencies {
     selftestCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
     selftestCompileOnly "io.github.llamalad7:mixinextras-fabric:${mixinextras_version}"
     selftestCompileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
+    // ShiftClickCheck puts mouse and key events into our LWJGL component's queues, as SDL's would arrive.
+    selftestCompileOnly project(':oldfaithful-lwjgl')
     selftestCompileOnly project(':harness')
     selftestCompileOnly sourceSets.main.output
     selftestCompileOnly project(':oldfaithful-saves')

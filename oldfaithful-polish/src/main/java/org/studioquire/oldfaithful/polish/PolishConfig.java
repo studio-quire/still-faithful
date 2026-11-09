@@ -31,6 +31,8 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	private static final String SAVES_KEY = "saves.backgroundAutosave", SAVES_PACKAGE = "autosave";
 	/** #6 is a choice rather than a switch: stepped or smooth (the dusk mixins in; DuskLight), or beta (off). */
 	public static final String DUSK_KEY = "sky.dusk";
+	/** Pairs go by which way chests face, so they need #69's facings. */
+	private static final String PAIRS_KEY = "blocks.chestPairs", FACING_KEY = "blocks.chestsFaceYou";
 	private static final String HEADER = "# stillfaithful-polish: Still Faithful's changes, what later versions improved while beta stayed beta.\n"
 			+ "# false (for sky.dusk, beta) leaves that part of the game exactly as beta had it. Restart the game after changing\n"
 			+ "# anything here (the settings screen, Options > Still Faithful..., writes this file too).\n"
@@ -108,10 +110,30 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			{"render.chatBars", "chat",
 					"# Each line of chat had a dark bar behind it the full width of the chat, however short the line. With this,\n"
 					+ "# a line's bar ends just past its own text, as long as the line is.\n"},
+			{PAIRS_KEY, "chestpairs",
+					"# A chest beside another always joined it into a double chest, and none could go beside a double chest. With\n"
+					+ "# this, chests pair as in later versions: a chest you place joins one beside it only if that one faces the same\n"
+					+ "# way, stands to its left or right and isn't joined already, and never while you sneak; and a chest can go\n"
+					+ "# anywhere, beside a double chest too. Chests from before stay paired as they were. Needs blocks.chestsFaceYou\n"
+					+ "# (pairs go by which way chests face). In multiplayer, the server's.\n"},
+			{"render.chestLids", "chestlids",
+					"# Each half of a double chest had the lid of a single chest, so a border ran down the middle of its top and\n"
+					+ "# bottom. With this, a double chest has one lid, as in later versions, made from your texture pack's chest lid.\n"},
+			{"mobs.skeletonArrows", "skeletons",
+					"# Skeletons shot their arrows from well above their heads. With this, an arrow leaves from the skeleton's eyes,\n"
+					+ "# as a player's does and as in later versions; its speed and aim are beta's. Off unless turned on. In\n"
+					+ "# multiplayer, the server's.\n",
+					"false"},
 			{"skins.modern", "skins",
 					"# Beta read only the top half of a skin. With this, skins made for later versions show whole: jacket, sleeves\n"
 					+ "# and trousers, a left arm and leg of their own, and slim arms where the player's profile asks for them.\n"
 					+ "# Older skins look as they did in beta. Yours and other players', on any server: a server needs nothing.\n"},
+			{"inventory.shiftClick", "shiftclick",
+					"# Shift-click moved things between a chest and your inventory, or your inventory and hotbar, but it did nothing\n"
+					+ "# in a dispenser, never put anything into a furnace and never put armour on. With this it does those too: a\n"
+					+ "# dispenser both ways, like a chest; what smelts into a furnace's top slot and fuel into its bottom one (if that\n"
+					+ "# slot holds something else, nothing moves); and armour on, from your inventory, where that place is empty.\n"
+					+ "# It's made of the clicks you could make yourself, so it works on any server.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();
@@ -153,7 +175,16 @@ public final class PolishConfig implements IMixinConfigPlugin {
 				off.add(c[0]);
 			}
 		}
+		if (off.contains(FACING_KEY) && !off.contains(PAIRS_KEY)) off.add(PAIRS_KEY);
 		if (!off.isEmpty()) System.out.println("[stillfaithful-polish] Turned off in " + file.getName() + ": " + String.join(", ", off));
+	}
+
+	/** A switch's value when the file doesn't say: true for most. */
+	public static String defaultValue(String key) {
+		for (String[] c : CHANGES) {
+			if (c[0].equals(key)) return fallback(c);
+		}
+		return "true";
 	}
 
 	private static String fallback(String[] change) {
