@@ -354,11 +354,12 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
                         "-Doldfaithful.selftest.stallMs=${(duskFull ? 860 : 390) * 1000}".toString(),
                         "-Doldfaithful.selftest.duskFull=${duskFull}".toString()]
-        // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead. A new switch joins this list.
+        // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead. A new switch joins this list
+        // (StillCheck fails a run whose switches came up mixed).
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -392,10 +393,19 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
 }
 // -Ptest.speed=N: game time N times as fast in every hidden client's single player, and on library servers (with the
 // harness probe) and the clients that join them; anything else stays at 20 ticks a second (ClientStartupTask's tickMs,
-// docs/building.md).
+// docs/building.md). Without it the tests below run at 4, as releases run them (docs/release.md), and -Ptest.speed=1
+// gives them the game's own pace, for a change that touches timing. The rest keep the game's pace unless told: the
+// pack tests (what players get), the picture tasks (their settling counts ticks) and the hunts.
 def testSpeed = providers.gradleProperty('test.speed')
+def fastUnlessTold = ['clientStartupTest', 'clientStartupTestFixed', 'clientStartupTestStill', 'clientStartupTestLibrary',
+                      'librarySelftest', 'libraryTest', 'libraryBadTest', 'libraryContentTest', 'libraryContentTestStill', 'libraryApiTest'] as Set
+// -Ptest.only=fence,chat on an edition's start-up test: only those checks in the world (ClientStartupTask's only).
+def testOnly = providers.gradleProperty('test.only')
+def takesOnly = ['clientStartupTestFixed', 'clientStartupTestStill'] as Set
 tasks.withType(oldfaithful.gradle.ClientStartupTask).configureEach {
-    if (testSpeed.isPresent()) tickMs = Math.max(1, Math.round(50 / (testSpeed.get() as double)) as int)
+    def speed = testSpeed.isPresent() ? (testSpeed.get() as double) : fastUnlessTold.contains(name) ? 4d : 1d
+    tickMs = Math.max(1, Math.round(50 / speed) as int)
+    if (testOnly.isPresent() && takesOnly.contains(name)) only = testOnly.get()
 }
 // Pictures of the real game for the site (SceneShot, docs/release.md): Old Faithful's mods, a 1440x900 hidden
 // window, lava lying in caves near the spawn of -PsceneSeed (default 7373), shots in local/run/scene-shot/shots/.
@@ -919,6 +929,13 @@ if (findProject(':library:tower-check') != null) {
         towers = providers.gradleProperty('towers.count').map { it as int }.orElse(6)
         at = providers.gradleProperty('towers.at')
         style = providers.gradleProperty('towers.style')
+        // Servers only, nothing shown: four worlds side by side, each a busy thread at below-normal priority (one while the user's own game runs).
+        parallel = providers.gradleProperty('towers.parallel').map { it as int }.orElse(4)
+        // -Ptowers.hurry=false for the game's own 20 ticks a second while chunks load, as the test ran until 2026-11-09.
+        hurry = providers.gradleProperty('towers.hurry').map { it != 'false' }.orElse(true)
+        // -Ptowers.dumps=true writes every world's square to its cells.bin (150 MB each), not only the ones the task reads back.
+        dumps = providers.gradleProperty('towers.dumps').map { it != 'false' }.orElse(false)
+        userBusy = rootProject.layout.projectDirectory.file('tools/user_busy.ps1')
         natives = lwjgl3NativesDir
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
         privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')

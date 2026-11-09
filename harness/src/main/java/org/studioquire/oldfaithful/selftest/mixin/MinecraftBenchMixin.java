@@ -10,12 +10,14 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.studioquire.oldfaithful.selftest.Bench;
+import org.studioquire.oldfaithful.selftest.StartupCheck;
 
 /**
  * The benchmark's timing points in the game's run loop (docs/speed.md): the start of each pass, the ticks, the
  * lighting updates, the frame's rendering and the buffer swap. Each is a pass-through unless the benchmark launched
- * the game. Also, in the benchmark only, the loop doesn't sleep 10 ms a frame for lacking focus (its window never
- * has focus, unseen), which would otherwise cap it near 100 frames per second.
+ * the game. Also, in the benchmark, the loop doesn't sleep 10 ms a frame for lacking focus (its window never
+ * has focus, unseen), which would otherwise cap it near 100 frames per second; nor in a start-up test while render
+ * chunks wait to be built ({@link StartupCheck#chunksWaiting}).
  */
 @Mixin(Minecraft.class)
 abstract class MinecraftBenchMixin {
@@ -83,6 +85,6 @@ abstract class MinecraftBenchMixin {
 
 	@WrapOperation(method = "run", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/Display;isActive()Z", remap = false))
 	private boolean oldfaithful$activeInBench(Operation<Boolean> original) {
-		return Bench.ENABLED || original.call();
+		return Bench.ENABLED || StartupCheck.chunksWaiting((Minecraft) (Object) this) || original.call();
 	}
 }

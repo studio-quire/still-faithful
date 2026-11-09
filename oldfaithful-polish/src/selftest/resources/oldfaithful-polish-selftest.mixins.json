@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "ChunkCacheStorage",
+    "FurnaceFuel",
     "LivingEntityInvoker"
   ],
   "client": [

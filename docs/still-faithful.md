@@ -50,6 +50,7 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
 | | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
+| | `furnace.woodenFuel` | world | The user's ask (2026-11-09): wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
 | | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
@@ -316,6 +317,10 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 
 ## Tests
 
+- While iterating on one change, its own check alone: `./gw :harness:clientStartupTestStill -Ptest.only=still` (or
+  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `fixes`, `options`, `settings`, `window`, several with commas), about
+  half a minute where the whole test takes 1 to 2 minutes; the whole test, and `-Pstill.beta` where a switch changed,
+  once before the change is done (`docs/building.md` > What game runs cost).
 - `ShiftClickCheck` (in the same run, 2026-11-09): mouse and key events put into our LWJGL component's queues, read by
   the open screen as the real ones are. A helmet from the inventory and boots from the hotbar go on; a second helmet
   and a stack of pumpkins move as beta's; in a furnace iron ore goes on top, coal below, gold ore stays put beside the

@@ -58,7 +58,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	private static final String LIST = "mods-library/selection.txt";
 	private static final Pattern JVM_ARGS = Pattern.compile("\"\\+jvmArgs\"\\s*:\\s*\\[(.*?)]", Pattern.DOTALL);
 	private static final Pattern QUOTED = Pattern.compile("\"([^\"]+)\"");
-	private static final List<String> SERVER_MODS = List.of("world-rules", "hearty-food", "item-repair");
+	private static final List<String> SERVER_MODS = List.of("world-rules", "hearty-food", "item-repair", "wild-saplings");
 
 	private final List<String> lines = new ArrayList<>();
 	private final List<String> failures = new ArrayList<>();
@@ -83,7 +83,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
 		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
-		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "world-rules")) {
+		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules")) {
 			expect("as shipped: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
 		}
 		expect("the new world's file has seen Water Bottles", Files.isRegularFile(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties"))
@@ -96,7 +96,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		played = launch(plain, false, args("-Doldfaithful.selftest.libraryPack=off", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
 		expect("nothing ticked: the loader lists no library mod", loadedNothing(played));
-		expect("the ticks were written for the next launch", Files.readAllLines(plain.resolve(LIST)).size() == 10);
+		expect("the ticks were written for the next launch: every mod and the core", java.util.Set.copyOf(Files.readAllLines(plain.resolve(LIST))).equals(java.util.Set.copyOf(allOn().lines().toList())));
 		expect("a plain client's login is a vanilla client's", loginSeed(run, "login-plain", instance, "") == 0L);
 
 		Path absent = game(run, "no-list", instance);
@@ -122,7 +122,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Path plainDir = serverFolder(run, "server-plain", port);
 		Path plainMods = plainDir.resolve("mods"), held = plainDir.resolve("held");
 		Files.createDirectories(held);
-		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "hearty-food", "item-repair")) {
+		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "hearty-food", "item-repair", "wild-saplings")) {
 			Files.move(plainMods.resolve(nameOf(plainMods, mod)), held.resolve(nameOf(plainMods, mod)));
 		}
 		start(plainDir, "every library jar out");
@@ -146,7 +146,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		start(plainDir, "all but the mods with content");
 		try {
 			try (RawClient vanilla = new RawClient(port, "PlainPlayer")) {
-				expect("World Rules and Hearty Food on: a vanilla client logs in", vanilla.login(60) == null);
+				expect("the mods without content on (" + String.join(", ", SERVER_MODS) + "): a vanilla client logs in", vanilla.login(60) == null);
 			}
 			expect("the plain pack plays there", tryServer(run, "plain-on-others", instance, "", port).startsWith("admitted"));
 			expect("a pack with everything on plays there", tryServer(run, "all-on-others", instance, allOn(), port).startsWith("admitted"));
@@ -255,13 +255,13 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 
 	/** What the loader's mod list said: nothing of the library's, by id. */
 	private static boolean loadedNothing(List<String> output) {
-		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- blue-flowers ") || l.contains("- buried-towers ") || l.contains("- hearty-food ") || l.contains("- item-repair ") || l.contains("- alchemy ") || l.contains("- blue-flowers ")
+		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- blue-flowers ") || l.contains("- buried-towers ") || l.contains("- hearty-food ") || l.contains("- item-repair ") || l.contains("- alchemy ") || l.contains("- wild-saplings ")
 				|| l.contains("- plain-f3 ") || l.contains("- no-toasts "));
 	}
 
 	private String allOn() throws IOException {
 		return String.join("\n", "mods-library/alchemy.jar", "mods-library/blue-flowers.jar", "mods-library/buried-towers.jar", "mods-library/faithful-core.jar", "mods-library/hearty-food.jar", "mods-library/item-repair.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
-				"mods-library/water-bottles.jar", "mods-library/world-rules.jar", "");
+				"mods-library/water-bottles.jar", "mods-library/wild-saplings.jar", "mods-library/world-rules.jar", "");
 	}
 
 	/** Joins from a game folder of its own with this list; what the client ended up looking at. */

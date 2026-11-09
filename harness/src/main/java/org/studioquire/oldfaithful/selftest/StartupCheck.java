@@ -56,6 +56,12 @@ public final class StartupCheck {
 	private static final boolean USE_SET = Boolean.getBoolean("oldfaithful.selftest.useServerSet");
 	/** The conflict harness: host:port of a hostile server, joined again and again until its kick says it's done. */
 	private static final String HOSTILE = System.getProperty("oldfaithful.selftest.hostile");
+	/**
+	 * {@code -Ptest.only=fence,chat} on an edition's start-up test (docs/building.md): the checks in the world whose names
+	 * hold one of these and no others, for iterating on one thing. The names are fixes, options, settings and each
+	 * {@link WorldCheck}'s class (StillCheck, FenceCheck, DuskCheck...), in any case. Null for the whole test.
+	 */
+	private static final java.util.List<String> ONLY = only(System.getProperty("oldfaithful.selftest.only"));
 	/** "<name>:<mod id>" for an edition beyond Old Faithful: its title line, and the name its settings button carries. */
 	static final String EDITION = System.getProperty("oldfaithful.selftest.edition");
 	/** Other mods' test-only checks in the running world, after the Fixed edition's ({@link WorldCheck}). */
@@ -68,6 +74,9 @@ public final class StartupCheck {
 	private static final SelfTest results = new SelfTest();
 	private static int phase;
 	private static int wait;
+	/** Passes of the game's loop that drew (GameRendererStartupMixin), each after one read of the window's events. */
+	public static int frames;
+	private static int pausedUntilFrame;
 	private static int worldTicks;
 	private static FixesCheck fixes;
 	private static OptionsCheck options;
@@ -210,10 +219,10 @@ public final class StartupCheck {
 				pushKey(25, SDLKeycode.SDL_KMOD_LCTRL, false);
 				pushKey(224, 0, false);
 				phase = 2;
-				wait = 5;
+				pause(5);
 				return;
 			case 2:
-				if (--wait > 0) return;
+				if (pausing()) return;
 				TextFieldWidget field = ((MultiplayerScreenAccessor) mc.currentScreen).oldfaithful$serverField();
 				String c = clipboard == null ? "" : clipboard;
 				String expected = c.substring(0, Math.min(32, c.length()));
@@ -339,7 +348,7 @@ public final class StartupCheck {
 					settingsOrFinish(mc);
 					return;
 				}
-				if (!WORLD_CHECKS_ONLY && net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("oldfaithful-fixes")) {
+				if (!WORLD_CHECKS_ONLY && net.fabricmc.loader.api.FabricLoader.getInstance().isModLoaded("oldfaithful-fixes") && wanted("fixes")) {
 					fixes = new FixesCheck(results);
 					fixes.start(mc);
 					phase = 5;
@@ -424,24 +433,39 @@ public final class StartupCheck {
 				SDLVideo.SDL_SetWindowSize(w, Integer.parseInt(wh[0]), Integer.parseInt(wh[1]));
 				SDLVideo.SDL_SetWindowPosition(w, Integer.parseInt(xy[0]), Integer.parseInt(xy[1]));
 				phase = 11;
-				wait = 5;
+				pause(5);
 				return;
 			}
 			case 11:
-				if (--wait > 0) return;
+				if (pausing()) return;
 				SDLVideo.SDL_MaximizeWindow(Window.handle());
 				results.check("rearranged: " + Display.getWidth() + "x" + Display.getHeight() + " at " + Display.getX() + "," + Display.getY()
 						+ ", then maximised (" + REARRANGE + ")", REARRANGE.equals(Display.getWidth() + "x" + Display.getHeight() + "@" + Display.getX() + "," + Display.getY())
 						&& maximized());
 				phase = 12;
-				wait = 5;
+				pause(5);
 				return;
 			case 12:
-				if (--wait > 0) return;
+				if (pausing()) return;
 				finish(mc);
 				return;
 			default:
 		}
+	}
+
+	/**
+	 * A wait for something that arrives through the window's events (a key, a resize), which are read once a pass of the
+	 * game's loop: so many ticks, and three passes besides. Ticks alone aren't enough: after a slow frame the loop runs
+	 * up to ten ticks before it reads events again, and on a busy PC the title screen's first frames are that slow (a
+	 * resize unread at its check failed `clientStartupTest`'s window launch, 2026-11-09).
+	 */
+	private static void pause(int ticks) {
+		wait = ticks;
+		pausedUntilFrame = frames + 3;
+	}
+
+	private static boolean pausing() {
+		return --wait > 0 || frames < pausedUntilFrame;
 	}
 
 	private static void connect(Minecraft mc, String hostPort) {
@@ -561,9 +585,54 @@ public final class StartupCheck {
 		return true;
 	}
 
+	private static java.util.List<String> only(String names) {
+		if (names == null || names.trim().isEmpty()) return null;
+		java.util.List<String> only = new java.util.ArrayList<>();
+		for (String name : names.split(",")) {
+			if (!name.trim().isEmpty()) only.add(name.trim().toLowerCase(java.util.Locale.ROOT));
+		}
+		return only;
+	}
+
+	/** Whether the check of this name runs: all do, unless {@link #ONLY} names some. */
+	private static boolean wanted(String name) {
+		if (ONLY == null) return true;
+		for (String o : ONLY) {
+			if (name.toLowerCase(java.util.Locale.ROOT).contains(o)) return true;
+		}
+		return false;
+	}
+
+	/** Says a run of some checks wasn't the whole test, and fails it over a name that is no check's, with the names there are. */
+	private static void onlyNote() {
+		// "window" is the task's own: its short launches after this one (ClientStartupTask).
+		java.util.List<String> names = new java.util.ArrayList<>(java.util.Arrays.asList("fixes", "options", "settings", "window"));
+		for (WorldCheck check : FabricLoader.getInstance().getEntrypoints(WorldCheck.ENTRYPOINT, WorldCheck.class)) names.add(check.getClass().getSimpleName());
+		java.util.List<String> unknown = new java.util.ArrayList<>();
+		for (String o : ONLY) {
+			boolean known = false;
+			for (String name : names) known |= name.toLowerCase(java.util.Locale.ROOT).contains(o);
+			if (!known) unknown.add(o);
+		}
+		results.check("only " + ONLY + " ran: not the whole test" + (unknown.isEmpty() ? "" : "; no check here is named " + unknown + ", they are " + names), unknown.isEmpty());
+	}
+
+	/**
+	 * Whether render chunks are waiting to be built in a start-up test's world. The game sleeps 10 ms a frame while its
+	 * window lacks focus, which a hidden one always does (about 64 frames a second on Windows' timer), and a frame that
+	 * starts late builds one or two chunks, so a view of a few hundred took seconds and every check that waits for one
+	 * to be built went at that pace. While chunks wait the loop doesn't sleep (MinecraftBenchMixin), and vanilla builds
+	 * them as it does for a window with focus; with none waiting it sleeps as before, so an idle test takes no more CPU.
+	 */
+	public static boolean chunksWaiting(Minecraft mc) {
+		return ENABLED && mc.world != null && mc.worldRenderer != null
+				&& !((org.studioquire.oldfaithful.selftest.mixin.WorldRendererAccessor) mc.worldRenderer).oldfaithful$dirtyChunks().isEmpty();
+	}
+
 	private static void optionsOrFinish(Minecraft mc) throws ReflectiveOperationException {
 		if (worldChecks == null) {
-			worldChecks = FabricLoader.getInstance().getEntrypoints(WorldCheck.ENTRYPOINT, WorldCheck.class);
+			worldChecks = new java.util.ArrayList<>(FabricLoader.getInstance().getEntrypoints(WorldCheck.ENTRYPOINT, WorldCheck.class));
+			worldChecks.removeIf(check -> !wanted(check.getClass().getSimpleName()));
 			if (!worldChecks.isEmpty()) {
 				worldChecks.get(0).start(mc, results);
 				phase = 8;
@@ -574,13 +643,17 @@ public final class StartupCheck {
 			finish(mc);
 			return;
 		}
+		if (!wanted("options")) {
+			settingsOrFinish(mc);
+			return;
+		}
 		options = new OptionsCheck(results);
 		options.start(mc);
 		phase = 6;
 	}
 
 	private static void settingsOrFinish(Minecraft mc) {
-		if (!SettingsCheck.loaded()) {
+		if (!SettingsCheck.loaded() || !SETTINGS_ONLY && !wanted("settings")) {
 			finish(mc);
 			return;
 		}
@@ -611,6 +684,7 @@ public final class StartupCheck {
 					+ (worldSeconds > 0 ? ", in a world " + worldFrames / worldSeconds + " over " + worldSeconds + " s, lowest " + fewestFrames : ""));
 		}
 		phase = 99;
+		if (ONLY != null) onlyNote();
 		results.done();
 		if (FIRST_START && OptionsCheck.quit(mc)) return;
 		// As the window's close button does: the game saves and stops itself.

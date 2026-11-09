@@ -79,7 +79,7 @@ The Faithful Library's:
 |---|---|
 | `OldFaithful-Library-<v>.zip`, `StillFaithful-Library-<v>.zip` | The packs: the edition's pack with Faithful Core and every mod in `.minecraft/mods-library/` under version-less names, a `selection.txt` with all of them on, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
 | `OldFaithful-Library-server-<v>.zip`, `StillFaithful-Library-server-<v>.zip` | The edition's server package with the core, settings and the server-side mods on in `mods/` under versioned names, as in the packs; Plain F3 and No Toasts are client-only, so not there |
-| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,item-repair,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is only here, in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default |
+| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,item-repair,wild-saplings,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is only here, in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default |
 | `SHA256SUMS.txt` | For the release notes |
 
 Old Faithful's, Still Faithful's and the library's releases have no component file, natives or separate sources zip: Pure Faithful's mods and component
@@ -106,7 +106,7 @@ README and notices header) and builds both from the same templates; Old Faithful
 `release/old-faithful/`. A project marked `oldfaithful_edition=fixed` that the script's `fixedMods` doesn't list stops
 the build, so a new Old Faithful mod is placed in the pack and server package on purpose. Still Faithful's edition is
 added to `releaseEditions` by `gradle/still-faithful.gradle` (its texts in `release/still-faithful/`), with the same
-rule for its `stillMods`. The library's two packs are added by `gradle/library.gradle` (`release/library/`), with the same rule for its `libraryMods`, against every mod in `library/` without `library_test=true` or `library_jar_only=true`; the second is a jar in the release and nothing more.
+rule for its `stillMods`. The library's two packs are added by `gradle/library.gradle` (`release/library/`), with the same rule for its `libraryMods`, against every mod in `library/` without `library_test=true` or `library_jar_only=true`; the second is a jar in the release and nothing more. The library's pack test names the packs' mods too, so a new one goes into its lists as well: `buildSrc/.../LibraryPackTestTask.java` (the loader's list, the server's jars, the mods a vanilla client can join with) and the Mods menu's names and ids in `harness/.../SettingsCheck.java`.
 
 ## The pack
 

@@ -129,6 +129,11 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# dispenser both ways, like a chest; what smelts into a furnace's top slot and fuel into its bottom one (if that\n"
 					+ "# slot holds something else, nothing moves); and armour on, from your inventory, where that place is empty.\n"
 					+ "# It's made of the clicks you could make yourself, so it works on any server.\n"},
+			{"furnace.woodenFuel", "fuel",
+					"# A furnace burned planks, logs, sticks, saplings and most wooden blocks, but no wooden tools or swords, bows,\n"
+					+ "# fishing rods, bowls, signs, wooden doors, ladders, boats or wooden slabs. With this, those burn too, for as long\n"
+					+ "# as later versions burn them: a boat smelts six items; a bow, fishing rod or ladder one and a half, as a plank\n"
+					+ "# does; a tool, sign or door one; a wooden slab three quarters; a bowl half. In multiplayer, the server's.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

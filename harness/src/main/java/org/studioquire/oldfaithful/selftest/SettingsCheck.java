@@ -574,8 +574,8 @@ final class SettingsCheck {
 		return true;
 	}
 
-	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "World Rules");
-	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "world-rules");
+	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "Wild Saplings", "World Rules");
+	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules");
 
 	private static List<String> extra(String names) {
 		List<String> out = new ArrayList<>();
@@ -700,7 +700,7 @@ final class SettingsCheck {
 			Screen p = openMod(mc, name);
 			if (button(p, "Enabled:").text.startsWith("Enabled: OFF")) press(p, button(p, "Enabled:"));
 		}
-		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == 10);
+		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == PACK_NAMES.size() + 1);
 		mc.setScreen(null);
 		return true;
 	}

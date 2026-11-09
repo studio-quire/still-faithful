@@ -29,6 +29,7 @@ import org.studioquire.oldfaithful.polish.PolishConfig;
 import org.studioquire.oldfaithful.polish.scenario.CartScenes;
 import org.studioquire.oldfaithful.polish.scenario.Tracks;
 import org.studioquire.oldfaithful.polish.selftest.mixin.ChunkCacheStorage;
+import org.studioquire.oldfaithful.polish.selftest.mixin.FurnaceFuel;
 import org.studioquire.oldfaithful.polish.selftest.mixin.LivingEntityInvoker;
 import org.studioquire.oldfaithful.selftest.SelfTest;
 import org.studioquire.oldfaithful.selftest.WorldCheck;
@@ -70,7 +71,9 @@ public final class StillCheck implements WorldCheck {
 		// Every chunk the scenes need is loaded before any is built: loading a chunk decorates its neighbours (a lake
 		// can be carved into whatever stands in the sky there).
 		loadCartChunks();
+		switches();
 		stairs();
+		fuel();
 		leaves(mc);
 		chests(mc);
 		chestPairs(mc);
@@ -181,6 +184,16 @@ public final class StillCheck implements WorldCheck {
 		return true;
 	}
 
+	/**
+	 * The test runs with every switch on, or with every one off (-Pstill.beta, whose list in harness/build.gradle is
+	 * kept by hand): a switch missing from that list stays on, and its check would pass on the wrong side unnoticed.
+	 */
+	private void switches() {
+		List<String> on = new java.util.ArrayList<>(), off = new java.util.ArrayList<>();
+		for (String key : PolishConfig.keys()) (PolishConfig.applied(key) ? on : off).add(key);
+		results.check("still: every switch on or every one off (on: " + on + ", off: " + off + ")", on.isEmpty() || off.isEmpty());
+	}
+
 	/** #13: wooden and cobblestone stairs broken as a player's break drops them (Block.dropStacks). */
 	private void stairs() {
 		boolean on = PolishConfig.applied("blocks.stairsDropStairs");
@@ -195,6 +208,38 @@ public final class StillCheck implements WorldCheck {
 			results.check("still #13: " + Block.BLOCKS[kinds[i][0]].getTranslationKey() + " dropped " + dropped(x, y, z) + " (expected "
 					+ want + ")", droppedOnly(x, y, z, want));
 		}
+	}
+
+	/**
+	 * Wooden fuel: what the furnace's own table says each wooden thing burns for (later versions' times; 0, beta's, where
+	 * the switch is off), and that beta's own fuels and non-fuels stay as they were either way.
+	 */
+	private void fuel() {
+		boolean on = PolishConfig.applied("furnace.woodenFuel");
+		FurnaceFuel furnace = (FurnaceFuel) new net.minecraft.block.entity.FurnaceBlockEntity();
+		Object[][] added = {
+				{Item.WOODEN_SWORD, 200}, {Item.WOODEN_SHOVEL, 200}, {Item.WOODEN_PICKAXE, 200}, {Item.WOODEN_AXE, 200}, {Item.WOODEN_HOE, 200},
+				{Item.SIGN, 200}, {Item.WOODEN_DOOR, 200}, {Item.BOW, 300}, {Item.FISHING_ROD, 300}, {Block.LADDER, 300}, {Item.BOAT, 1200},
+				{Item.BOWL, 100}, {new ItemStack(Block.SLAB, 1, 2), 150},
+		};
+		Object[][] beta = {
+				{Block.PLANKS, 300}, {Block.LOG, 300}, {Block.CHEST, 300}, {Block.FENCE, 300}, {Block.TRAPDOOR, 300}, {Item.STICK, 100},
+				{Block.SAPLING, 100}, {Item.COAL, 1600}, {new ItemStack(Block.SLAB, 1, 0), 0}, {Block.COBBLESTONE, 0}, {Item.STONE_SWORD, 0},
+				{Item.PAPER, 0},
+		};
+		StringBuilder wrong = new StringBuilder();
+		for (Object[][] list : new Object[][][] {added, beta}) {
+			for (Object[] row : list) {
+				ItemStack stack = row[0] instanceof ItemStack ? (ItemStack) row[0]
+						: row[0] instanceof Item ? new ItemStack((Item) row[0]) : new ItemStack((Block) row[0]);
+				int want = list == added && !on ? 0 : (Integer) row[1];
+				int got = furnace.oldfaithful$fuelTime(stack);
+				if (got != want) wrong.append(wrong.length() == 0 ? "" : ", ").append(stack.itemId).append(':').append(stack.getDamage())
+						.append(' ').append(got).append(" not ").append(want);
+			}
+		}
+		results.check("still: furnace fuel times of " + added.length + " wooden things (" + (on ? "later versions'" : "beta: none") + ") and "
+				+ beta.length + " of beta's own" + (wrong.length() == 0 ? "" : ": " + wrong), wrong.length() == 0);
 	}
 
 	/** #69: chests placed with the item at a set yaw, alone and in pairs, and a chest of beta's beside a wall. */

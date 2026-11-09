@@ -99,6 +99,15 @@ public abstract class ClientStartupTask extends GameTestTask {
 	@Input
 	public abstract Property<Integer> getTickMs();
 
+	/**
+	 * {@code -Ptest.only=fence,chat}, on the editions' start-up tests: only the checks in the world whose names hold one
+	 * of these (StartupCheck's ONLY: fixes, options, settings, a world check's class), and the window launches after it
+	 * only with {@code window} among them. For iterating on one thing; empty for the whole test, which a change still
+	 * gets once at the end.
+	 */
+	@Input
+	public abstract Property<String> getOnly();
+
 	/** Files written into the game's config folder before the main launch: name to contents (none by default). */
 	@Input
 	public abstract MapProperty<String, String> getConfigs();
@@ -115,6 +124,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 		getWindowRuns().convention(getPlatform().map(p -> p.equals("windows")));
 		getOldFaithful().convention(false);
 		getTickMs().convention(50);
+		getOnly().convention("");
 	}
 
 	private static final String PRISM_WINDOW = "-Dorg.prismlauncher.window.dimensions=";
@@ -147,6 +157,10 @@ public abstract class ClientStartupTask extends GameTestTask {
 			launchArgs.add("-Dfabric.addMods=@mods-library/selection.txt");
 		}
 
+		String only = getOnly().get().trim();
+		if (!only.isEmpty()) launchArgs.add("-Doldfaithful.selftest.only=" + only);
+		boolean windowRuns = getWindowRuns().get() && (only.isEmpty() || List.of(only.toLowerCase(Locale.ROOT).split("\\s*,\\s*")).contains("window"));
+
 		List<String> failures = new ArrayList<>();
 		List<String> lines = launch(run, linux, launchArgs, failures);
 		if (lines.stream().noneMatch(l -> l.contains("OpenAL initialized"))) failures.add("the sound system didn't start (no \"OpenAL initialized\")");
@@ -162,7 +176,7 @@ public abstract class ClientStartupTask extends GameTestTask {
 			failures.add(log + " lacks the start-up test's output");
 		}
 
-		if (getWindowRuns().get() && failures.isEmpty()) {
+		if (windowRuns && failures.isEmpty()) {
 			Path game = run.resolve("window-memory");
 			Files.createDirectories(game.resolve("config"));
 			Files.createDirectories(game.resolve("mods"));
@@ -231,7 +245,8 @@ public abstract class ClientStartupTask extends GameTestTask {
 				if (!"true".equals(kept.getProperty("maximized"))) failures.add("first start: the kept placement isn't maximised (" + kept + ")");
 			}
 		}
-		report(linux ? "Client start-up test (" + platform + ")" : "Client start-up test", lines, failures);
+		String title = linux ? "Client start-up test (" + platform + ")" : "Client start-up test";
+		report(only.isEmpty() ? title : title + ", only " + only + " (not the whole test)", lines, failures);
 	}
 
 	/** What the window runs leave kept: where the first one put the window, Prism's request then, and fullscreen or not. */

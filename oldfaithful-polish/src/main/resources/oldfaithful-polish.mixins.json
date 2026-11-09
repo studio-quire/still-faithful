@@ -16,6 +16,7 @@
     "chestpairs.ChestBlockMixin",
     "chests.BlockMixin",
     "fences.FenceBlockMixin",
+    "fuel.FurnaceBlockEntityMixin",
     "glowstone.PlayerInventoryMixin",
     "lava.FlowingLiquidBlockMixin",
     "leaves.LeavesBlockItemMixin",

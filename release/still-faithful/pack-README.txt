@@ -16,6 +16,8 @@ Still Faithful's own, each on its own switch:
   double chest has one lid across both halves. Chests placed before keep beta's rules.
 - Shift-click works in a dispenser both ways, into a furnace (what smelts to the top, fuel to the bottom), and puts
   armour on, from your inventory. It works on any server.
+- Wooden tools, bows, fishing rods, bowls, signs, wooden doors, ladders, boats and wooden slabs burn in a furnace, as
+  in later versions; beta burned planks, logs, sticks, saplings and most wooden blocks, but none of these.
 - Glowstone drops by hand or with any tool, as from 1.0.
 - Lava cut off from its source thins out instead of lingering for good, and water between two sources becomes a
   source over still water too.

@@ -7,6 +7,18 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.5.0 (2026-11-09)
+
+On Old Faithful 0.2.3 and Pure Faithful 0.1.5, as 0.4.1 was. In Still Faithful's own mod, on its own switch under
+Polish:
+
+- Wooden things burn in a furnace (Wooden Fuel): wooden tools and swords, bows, fishing rods, bowls, signs, wooden
+  doors, ladders, boats and wooden slabs, for as long as later versions burn them. A boat smelts six items; a bow,
+  fishing rod or ladder one and a half, as a plank does; a tool, sign or door one; a wooden slab three quarters; a
+  bowl half. Beta burned planks, logs, sticks, saplings and most wooden blocks, but none of these. On a server,
+  whether they burn is the server's switch, and works for players with any client; shift-click sends them to the
+  fuel slot when your own game has the switch on.
+
 ## 0.4.1 (2026-11-09)
 
 On Old Faithful 0.2.3 and Pure Faithful 0.1.5, as 0.4.0 was.
