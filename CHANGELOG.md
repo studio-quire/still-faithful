@@ -11,11 +11,9 @@ what a player or server owner notices.
 
 On Old Faithful 0.2.3 and Pure Faithful 0.1.5, as 0.4.0 was.
 
-- Skeleton Arrows, new in 0.4.0, is gone: skeletons shoot from well above their heads again, as in beta, with no
-  switch. That height matters under a low roof: in a tunnel two blocks high, or with a skeleton in a doorway, beta's
-  arrow starts inside the ceiling and sticks there, so the skeleton can't hit you, and from its eyes it could. The
-  switch made skeletons more dangerous underground more than it polished anything. A config file that still names it
-  loads as before.
+- Skeleton Arrows, new in 0.4.0 and off unless you turned it on, is gone. If you had turned it on, skeletons shoot
+  from well above their heads again, as in beta, so in a tunnel two blocks high their arrows stick in the ceiling
+  again; otherwise nothing changes. A config file that still names it loads as before.
 
 ## 0.4.0 (2026-11-09)
 

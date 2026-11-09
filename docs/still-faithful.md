@@ -149,12 +149,12 @@ by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
 
 ### Skeleton arrows: removed (the user's call, 2026-11-09)
 
-Dying mobs that aren't solid, built here the same day, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
+Dying mobs that aren't solid, built here on 2026-11-08, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
 - **Skeleton arrows** (`mobs.skeletonArrows`, the user's ask 2026-11-08; in 0.4.0, off by default after they tried
   it) started a skeleton's arrow where `ArrowEntity` puts any shooter's and later versions put a skeleton's, at the eyes
   less 0.1, instead of beta's 1.4 blocks higher, over its head (a `@ModifyConstant` on that 1.4 in
   `SkeletonEntity.attack`). Taken out after 0.4.0, as there aren't many good ways to make it better (user,
-  2026-11-09). The next release's changelog says so; a config file that still names it loads as before, as with
+  2026-11-09), in 0.4.1, whose changelog says so; a config file that still names it loads as before, as with
   Old Faithful 0.2.1's #68.
 - What it did to play (Claude Opus 5.5, a re-run of beta's arrow code, 2026-11-09): on open ground within a few points
   of beta (fewer hits on a player well above, more on one well below; a walking player is rarely hit either way).

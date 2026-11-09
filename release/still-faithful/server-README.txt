@@ -13,8 +13,7 @@ From Old Faithful: beta's clear mistakes fixed, each on a switch in config/oldfa
 as beta's own rule says it should be. Still Faithful's own: what later versions improved while the game stayed beta
 (stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats,
 minecarts that meet on every track, animals that stay once a player has looked after them, fences shaped as in later
-versions, chests that pair as in later versions; skeletons shooting from their eyes, off unless turned on), each on a
-switch in config/stillfaithful-polish.properties.
+versions, chests that pair as in later versions), each on a switch in config/stillfaithful-polish.properties.
 
 Players can join with vanilla beta 1.7.3 or any of the three editions. The server's changes work for everyone;
 walking close past fence posts and faster glowstone mining need Still Faithful on both sides (other clients walk into
