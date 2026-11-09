@@ -5,8 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "mixins": [
     "ChunkCacheStorage",
-    "LivingEntityInvoker",
-    "SkeletonEntityInvoker"
+    "LivingEntityInvoker"
   ],
   "client": [
     "ChatMessages",

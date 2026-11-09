@@ -7,6 +7,16 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.4.1 (2026-11-09)
+
+On Old Faithful 0.2.3 and Pure Faithful 0.1.5, as 0.4.0 was.
+
+- Skeleton Arrows, new in 0.4.0, is gone: skeletons shoot from well above their heads again, as in beta, with no
+  switch. That height matters under a low roof: in a tunnel two blocks high, or with a skeleton in a doorway, beta's
+  arrow starts inside the ceiling and sticks there, so the skeleton can't hit you, and from its eyes it could. The
+  switch made skeletons more dangerous underground more than it polished anything. A config file that still names it
+  loads as before.
+
 ## 0.4.0 (2026-11-09)
 
 On Old Faithful 0.2.3 and Pure Faithful 0.1.5. In Still Faithful's own mod, each on its own switch under Polish:

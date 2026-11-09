@@ -13,7 +13,7 @@ account. Nothing of Mojang's is in this repository or in our downloads. For Wind
 
 ## What it changes
 
-Every change has its own switch, all on but Skeleton Arrows: in the game under **Options > Still Faithful... > Changes > Polish**, or in
+Every change has its own switch, all on: in the game under **Options > Still Faithful... > Changes > Polish**, or in
 `config/stillfaithful-polish.properties`. Switch one off to have beta's behaviour back (after a restart).
 
 - **Dusk and dawn without the steps.** Beta darkens the world in eleven steps, and at each one the chunks around you
@@ -49,8 +49,6 @@ Every change has its own switch, all on but Skeleton Arrows: in the game under *
   posts needs the server to have this too; aiming past them works anywhere. Posts that only touch diagonally no longer
   close a gap to players and the narrower mobs.
 - **Chat** lines each have a dark bar only as long as their text, not the chat's full width.
-- **Skeletons** can shoot their arrows from their eyes instead of from well above their heads, with beta's speed and
-  aim, as in later versions. Off unless you turn it on (Skeleton Arrows).
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
 - **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and

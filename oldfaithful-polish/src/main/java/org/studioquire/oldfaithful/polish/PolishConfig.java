@@ -119,11 +119,6 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			{"render.chestLids", "chestlids",
 					"# Each half of a double chest had the lid of a single chest, so a border ran down the middle of its top and\n"
 					+ "# bottom. With this, a double chest has one lid, as in later versions, made from your texture pack's chest lid.\n"},
-			{"mobs.skeletonArrows", "skeletons",
-					"# Skeletons shot their arrows from well above their heads. With this, an arrow leaves from the skeleton's eyes,\n"
-					+ "# as a player's does and as in later versions; its speed and aim are beta's. Off unless turned on. In\n"
-					+ "# multiplayer, the server's.\n",
-					"false"},
 			{"skins.modern", "skins",
 					"# Beta read only the top half of a skin. With this, skins made for later versions show whole: jacket, sleeves\n"
 					+ "# and trousers, a left arm and leg of their own, and slim arms where the player's profile asks for them.\n"

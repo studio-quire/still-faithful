@@ -47,7 +47,6 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule. With `blocks.chestPairs`, placing goes by its rule instead |
 | | `blocks.chestPairs` | world (drawn on the client) | Chests pair as later versions pair them (below): a chest placed joins one beside it only if that one faces the same way, stands to its left or right and isn't joined, and never while sneaking; a chest can go anywhere, beside a double chest too. A chest joined so says who to in its data (6 to 13). Needs `blocks.chestsFaceYou`, as pairs go by facing |
 | | `render.chestLids` | client | A double chest's top and bottom are one lid: four half-lids made from the texture pack's lid in tiles beta leaves as placeholders (below) |
-| | `mobs.skeletonArrows` | world | A skeleton's arrow starts at its eyes, where `ArrowEntity` puts any shooter's, instead of 1.4 blocks higher, over its head; aimed from there by beta's own sum, at beta's speed (0.6) and spread (12). Off by default (the user's call, 2026-11-08, after trying it) |
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
 | | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
@@ -148,14 +147,20 @@ by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
   beside a double chest for a moment before the server takes it back, as for any refused placement; nothing for that
   needs the server marker, whose field is full anyway.
 
-### Skeleton arrows (the user's ask, 2026-11-08)
+### Skeleton arrows: removed (the user's call, 2026-11-09)
 
 Dying mobs that aren't solid, built here the same day, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
-- **Skeleton arrows** (`mobs.skeletonArrows`, off by default: the user's call the same day, after trying it). `SkeletonEntity.attack` makes the arrow where `ArrowEntity` puts any
-  shooter's, at the eyes less 0.1, then adds 1.4 to its height, leaving it over the skeleton's head (and inside a
-  ceiling under a two-high roof). Here it isn't lifted; the aim is worked out from where the arrow is, as beta's sum
-  already does, and speed and spread are beta's. Later versions start a skeleton's arrow there too, as any mob's: at the
-  shooter's eyes less 0.1. The server's.
+- **Skeleton arrows** (`mobs.skeletonArrows`, the user's ask 2026-11-08; in 0.4.0, off by default after they tried
+  it) started a skeleton's arrow where `ArrowEntity` puts any shooter's and later versions put a skeleton's, at the eyes
+  less 0.1, instead of beta's 1.4 blocks higher, over its head (a `@ModifyConstant` on that 1.4 in
+  `SkeletonEntity.attack`). Taken out after 0.4.0, as there aren't many good ways to make it better (user,
+  2026-11-09). The next release's changelog says so; a config file that still names it loads as before, as with
+  Old Faithful 0.2.1's #68.
+- What it did to play (Claude Opus 5.5, a re-run of beta's arrow code, 2026-11-09): on open ground within a few points
+  of beta (fewer hits on a player well above, more on one well below; a walking player is rarely hit either way).
+  Under a two-high roof (1x2 tunnels, low caves, a skeleton in a doorway) beta's arrow starts inside the ceiling and
+  sticks there, so those skeletons never hit; from the eyes they hit 50 to 80% at 3 to 6 blocks. More a difficulty
+  change underground than polish.
 
 ### Shift-click (the user's ask, 2026-11-09)
 
@@ -401,13 +406,13 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   "moved wrongly" or floating line in a server's log. Not tested: a vanilla client by itself (the client without the
   polish mod has Old Faithful's, none of which touch collision) and mobs or boats seen across mixed sides (the server
   moves them; a client without the change only sees them pass closer to a post than its own fences would let it).
-- `StillCheck`'s chest, mob and skeleton scenes (2026-11-08), in the same run: #69's double chest placed looking along
+- `StillCheck`'s chest and mob scenes (2026-11-08), in the same run: #69's double chest placed looking along
   the first stays two singles under `blocks.chestPairs`; four chests in a row placed facing north make two doubles
   side by side (data 6, 7, 6, 7), each showing the end of its own front where they meet; one placed sneaking stays
   single, one facing east beside one facing north doesn't join, and a pair of beta's (data 0) keeps its pair and its
   front with a chest placed beside it. Beta: the third chest of the row and the one beside beta's pair aren't placed.
   Lids: a pair along x and one along z get tiles 250 to 253 (beta: 25), and terrain.png read back from the GPU holds the
-  half-lids `ChestLids` makes from the pack's sheet, pixel for pixel. A skeleton's arrow starts 0.1 below its eyes (beta: 1.3 above).
+  half-lids `ChestLids` makes from the pack's sheet, pixel for pixel.
 - `./gw :oldfaithful-saves:serverSaveTest -Pstill.saves`: the saves mod's real-server test with the polish mod beside
   it (damaged chunks; the server killed outright 8 times during bursts of save-all, every chunk and level.dat read
   back with vanilla's reader after each, nothing gone): passed 2026-11-02 with the background writer doing the

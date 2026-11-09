@@ -9,8 +9,6 @@ import net.minecraft.block.Block;
 import net.minecraft.client.InteractionManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.mob.SkeletonEntity;
-import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CowEntity;
 import net.minecraft.entity.passive.PigEntity;
@@ -32,7 +30,6 @@ import org.studioquire.oldfaithful.polish.scenario.CartScenes;
 import org.studioquire.oldfaithful.polish.scenario.Tracks;
 import org.studioquire.oldfaithful.polish.selftest.mixin.ChunkCacheStorage;
 import org.studioquire.oldfaithful.polish.selftest.mixin.LivingEntityInvoker;
-import org.studioquire.oldfaithful.polish.selftest.mixin.SkeletonEntityInvoker;
 import org.studioquire.oldfaithful.selftest.SelfTest;
 import org.studioquire.oldfaithful.selftest.WorldCheck;
 import org.lwjgl.BufferUtils;
@@ -78,7 +75,6 @@ public final class StillCheck implements WorldCheck {
 		chests(mc);
 		chestPairs(mc);
 		chestLids(mc);
-		skeletonArrows();
 		glowstone(mc);
 		lava();
 		water();
@@ -351,30 +347,6 @@ public final class StillCheck implements WorldCheck {
 		} catch (java.io.IOException e) {
 			results.check("still lids: the pack's terrain.png read: " + e, false);
 		}
-	}
-
-	/** mobs.skeletonArrows: where a skeleton's arrow starts, against its eyes. */
-	private void skeletonArrows() {
-		boolean on = PolishConfig.applied("mobs.skeletonArrows");
-		int x = bx - 30, y = Y, z = bz + 30;
-		fill(x - 3, y - 1, z - 8, x + 3, y - 1, z + 3, Block.STONE.id);
-		SkeletonEntity skeleton = new SkeletonEntity(world);
-		PigEntity target = new PigEntity(world);
-		skeleton.setPositionAndAnglesKeepPrevAngles(x + 0.5, y, z + 0.5, 180.0F, 0.0F);
-		target.setPositionAndAnglesKeepPrevAngles(x + 0.5, y, z - 5.5, 0.0F, 0.0F);
-		world.spawnEntity(skeleton);
-		world.spawnEntity(target);
-		((SkeletonEntityInvoker) skeleton).oldfaithful$attack(target, 6.0F);
-		ArrowEntity arrow = null;
-		for (Object e : world.getEntities(skeleton, skeleton.boundingBox.expand(3.0, 3.0, 3.0))) {
-			if (e instanceof ArrowEntity && ((ArrowEntity) e).owner == skeleton) arrow = (ArrowEntity) e;
-		}
-		double above = arrow == null ? Double.NaN : arrow.y - (skeleton.y + skeleton.getEyeHeight());
-		results.check(String.format("still skeletons: the arrow started %.2f above the skeleton's eyes (%s)", above, on ? "-0.1, at them" : "beta: 1.3, over its head"),
-				arrow != null && Math.abs(above - (on ? -0.1 : 1.3)) < 0.01);
-		skeleton.markDead();
-		target.markDead();
-		if (arrow != null) arrow.markDead();
 	}
 
 	private void placeChest(Minecraft mc, int x, int y, int z, float yaw) {

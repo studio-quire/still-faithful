@@ -83,6 +83,7 @@ public final class StartupCheck {
 	private static long framesReadAt;
 	private static int frameSeconds, frameTotal, worldSeconds, worldFrames, fewestFrames = Integer.MAX_VALUE;
 	private static String clipboard;
+	private static int pasteTries;
 	/** Rows of beta's version-line grey in the title screen's corner, counted as separate lines; -1 until drawn. */
 	private static volatile int titleLines = -1;
 
@@ -216,8 +217,21 @@ public final class StartupCheck {
 				TextFieldWidget field = ((MultiplayerScreenAccessor) mc.currentScreen).oldfaithful$serverField();
 				String c = clipboard == null ? "" : clipboard;
 				String expected = c.substring(0, Math.min(32, c.length()));
+				// The clipboard is the desktop's, shared with whoever is at it: something copied between the read and the
+				// paste, or held open by another program at the paste (which reads as empty), isn't ours. Read and paste
+				// again then, twice at most; a paste of an unchanged clipboard that comes out wrong fails at once.
+				if (!expected.equals(field.getText()) && pasteTries < 2) {
+					String now = Sys.getClipboard();
+					if (!c.equals(now == null ? "" : now) || field.getText().isEmpty()) {
+						pasteTries++;
+						field.setText("");
+						phase = 1;
+						return;
+					}
+				}
 				results.check("paste: Ctrl+V in the server address field pastes the clipboard through SDL ("
-						+ (c.isEmpty() ? "the clipboard holds no text, so only the key path ran" : expected.length() + " characters, contents not shown") + ")",
+						+ (c.isEmpty() ? "the clipboard holds no text, so only the key path ran" : expected.length() + " characters, contents not shown")
+						+ (pasteTries > 0 ? "; read again " + pasteTries + " times, the clipboard changed or was busy" : "") + ")",
 						expected.equals(field.getText()));
 				mc.setScreen(new TitleScreen());
 				phase = 3;

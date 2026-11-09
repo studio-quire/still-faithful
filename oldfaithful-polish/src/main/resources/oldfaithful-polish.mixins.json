@@ -21,7 +21,6 @@
     "leaves.LeavesBlockItemMixin",
     "leaves.LeavesBlockMixin",
     "minecarts.MinecartEntityMixin",
-    "skeletons.SkeletonEntityMixin",
     "stairs.StairsBlockMixin",
     "watersources.FlowingLiquidBlockMixin"
   ],

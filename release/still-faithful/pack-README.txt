@@ -36,8 +36,6 @@ Still Faithful's own, each on its own switch:
   against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past posts
   needs the server to have this too.
 - Each line of chat has a dark bar only as long as its text, not the chat's full width.
-- Skeletons can shoot from their eyes instead of from well above their heads (Skeleton Arrows, off unless you turn
-  it on).
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
 - Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the
@@ -56,7 +54,7 @@ Old Faithful too (there, placed leaves can decay again and kept animals can desp
 Settings: in the game, Options > Still Faithful... has every switch, in beta's own style; Still Faithful's are under
 Changes > Polish. Most changes take effect after a restart (the screen marks one that's waiting); Dusk's Smooth and Stepped
 switch at once. The same settings are files in .minecraft/config:
-- stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on but Skeleton Arrows.
+- stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on.
 - oldfaithful-fixes.properties, oldfaithful-lighting.properties, oldfaithful-options.properties: Old Faithful's.
 - purefaithful-display.properties and purefaithful-hardening.properties: Pure Faithful's.
 

@@ -35,7 +35,6 @@ public final class PolishSettings implements SettingsProvider {
 			{"blocks.chestPairs", WORLD, "Chest Pairs",
 					"Any two chests side by side joined, and none could go beside a double chest. Needs Chest Facing."},
 			{"render.chestLids", CLIENT, "Chest Lids", "A double chest's lid had a border down the middle, one lid to each half."},
-			{"mobs.skeletonArrows", WORLD, "Skeleton Arrows", "Skeletons shot their arrows from well above their heads."},
 			{"blocks.fenceShape", CLIENT, "Fence Shape",
 					"Fences were whole blocks to walk into and aim at. On a server, walking past posts needs this change there too."},
 			{"inventory.shiftClick", CLIENT, "Shift-Click", "Shift-click did nothing in a dispenser, and never filled a furnace or put armour on."},
