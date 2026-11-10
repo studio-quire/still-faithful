@@ -7,6 +7,33 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.6.0 (2026-11-10)
+
+On Old Faithful 0.2.4 and Pure Faithful 0.1.5, as 0.5.1 was. In Still Faithful's own mod, on new switches under Polish,
+all on:
+
+- Skeletons shoot from their eyes, as in later versions, instead of from well above their heads (Skeleton Arrows).
+  Under a ceiling two blocks high (a tunnel, a low cave, a doorway) their arrows used to stick in the ceiling, so they
+  never hit you there; now they can. Standing elsewhere, you're hit about as often as before. On the move it can
+  differ: walking straight at a skeleton you're hit more often, since beta's arrows came down from above its head and
+  passed over you, and walking along a ledge just above or below one close by, less or more often. On a server,
+  this is the server's switch, and works for players with any client. If you played 0.4.0, which had this switch off
+  unless you turned it on, your settings may still have it off: Options > Still Faithful... > Changes > Polish, or
+  mobs.skeletonArrows in config/stillfaithful-polish.properties.
+- Squid at the surface no longer bounce (Squid Surfacing). A squid that swam up to the surface bounced against it:
+  each time it came halfway out it dropped back and swam up again, a few times a second, its tentacles twitching. Now
+  it slows as it nears the surface and swims on just under it, its back at the waterline, until it turns. Where squid
+  swim and end up is otherwise as before. On a server, this is the server's switch, and works for players with any
+  client.
+- Blasts show from further away (Particle Distance). Beta made no particle more than 16 blocks from you, so a blast or
+  a mob dying further off left no puff, even within a bow shot. Now particles show within 32 blocks, as in later
+  versions, and the puffs of a blast or a mob dying within 64, as far as a blast is heard.
+- Small things show from further away (Entity Distance). Beta drew a thing only within a distance that went by its
+  size, so a dropped item vanished past 16 blocks, a chicken past 21 and an arrow past 32. Now everything shows within
+  64 blocks at least, as far as a zombie; bigger things as far as before.
+
+Particle Distance and Entity Distance are your own game's: they work on any server, which needs nothing.
+
 ## 0.5.1 (2026-11-09)
 
 On Old Faithful 0.2.4, which saves faster in a world with many blocks waiting to update (see its changelog), and Pure

@@ -353,13 +353,15 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         timeoutSeconds = duskFull ? 900 : 420
         extraJvmArgs = ["-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString(),
                         "-Doldfaithful.selftest.stallMs=${(duskFull ? 860 : 390) * 1000}".toString(),
-                        "-Doldfaithful.selftest.duskFull=${duskFull}".toString()]
+                        "-Doldfaithful.selftest.duskFull=${duskFull}".toString(),
+                        // -Pstill.squidClip: SquidCheck also films squid at the surface (local/run/squid-surface/), about 70 s more.
+                        "-Doldfaithful.selftest.squidClip=${providers.gradleProperty('still.squidClip').isPresent()}".toString()]
         // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead. A new switch joins this list
         // (StillCheck fails a run whose switches came up mixed).
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -806,6 +808,7 @@ if (findProject(':library:harness-probe') != null) {
             if (p.tasks.names.contains('selftestRemapJar')) it.selftests.from(p.tasks.named('selftestRemapJar'))
         }
         tagVocabulary = rootProject.layout.projectDirectory.file('library/tags.txt')
+        together = rootProject.layout.projectDirectory.file('library/together.txt')
         runDir = rootProject.layout.projectDirectory.dir(providers.gradleProperty('library.runDir').getOrElse('local/run/lib-harness-test'))
     }
     tasks.register('librarySelftest', oldfaithful.gradle.LibraryTestTask) {

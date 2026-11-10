@@ -120,6 +120,7 @@ Key:
 | 79 | Multiplayer: an item used just after closing a chest, furnace or workbench (a block placed within about a round trip) comes back on the player's screen, one more than they have, until the slot next changes | bug | OF | low-mid (MP) | fixed (OF) |
 | 80 | A dark hairline down the seam between two blocks side by side, seen with the camera almost in line with the seam (half a block off it, 4 away, looking down a little): chests and planks alike | ? | ? | low | seen in pictures, not looked into |
 | 81 | A mob that has died stays solid while it falls over: it pushes you and other mobs and is pushed, and arrows bounce off it though nothing can hurt it | bug | OF | low | fixed (OF) |
+| 82 | An arrow that starts a tick exactly on the face it's about to strike is put at NaN: beta divides by how far it moved, which is none | bug | ? | ? | seen in Explosive Arrows, not looked into for plain arrows |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -1119,6 +1120,14 @@ little could rely on it (a crowd at a trap shoved for a second, arrows soaked up
 pushable, pushing nothing, an arrow through it); with the fix off, both as beta (Still Faithful's all-off run, when it
 was polish, 2026-11-08: pushable, pushed, the arrow bounced back).
 
+### 82. An arrow starting a tick on the face it strikes goes to NaN (seen, not looked into for plain arrows)
+Found by Explosive Arrows' self-test (2026-11-09): an arrow whose tick starts exactly on the face it
+strikes has moved nothing that tick, and beta's `ArrowEntity.tick` divides by that distance as it backs the arrow off
+the face, so its position becomes NaN. An explosive arrow's burst there disconnected a client on a server; that mod now
+bursts where the tick began and a client ignores a burst it can't draw. Plain arrows still do it: what a NaN arrow does
+afterwards (on a client, on a server, in a save) isn't looked into. ? (low, by how
+exact the start must be).
+
 ### 74. A step-up under a low roof sinks into the floor (T, seen)
 Asked about by the user (2026-11-06), who remembered being moved slightly into a block and pushed out on a simple
 one-block ledge, single player on Still Faithful; whether theirs had a block overhead isn't known yet. Later versions'
@@ -1225,7 +1234,9 @@ At the surface (fixed, near it meaning the middle within a block of the surface;
 Never wholly out of the water. A squid at the top bobs: 11 to 16% of its ticks near the surface are in the out-of-water branch, each
 a tick or up to 3 long, so in that branch's gravity it drops back a little and swims up again, with a one-tick change of tentacles.
 That's the same hop beta's squid did at the floor all the time (about 200 changes of branch a minute, and 194 a minute for a fixed
-squid kept at the top by a 1-deep pool); how it looks is the user's check. Elsewhere, the same as beta: water 1 deep (mean height 0.19 both, the
+squid kept at the top by a 1-deep pool); the user, playing, found it a jitter (2026-11-10): Still Faithful's Squid
+Surfacing eases a squid off 0.3 under the surface instead, and Old Faithful keeps the bounce, beta's own squid code at
+the surface (`docs/still-faithful.md` > Squid at the surface). Elsewhere, the same as beta: water 1 deep (mean height 0.19 both, the
 second half); a trough of flowing water thinning out, all 6 squid carried off its end onto dry stone within the first minute and left
 there, in both; on land they stay where they are, unhurt.
 On a client (`fixesMultiplayerTest`, a tank 3 deep, about 20 s): with the fixes on both sides its squid are exactly at the server's height (0.000), reach 2.50 over the floor, and make no

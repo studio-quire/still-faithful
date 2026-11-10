@@ -49,13 +49,18 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | | `render.chestLids` | client | A double chest's top and bottom are one lid: four half-lids made from the texture pack's lid in tiles beta leaves as placeholders (below) |
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
 | | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
+| | `render.particleDistance` | client | Particles made within 32 blocks of the camera, not beta's 16, and a puff (a blast's, a mob dying or appearing) within 64 (below) |
+| | `render.entityDistance` | client | Everything drawn within 64 blocks at least (a zombie's distance), where beta's distance went by the box: a dropped item 16, a chicken 21, an arrow 32; bigger things as beta (below) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
 | | `furnace.woodenFuel` | world | The user's ask (2026-11-09): wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
+| | `mobs.skeletonArrows` | world | A skeleton's arrow starts at its eyes less 0.1, where `ArrowEntity` puts any shooter's and later versions a skeleton's, not 1.4 higher, over its head; aimed so it crosses the target's distance where beta's would, spread as widely there (`SkeletonAim`, below) |
+| | `mobs.squidSurface` | world | A squid in water rises each tick at most a fifth of the way to 0.3 under the surface (its middle's), so it slows as it nears, never comes out and swims on there; deeper, beta's swim (`Squids`, below) |
 | | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
 | 14 | `saves.backgroundAutosave` | world | Chunk saves compressed and written on a thread of their own (`BackgroundSaves`, below); needs Pure Faithful's saves mod |
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
 
 "World" means where the world runs: the server in multiplayer, the client in single player.
+Dying mobs that aren't solid, built here on 2026-11-08, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
 
 ### Dusk and dawn without rebuilds (#6)
 
@@ -148,20 +153,80 @@ by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
   beside a double chest for a moment before the server takes it back, as for any refused placement; nothing for that
   needs the server marker, whose field is full anyway.
 
-### Skeleton arrows: removed (the user's call, 2026-11-09)
+### Skeleton arrows (the user's ask, 2026-11-10)
 
-Dying mobs that aren't solid, built here on 2026-11-08, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
-- **Skeleton arrows** (`mobs.skeletonArrows`, the user's ask 2026-11-08; in 0.4.0, off by default after they tried
-  it) started a skeleton's arrow where `ArrowEntity` puts any shooter's and later versions put a skeleton's, at the eyes
-  less 0.1, instead of beta's 1.4 blocks higher, over its head (a `@ModifyConstant` on that 1.4 in
-  `SkeletonEntity.attack`). Taken out after 0.4.0, as there aren't many good ways to make it better (user,
-  2026-11-09), in 0.4.1, whose changelog says so; a config file that still names it loads as before, as with
-  Old Faithful 0.2.1's #68.
-- What it did to play (Claude Opus 5.5, a re-run of beta's arrow code, 2026-11-09): on open ground within a few points
-  of beta (fewer hits on a player well above, more on one well below; a walking player is rarely hit either way).
-  Under a two-high roof (1x2 tunnels, low caves, a skeleton in a doorway) beta's arrow starts inside the ceiling and
-  sticks there, so those skeletons never hit; from the eyes they hit 50 to 80% at 3 to 6 blocks. More a difficulty
-  change underground than polish.
+Asked for on 2026-11-08 and built as the start alone (0.4.0, off by default after the user tried it), then taken out in
+0.4.1 as there weren't many good ways to make it better (user, 2026-11-09). Asked for again on 2026-11-10: like later
+versions, balanced to keep about the same beta efficiency, just from somewhere other than over the head, and fine for
+skeletons to shoot from under a two-high ceiling. Built by Claude Opus 5.5 the same day. On by default, as later
+versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), where 0.4.0 shipped it off.
+- **Beta.** `SkeletonEntity.attack` makes the arrow at the eyes less 0.1 (`ArrowEntity`'s shooter constructor, as for a
+  player), lifts it 1.4, to 2.83 over the feet, and aims from there at the target's eyes less 0.2, plus 0.2 up for each
+  block across, at speed 0.6 and spread 12 (each part of the direction off by a normal 0.09). The 0.2 is the allowance
+  for gravity, not for the high start: the aim is measured from wherever the arrow starts.
+- **The start alone** (0.4.0's change): the arrow still arrives about where beta's did, but the slope changes. Up at a
+  player above it climbs more steeply, so it's slower across, longer in the air and spread wider when it gets there;
+  down at a player below, the other way. Standing, ranges 2 to 9: 4 up a cliff 52% where beta's hit 69%, 2 up 66
+  against 71, level 69 against 72, 2 down 72 against 70, 4 down 67 against 59.
+- **Here** (`SkeletonAim`; a wrap of the `setVelocity` call beside the `@ModifyConstant` on the 1.4): aimed so the arrow,
+  unspread, crosses the target's distance at the height beta's would have, and spread by beta's 12 times how much
+  quicker across it is than beta's (the ratio of the two angles' cosines), so it has spread as widely as beta's when it
+  arrives. Heights come from the arrow's own steps (drag 0.99, fall 0.03 a tick) run continuously; the flat arc, as
+  beta's; out of reach, the highest. Matching the height alone wasn't enough: 4 up still 56%, 4 down 64%.
+- **What it does** (a re-run of beta's code, `tools/skeleton_arrows.py tables`, 20,000 shots a cell, single player; a
+  server's player, aimed at 0.12 lower, gives the same picture with `--mp`). Standing, mean of ranges 2 to 9: level
+  72.0 to 70.4 (each range within 3, but 84 to 79 at 4 across), 2 up 71.0 to 71.7, 4 up 68.9 to 69.0, 2 down 69.8 to
+  69.9, 4 down 58.6 to 58.5. Walking (0.22 a tick) on level ground: away 40.7 to 41.6, across 16.7 to 18.8, toward
+  66.3 to 80.7, as beta's arrow came down from above the head and passed over a player walking in, while from the eyes
+  it stays at head height. Along a cliff's edge 2 up and 2 or 3 across, 70% and 20% to 26% and 4% (a steeper climb
+  takes longer to cover the distance); 2 down, 12 and 5 to 45 and 18; from 4 across, 6% or less either way. Under a
+  ceiling two high beta's arrow starts inside it and sticks there, so it never hits; here, standing, 55% in a tunnel
+  one wide and 59% in a wide room (97 at 2 across, 50 to 65 at 4 to 6, 17 to 20 at 9), walking about 30. Three high,
+  about beta's (64 to 65 one wide).
+- **Multiplayer.** The server's: the arrow's start and speed reach every client in its spawn packet, so a client needs
+  nothing.
+- **The key** is 0.4.0's, `mobs.skeletonArrows`. 0.4.0 wrote it into the file as false, its default then, so a file from
+  0.4.0 keeps it off until changed (the changelog says where); 0.4.1 and later never wrote it.
+- **Beside Wolf Packs**, whose wrap of `spawnEntity` in the same method tells the packs about a shot: different calls,
+  both apply.
+
+### Squid at the surface (the user's ask, 2026-11-10)
+
+The user, playing: squid jitter at the surface; it's their own motion and bob, but could it look more natural, with
+less bob. Built by Claude Opus 5.5 the same day.
+- **What it was.** Old Faithful's #77 lets squid swim up, so they reach the surface. A squid in water sets its speed every
+  tick to its swim direction times its pulse, and keeps a direction until its 1-in-50 a tick re-pick (about 2.5 s); out
+  of the water (#77's test: its middle over the water's real surface) it falls, its sideways speed zeroed and its
+  tentacles in their out-of-water pose. So a squid heading up met the surface and bounced: a tick or two out, a drop
+  of 0.04 to 0.11, back in and up again, every 2 to 10 ticks, its tentacles snapping for a tick each time (traced per
+  tick in a hidden client and in a re-run of beta's code). Not something #77's fix brought in: it's beta's own squid
+  code meeting the surface, which every later version has too (26.3's `Squid.aiStep` is beta's, with a looser water
+  test, so its squid rise higher before dropping). So a Still Faithful polish, not an Old Faithful fix, and Old Faithful
+  keeps the bounce (Claude Opus 5.5's call).
+- **Here** (`Squids`, a mixin right after the in-water branch sets the speed, before the tilt is worked out from it):
+  where the world runs, a squid's rise each tick is at most a fifth of the way to 0.3 under the surface (its middle's;
+  the highest surface among the columns #77's test asks about, looked for two blocks up). It slows as it nears, never
+  comes out, and swims on there with its back at the waterline (a flat squid's drawn body about 0.1 over it, its box
+  0.175) until its re-pick turns it; risen less, it lies flatter, and its pulse, roll and tentacles are beta's. Above
+  that height while still in water it sinks back the same way. Deeper than about 0.8 under the surface a full swim is
+  under the limit, so nothing changes there. A squid that falls in or is knocked out still has beta's out-of-water
+  branch.
+- **What it does** (near the surface: the middle within a block of it, as #77 measures). A hidden client in single
+  player, ten squid in a pool 3 deep, 1,200 ticks, 2026-11-10: with the switch off, 0.38 to 0.46 blocks of rise and fall
+  a second, 3.8 to 4.5 turns between up and down a second, 11.5 to 14.1% of ticks out of the water, 1.7 to 2.1 tentacle
+  snaps a second, body out 26 to 28% on average and 60% at most (two runs); with it, 0.12 to 0.16 blocks (squid swimming
+  up and diving), 0.07 to 0.11 turns, none out, no snaps, body out 10 to 13% and 18% at most (three runs). The real server (`squidWatch -Psquids.labels=
+  fixed,polished`, 6,000 ticks): water 3 deep 0.44 to 0.14 blocks a second and 4.2 to 0.13 turns, 12.8% out to none;
+  30 deep, 0.46 to 0.17 and 4.7 to 0.17; 1 deep, where squid now stay at the floor, 0.27 to 0.02. Where squid end up:
+  30 deep from random heights, a mean of 15.0 over the floor in the second half with the change against 14.3 without;
+  from the floor 6.9 against 10.8, though that tank's squid with the change never came within a block of the surface,
+  so nothing of it touched them (sixteen squid in a random walk; a re-run of beta's code with 200 squid gives 13.15
+  against 13.20 after ten minutes).
+  The trough of thinning flow carries all six onto dry stone either way, as in #77, and squid on land stay put.
+- **Multiplayer.** The server's: a client draws the server's positions (to 1/32, lerped), so any client sees it. A client
+  with #77 runs the same water test for the animation, and the middle 0.3 under is never near the line. A Still
+  Faithful client on a server without the change sees the server's bounce; a smoothing of its own would draw squid
+  somewhere other than the server has them, so there's none.
 
 ### Shift-click (the user's ask, 2026-11-09)
 
@@ -185,8 +250,43 @@ follow Faithful Core's rule where it's installed (stack data). Only vanilla's ow
 
 Later versions' other handling (dragging to spread a stack, double-click to gather, the drop key over a slot, crafting
 many batches at once, the crafting table's grid taking shift-clicks, keeping what's held when a screen closes) stays
-beta's: built the same day and undone at the user's word, for only beta's gaps and no new capabilities (in history:
-c71d112 to 88007b9, undone by 7a24fe9).
+beta's: built the same day and undone at the user's word, for only beta's gaps and no new capabilities.
+
+### Particle and entity distance (the user's ask, 2026-11-09)
+
+The user, playing with Explosive Arrows: the blast doesn't show at a distance. Built by Claude Opus 5.5 the same day.
+- **Beta.** `WorldRenderer.addParticle` makes no particle more than 16 blocks from the camera, whatever made it.
+  `Entity.shouldRender` draws a thing within 64 times its box's average side (times `renderDistanceMultiplier`, 10 for
+  other players): a dropped item 16, a chicken 21, an arrow 32, a minecart or pig 57, a zombie 64, a spider 79;
+  snowballs, eggs and the fishing float 64 and fireballs 256 by overrides of their own. Block-breaking particles have no
+  limit. A server sends items and arrows within 64 blocks (the tracker's square), blasts and block events within 64,
+  mobs within 160.
+- **Later versions** (26.3's jar read, 2026-11-09): particles within 32 blocks, some at any distance, among them the
+  puff (`poof`, beta's `explode`) and the blast's own; arrows 10 times beta's rule (320 blocks); dropped items still
+  16 (no rule of their own), times the Entity Distance setting. Their single player runs a server inside the game,
+  which sends blasts within 64 blocks (`ServerLevel.explode`), so that's how far a blast shows there too.
+- **Here.** `render.particleDistance` (`particledistance.WorldRendererMixin`): every particle within 32, puffs (a
+  blast's, a mob dying or appearing from a spawner) within 64: as far as a blast is heard (beta's sound reach at its
+  volume of 4), past the bow's reach (about 52 blocks on level ground, from `ArrowEntity`'s speed 1.5, drag 0.99 and
+  fall 0.03), and as far as a server sends blasts, so single player and a server agree. A blast's dark smoke is an
+  ordinary particle: past 32 a blast is its white puffs, as in later versions, where smoke would be a pixel or two.
+  `render.entityDistance` (`entitydistance.EntityMixin`): 64 at least, a zombie's distance and how far a server sends
+  items and arrows; bigger things and the classes with their own distance keep beta's. Dropped items past 16 are ours,
+  not later versions' default. Both client-only: a server needs nothing. Two switches, since they're separate things
+  with separate costs: a pile of items in view might want beta's way while blasts stay far.
+- **With Explosive Arrows** (the library's, since 0.3.0, which draws its own blast's puffs and smoke 16 to 64 blocks out
+  itself, whatever the edition): each of its particles takes one way, its own drawing or `World.addParticle`, never
+  both, so nothing doubles with the switch on. Its smoke shows to 64 where other blasts' stops at 32 (reasoned from
+  the code, not run together).
+- **Cost.** Ambient particles (torches, fire, lava, portals, redstone) come from display ticks that only run within 16
+  blocks, so they don't grow; what's new is particles from things further off (blasts, mobs dying, splashes, a TNT
+  fuse, fireballs) and things drawn 16 to 64 out. Beta's cap stays (4000 particles a layer, the oldest dropped), so a
+  blast 50 blocks off costs what one within 16 always did. Measured by `DistanceCheck` (Tests), the game thread's time
+  in a hidden 1000x600 window, three runs on 2026-11-09 with other programs running: 400
+  apples 30 to 50 blocks out took 0.56 to 0.77 ms a frame to draw against 0.04 to 0.09 with none (about 1.5 µs an
+  apple, what beta pays for them within 16); four TNT-sized blasts 40 to 52 out filled the cap (4000 particles), and
+  drawing them took 0.29 to 0.51 ms a frame and moving them 0.66 to 1.14 ms a tick. With the switches off, none of
+  either was drawn or made.
 
 ### Modern skins
 
@@ -318,7 +418,7 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 ## Tests
 
 - While iterating on one change, its own check alone: `./gw :harness:clientStartupTestStill -Ptest.only=still` (or
-  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `fixes`, `options`, `settings`, `window`, several with commas), about
+  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `distance`, `skeleton`, `squid`, `fixes`, `options`, `settings`, `window`, several with commas), about
   half a minute where the whole test takes 1 to 2 minutes; the whole test, and `-Pstill.beta` where a switch changed,
   once before the change is done (`docs/building.md` > What game runs cost).
 - `ShiftClickCheck` (in the same run, 2026-11-09): mouse and key events put into our LWJGL component's queues, read by
@@ -403,6 +503,36 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   its text: one short line, five of different lengths with a long message wrapped as beta wraps it, and the same with
   the chat open. Pictures in `local/run/fences/chat/` (`-polished`, `-beta`). 2026-11-07: every bar ended at 2 + its
   text's width + 1 (14 to 319), and with `-Pstill.beta` at 322 for every line.
+- `DistanceCheck` (particle and entity distance, the same run, last; `-Ptest.only=distance`, about 20 s): the rules at
+  their edges (an item, an arrow, a chicken, a zombie and a spider asked whether they'd be drawn either side of beta's
+  distance and 64; a puff and a smoke particle offered at 15 to 65 blocks), then a grey platform above the clouds with
+  the camera 12 over it looking down 40 degrees, its middle all platform: nine apples 16, 25, 38 and 51 blocks out, and
+  an Explosive Arrow's blast (power 1.5, in the air) 13, 24, 37 and 51 out, each picture against the empty platform's,
+  counting the middle's pixels that changed; the particles each blast made against the places it reached; then the
+  cost (above). Pictures in `local/run/distance/` (`-polished`, `-beta`), with every cluster and every blast at once in
+  `apples-` and `blasts-`. 2026-11-09, both ways: with the switches, the item, arrow and chicken drawn to 63 and not
+  at 65, the zombie and spider as beta; puffs made to 63, smoke to 31; every cluster and blast changed pixels (70 to 528
+  for apples, 377 to 3849 for blasts); the two nearer blasts made a puff and a smoke particle a place, the two further
+  a puff a place. With `-Pstill.beta`: drawn only within 16, 32 and 21, both particles only at 15; only the nearest
+  cluster and blast changed any pixel, the others none, and the further blasts made no particle.
+- `SkeletonCheck` (skeleton arrows, the same run, last; `-Ptest.only=skeleton`, about 30 s with the start): where the
+  arrow starts against the eyes, then the game's own `attack` and arrows from 15 skeletons a scene at targets with a
+  player's box and aiming point, 20 volleys: level ground 6 across, a player 4 up a cliff and 4 down one 5 across, and
+  a tunnel one wide and two high 5 across; each share of hits against the re-run's (`tools/skeleton_arrows.py
+  scenes`) within four standard deviations and a point. 2026-11-10: with the switch, the arrow 0.10 below the eyes,
+  73.3% (the re-run 71.8), 71.0 (73.5), 70.7 (67.1), 55.0 (57.3); with `-Pstill.beta`, 1.30 over them, 67.7 (72.1),
+  71.7 (73.6), 66.7 (65.9) and none of 300 in the tunnel. The start alone would give about 58% up the cliff.
+- `SquidCheck` (Squid Surfacing, the same run, last; `-Ptest.only=squid`, about 50 s with the start): ten squid in a pool
+  10 by 10 and 3 deep, open to the sky, in a place where water doesn't freeze (in a snowy biome the top turns to ice,
+  which is no water to a squid: the first run met it), 1,200 ticks of their own swimming, each tick of each squid in
+  `local/run/squid-surface/ticks-<polished|beta>.csv`. With the switch, none out of the water near the surface and the
+  middle never over 0.3 under; with `-Pstill.beta`, some out (Old Faithful's bounce). Numbers above (2026-11-10).
+  `-Pstill.squidClip` adds the before-and-after film, about 70 s more: five seconds from the south shore, as a player
+  standing there sees it, and five from against the west wall, eyes 0.73 over the surface, at 60 frames a second (game
+  time slowed to 3 ticks a second, each drawn at a third, two thirds and all of the way from the tick before:
+  `SquidClipFrame`), into `local/run/squid-surface/<side>-shore/` and `<side>-low/`; the camera stands on a block and
+  is checked not to move. `squid-surface.mp4` there is both sides' frames put side by side with ffmpeg (the low view
+  cropped to 800x480 from the top, 100 in, to leave out the wall's top).
 - `./gw :harness:fencesMultiplayerTest` (#30, about 3.5 minutes): the server package with and without the polish mod,
   each joined by the hidden client with Still Faithful's mods with and without it; the server builds the scene on
   "!oftest fences" and puts the player at each walk's start on "!oftest tp" (`MultiplayerScenes`), flying off so beta's

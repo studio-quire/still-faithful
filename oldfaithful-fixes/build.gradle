@@ -89,6 +89,8 @@ tasks.register('serverTicksTest', Test) {
 }
 
 // #76 and #77 measured on the real server, with this mod and without it: -Psquids.ticks (20 a second), local/run/squid-watch/.
+// -Psquids.labels=fixed,beta by default; "polished" adds Still Faithful's polish mod to the fixes (its Squid Surfacing).
+def squidLabels = providers.gradleProperty('squids.labels').getOrElse('fixed,beta').split(',') as List
 tasks.register('squidWatch', Test) {
     group = 'verification'
     description = 'Squid in tanks on the real server, with the fix mod and without it: their height over time, near the surface above all.'
@@ -98,6 +100,7 @@ tasks.register('squidWatch', Test) {
     maxHeapSize = '256m'
     def remapped = tasks.named('remapJar')
     dependsOn remapped, scenarioRemap
+    if (squidLabels.contains('polished')) dependsOn ':oldfaithful-polish:remapJar'
     def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
     inputs.files(serverClasspath)
     outputs.upToDateWhen { false }
@@ -108,6 +111,9 @@ tasks.register('squidWatch', Test) {
         systemProperty 'oldfaithful.fixes.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
         systemProperty 'oldfaithful.run', rootProject.file('local/run/squid-watch').absolutePath
         systemProperty 'oldfaithful.squids.ticks', providers.gradleProperty('squids.ticks').getOrElse('12000')
-        systemProperty 'oldfaithful.squids.labels', providers.gradleProperty('squids.labels').getOrElse('fixed,beta')
+        systemProperty 'oldfaithful.squids.labels', squidLabels.join(',')
+        if (squidLabels.contains('polished')) {
+            systemProperty 'oldfaithful.polish.mod', project(':oldfaithful-polish').tasks.named('remapJar').get().output.get().asFile.absolutePath
+        }
     }
 }

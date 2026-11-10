@@ -58,7 +58,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	private static final String LIST = "mods-library/selection.txt";
 	private static final Pattern JVM_ARGS = Pattern.compile("\"\\+jvmArgs\"\\s*:\\s*\\[(.*?)]", Pattern.DOTALL);
 	private static final Pattern QUOTED = Pattern.compile("\"([^\"]+)\"");
-	private static final List<String> SERVER_MODS = List.of("world-rules", "hearty-food", "item-repair", "wild-saplings");
+	private static final List<String> SERVER_MODS = List.of("world-rules", "hearty-food", "item-repair", "wild-saplings", "wary-creepers", "wolf-packs");
 
 	private final List<String> lines = new ArrayList<>();
 	private final List<String> failures = new ArrayList<>();
@@ -83,7 +83,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
 		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
-		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules")) {
+		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "wary-creepers", "water-bottles", "wild-saplings", "wolf-packs", "world-rules")) {
 			expect("as shipped: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
 		}
 		expect("the new world's file has seen Water Bottles", Files.isRegularFile(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties"))
@@ -122,7 +122,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Path plainDir = serverFolder(run, "server-plain", port);
 		Path plainMods = plainDir.resolve("mods"), held = plainDir.resolve("held");
 		Files.createDirectories(held);
-		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "wild-saplings")) {
+		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "wild-saplings", "wary-creepers", "wolf-packs")) {
 			Files.move(plainMods.resolve(nameOf(plainMods, mod)), held.resolve(nameOf(plainMods, mod)));
 		}
 		start(plainDir, "every library jar out");
@@ -257,12 +257,12 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	/** What the loader's mod list said: nothing of the library's, by id. */
 	private static boolean loadedNothing(List<String> output) {
 		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- blue-flowers ") || l.contains("- buried-towers ") || l.contains("- hearty-food ") || l.contains("- item-repair ") || l.contains("- alchemy ") || l.contains("- wild-saplings ")
-				|| l.contains("- explosive-arrows ") || l.contains("- plain-f3 ") || l.contains("- no-toasts "));
+				|| l.contains("- explosive-arrows ") || l.contains("- plain-f3 ") || l.contains("- no-toasts ") || l.contains("- wary-creepers ") || l.contains("- wolf-packs "));
 	}
 
 	private String allOn() throws IOException {
 		return String.join("\n", "mods-library/alchemy.jar", "mods-library/blue-flowers.jar", "mods-library/buried-towers.jar", "mods-library/explosive-arrows.jar", "mods-library/faithful-core.jar", "mods-library/hearty-food.jar", "mods-library/item-repair.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
-				"mods-library/water-bottles.jar", "mods-library/wild-saplings.jar", "mods-library/world-rules.jar", "");
+				"mods-library/wary-creepers.jar", "mods-library/water-bottles.jar", "mods-library/wild-saplings.jar", "mods-library/wolf-packs.jar", "mods-library/world-rules.jar", "");
 	}
 
 	/** Joins from a game folder of its own with this list; what the client ended up looking at. */

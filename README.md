@@ -52,6 +52,18 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   posts needs the server to have this too; aiming past them works anywhere. Posts that only touch diagonally no longer
   close a gap to players and the narrower mobs.
 - **Chat** lines each have a dark bar only as long as their text, not the chat's full width.
+- **Skeletons** shoot from their eyes, as in later versions, instead of from well above their heads, so in a tunnel,
+  a low cave or a doorway two blocks high their arrows no longer stick in the ceiling: they can hit you there.
+  Standing elsewhere, you're hit about as often as beta's hit you. On the move it can differ: walking straight at one
+  you're hit more often, as beta's arrows came down over a player walking in, and along a ledge just above or below
+  one close by, less or more often (Skeleton Arrows). On a server, the server's switch.
+- **Squid** that swim up to the surface slow as they near it and swim on just under it, their backs at the waterline,
+  instead of bouncing against it a few times a second (Squid Surfacing). On a server, the server's switch.
+- **Blasts and small things show from further away.** Beta made no particle more than 16 blocks from you, so a blast
+  at bow range showed nothing, and it stopped drawing a dropped item past 16 blocks, a chicken past 21 and an arrow
+  past 32. Here particles show within 32 blocks, as in later versions, the puffs of a blast or a mob dying within 64,
+  and everything is drawn to 64 blocks at least, as far as a zombie (Particle Distance and Entity Distance). Your own
+  game's, on any server.
 - **Dropped stairs, fences** and other part-blocks lie at the size of other dropped blocks, and players and
   skeletons hold a bow like a bow.
 - **Modern skins** show whole: skins made for later versions get their jacket, sleeves and trousers, a left arm and

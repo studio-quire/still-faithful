@@ -313,6 +313,22 @@ final class LibraryWorldStages {
 			Path together = t.boots.get("together");
 			if (core == null || together == null || !Files.isRegularFile(core.resolve("tables.txt")) || !Files.isRegularFile(together.resolve("tables.txt"))) return;
 			Map<String, String> base = LibraryStages.readTable(core.resolve("tables.txt")), all = LibraryStages.readTable(together.resolve("tables.txt"));
+			// Entries two of our mods change only together, by design (library/together.txt): the entry, the mods, its value with them, and why. Only with every one of
+			// those mods here, and only at that value: anything else together is a failure as before.
+			Map<String, String[]> declared = new HashMap<>();
+			if (t.getTogether().isPresent()) {
+				for (String line : Files.readAllLines(t.getTogether().get().getAsFile().toPath(), StandardCharsets.UTF_8)) {
+					String[] f = line.split("\t");
+					if (!line.isBlank() && !line.startsWith("#") && f.length == 4) declared.put(f[0], f);
+				}
+			}
+			Set<String> here = t.subjects.stream().map(LibraryMod::id).collect(Collectors.toSet());
+			java.util.function.BiPredicate<String, String> meant = (key, value) -> {
+				String[] f = declared.get(key);
+				if (f == null || !f[2].equals(value) || !here.containsAll(List.of(f[1].split(",")))) return false;
+				t.notes.add("tables: " + key + " is " + value + " with " + f[1] + " together, as meant: " + f[3]);
+				return true;
+			};
 			Map<String, Map<String, String>> changes = new TreeMap<>();
 			List<String> report = new ArrayList<>();
 			for (LibraryMod m : t.subjects) {
@@ -336,14 +352,14 @@ final class LibraryWorldStages {
 				}
 				if (new HashSet<>(who.values()).size() > 1) {
 					t.fail(String.join(", ", who.keySet()), "two-mods-one-table-entry", key + ": " + who + "; together it's " + all.get(key));
-				} else if (!who.values().iterator().next().equals(String.valueOf(all.get(key)))) {
+				} else if (!who.values().iterator().next().equals(String.valueOf(all.get(key))) && !meant.test(key, String.valueOf(all.get(key)))) {
 					t.fail(String.join(", ", who.keySet()), "changes-together", key + " is " + who + " alone, " + all.get(key) + " together");
 				}
 			}
 			Set<String> keys = new HashSet<>(all.keySet());
 			keys.addAll(base.keySet());
 			for (String key : keys) {
-				if (!changes.containsKey(key) && !java.util.Objects.equals(all.get(key), base.get(key))) {
+				if (!changes.containsKey(key) && !java.util.Objects.equals(all.get(key), base.get(key)) && !meant.test(key, String.valueOf(all.get(key)))) {
 					t.fail("unknown", "changes-together", key + " is " + base.get(key) + " for each mod alone, " + all.get(key) + " together");
 				}
 			}

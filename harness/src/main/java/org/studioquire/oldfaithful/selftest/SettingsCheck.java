@@ -574,8 +574,8 @@ final class SettingsCheck {
 		return true;
 	}
 
-	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Explosive Arrows", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "Wild Saplings", "World Rules");
-	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules");
+	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Explosive Arrows", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Wary Creepers", "Water Bottles", "Wild Saplings", "Wolf Packs", "World Rules");
+	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "wary-creepers", "water-bottles", "wild-saplings", "wolf-packs", "world-rules");
 	/** A mod's own settings, besides its rules, as its page shows them in a pack as it comes: the whole button, so each at its default. */
 	private static final java.util.Map<String, List<String>> PACK_SETTINGS = java.util.Collections.singletonMap("Blue Flowers", java.util.Collections.singletonList("Yellow Flower: Dandelion"));
 

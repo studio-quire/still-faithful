@@ -24,6 +24,7 @@ import org.junit.jupiter.api.Test;
  * #76 and #77 measured on the real b1.7.3 dedicated server: the scenario mod's SquidWatch with this mod and without it,
  * side by side, each in a new world, each writing its lines to {@code local/run/squid-watch/<label>-<time>/watch.txt}. Takes as
  * long as the ticks at 20 a second; not a pass or fail of the fix. {@code ./gw :oldfaithful-fixes:squidWatch -Psquids.ticks=12000}.
+ * Labels ({@code -Psquids.labels}): fixed, beta, and polished (the fixes with Still Faithful's polish mod).
  */
 @Tag("squids")
 class SquidWatchRun {
@@ -47,6 +48,8 @@ class SquidWatchRun {
 		Files.createDirectories(mods);
 		List<String> wanted = new ArrayList<>(List.of("oldfaithful.fixes.scenario.mod"));
 		if (!label.equals("beta")) wanted.add("oldfaithful.fixes.mod");
+		// Still Faithful's Squid Surfacing (and the rest of its polish mod) on top of the fixes.
+		if (label.equals("polished")) wanted.add("oldfaithful.polish.mod");
 		for (String property : wanted) {
 			Path mod = Path.of(System.getProperty(property));
 			Files.copy(mod, mods.resolve(mod.getFileName()));

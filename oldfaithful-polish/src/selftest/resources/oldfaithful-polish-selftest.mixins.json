@@ -6,10 +6,13 @@
   "mixins": [
     "ChunkCacheStorage",
     "FurnaceFuel",
-    "LivingEntityInvoker"
+    "LivingEntityInvoker",
+    "SkeletonEntityInvoker"
   ],
   "client": [
     "ChatMessages",
+    "DistanceEntityTiming",
+    "DistanceParticleTiming",
     "DuskChunkBuilderMixin",
     "DuskGameRendererMixin",
     "DuskParticleManagerMixin",
@@ -18,7 +21,8 @@
     "HandledScreenFrame",
     "SkinDownloads",
     "SkinHttpsMixin",
-    "SkinRendererMixin"
+    "SkinRendererMixin",
+    "SquidClipFrame"
   ],
   "injectors": {
     "defaultRequire": 1

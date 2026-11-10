@@ -80,6 +80,12 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 	@PathSensitive(PathSensitivity.NONE)
 	public abstract RegularFileProperty getTagVocabulary();
 
+	/** {@code library/together.txt}: table entries two of our mods change only together, by design. */
+	@InputFile
+	@org.gradle.api.tasks.Optional
+	@PathSensitive(PathSensitivity.NONE)
+	public abstract RegularFileProperty getTogether();
+
 	/** Stage names to run; empty for all. */
 	@Input
 	public abstract ListProperty<String> getStages();

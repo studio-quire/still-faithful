@@ -42,10 +42,11 @@ public final class SquidWatch {
 		final List<SquidEntity> squids = new ArrayList<>();
 		final boolean[] wasDry;
 		final int[] dryRun;
+		final double[] lastDy;
 		long steps, splashes, flips, dryTicks, squidTicks;
 		// Near the surface: the middle within a block of it.
-		long nearTicks, nearDryTicks, wholeOutTicks;
-		double outSum, outMost, feetMost = Double.NEGATIVE_INFINITY;
+		long nearTicks, nearDryTicks, wholeOutTicks, nearTurns;
+		double outSum, outMost, feetMost = Double.NEGATIVE_INFINITY, nearTravel;
 		int longestDry;
 		double settledSum;
 		long settledCount;
@@ -58,6 +59,7 @@ public final class SquidWatch {
 			this.depth = depth;
 			wasDry = new boolean[squids];
 			dryRun = new int[squids];
+			lastDy = new double[squids];
 		}
 
 		double floorTop() {
@@ -102,15 +104,19 @@ public final class SquidWatch {
 					settledCount++;
 				}
 				double middle = (s.boundingBox.minY + s.boundingBox.maxY) / 2.0;
+				double dy = s.y - s.prevY;
 				if (Math.abs(middle - surface()) < 1.0) {
 					nearTicks++;
 					if (dry) nearDryTicks++;
+					nearTravel += Math.abs(dy);
+					if (dy * lastDy[i] < 0 && Math.abs(dy) > 1e-3 && Math.abs(lastDy[i]) > 1e-3) nearTurns++;
 					double out = Math.max(0.0, Math.min(1.0, (s.boundingBox.maxY - surface()) / BODY));
 					outSum += out;
 					outMost = Math.max(outMost, out);
 					feetMost = Math.max(feetMost, s.boundingBox.minY - surface());
 					if (s.boundingBox.minY > surface()) wholeOutTicks++;
 				}
+				lastDy[i] = dy;
 			}
 		}
 
@@ -118,10 +124,12 @@ public final class SquidWatch {
 			double minutes = squidTicks / 1200.0;
 			return String.format(Locale.ROOT, "%s: mean height over the floor in the second half %.2f, highest now %.2f; "
 							+ "per squid-minute %.1f footsteps, %.2f splashes, %.1f changes of branch; %.1f%% of ticks in the out-of-water branch, longest run %d; "
-							+ "near the surface %.1f%% of ticks, of those %.1f%% out-of-water, body out on average %.0f%%, at most %.0f%%, feet at most %.2f from the surface, wholly out %d ticks",
+							+ "near the surface %.1f%% of ticks, of those %.1f%% out-of-water, body out on average %.0f%%, at most %.0f%%, feet at most %.2f from the surface, wholly out %d ticks; "
+							+ "there, a second, %.3f blocks of rise and fall and %.2f turns between up and down",
 					name, settledSum / Math.max(1, settledCount), maxHeight(), steps / minutes, splashes / minutes, flips / minutes,
 					100.0 * dryTicks / squidTicks, longestDry, 100.0 * nearTicks / squidTicks, nearTicks == 0 ? 0.0 : 100.0 * nearDryTicks / nearTicks,
-					nearTicks == 0 ? 0.0 : 100.0 * outSum / nearTicks, 100.0 * outMost, nearTicks == 0 ? 0.0 : feetMost, wholeOutTicks);
+					nearTicks == 0 ? 0.0 : 100.0 * outSum / nearTicks, 100.0 * outMost, nearTicks == 0 ? 0.0 : feetMost, wholeOutTicks,
+					nearTicks == 0 ? 0.0 : nearTravel * 20.0 / nearTicks, nearTicks == 0 ? 0.0 : nearTurns * 20.0 / nearTicks);
 		}
 	}
 

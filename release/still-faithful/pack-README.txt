@@ -38,6 +38,13 @@ Still Faithful's own, each on its own switch:
   against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past posts
   needs the server to have this too.
 - Each line of chat has a dark bar only as long as its text, not the chat's full width.
+- Skeletons shoot from their eyes instead of from well above their heads, so under a ceiling two blocks high their
+  arrows no longer stick in it; elsewhere they hit a player standing about as often as before (Skeleton Arrows).
+- Squid that swim up to the surface slow as they near it and swim on just under it, instead of bouncing against it a
+  few times a second (Squid Surfacing).
+- Blasts and small things show from further away: particles within 32 blocks (beta's 16), the puffs of a blast or a
+  mob dying within 64, and dropped items, arrows, chickens and everything else drawn to 64 blocks at least, as far as
+  a zombie (beta stopped drawing a dropped item at 16).
 - Dropped stairs, fences and other part-blocks lie at the size of other dropped blocks, and players and skeletons
   hold a bow like a bow.
 - Modern skins show whole: jacket, sleeves and trousers, a left arm and leg of their own, and slim arms where the

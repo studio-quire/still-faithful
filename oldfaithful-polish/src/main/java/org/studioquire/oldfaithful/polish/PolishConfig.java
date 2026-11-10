@@ -119,6 +119,16 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			{"render.chestLids", "chestlids",
 					"# Each half of a double chest had the lid of a single chest, so a border ran down the middle of its top and\n"
 					+ "# bottom. With this, a double chest has one lid, as in later versions, made from your texture pack's chest lid.\n"},
+			{"mobs.skeletonArrows", "skeletons",
+					"# Skeletons shot their arrows from well above their heads, so under a ceiling two blocks high (a tunnel, a low\n"
+					+ "# cave, a doorway) the arrow stuck in the ceiling and never reached you. With this, an arrow leaves from the\n"
+					+ "# skeleton's eyes, as in later versions, so skeletons there can hit you. Elsewhere they hit a player standing\n"
+					+ "# about as often as before; on the move it can differ (more often walking straight at one). In multiplayer, the\n"
+					+ "# server's.\n"},
+			{"mobs.squidSurface", "squids",
+					"# A squid that swam up to the water's surface bounced against it: each time it came halfway out it dropped back\n"
+					+ "# and swam up again, a few times a second, its tentacles twitching. With this, a squid slows as it nears the\n"
+					+ "# surface and swims on just under it, its back at the waterline, until it turns. In multiplayer, the server's.\n"},
 			{"skins.modern", "skins",
 					"# Beta read only the top half of a skin. With this, skins made for later versions show whole: jacket, sleeves\n"
 					+ "# and trousers, a left arm and leg of their own, and slim arms where the player's profile asks for them.\n"
@@ -134,6 +144,16 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# fishing rods, bowls, signs, wooden doors, ladders, boats or wooden slabs. With this, those burn too, for as long\n"
 					+ "# as later versions burn them: a boat smelts six items; a bow, fishing rod or ladder one and a half, as a plank\n"
 					+ "# does; a tool, sign or door one; a wooden slab three quarters; a bowl half. In multiplayer, the server's.\n"},
+			{"render.particleDistance", "particledistance",
+					"# Particles (smoke, splashes, the puffs of a blast or of a mob dying) showed only within 16 blocks of you, so a\n"
+					+ "# blast further off made no cloud at all. With this, particles show within 32 blocks, as in later versions, and\n"
+					+ "# the puffs of a blast or of a mob dying within 64, as far as a blast is heard. A server sends blasts within\n"
+					+ "# 64 blocks too, so it needs nothing.\n"},
+			{"render.entityDistance", "entitydistance",
+					"# Things showed only within a distance that went by their size: a dropped item vanished past 16 blocks, a\n"
+					+ "# chicken past 21, an arrow past 32, a zombie past 64. With this, everything shows within 64 blocks at least,\n"
+					+ "# as far as a zombie, and bigger things as far as before. A server sends dropped items and arrows within 64\n"
+					+ "# blocks, so it needs nothing.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

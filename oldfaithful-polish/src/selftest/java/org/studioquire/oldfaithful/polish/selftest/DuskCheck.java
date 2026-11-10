@@ -110,6 +110,12 @@ public final class DuskCheck implements WorldCheck {
 			ox = px + 96 + (i % 8) * 64;
 			oz = pz + (i / 8 - 4) * 64;
 		}
+		// The spawn wanders until it finds sand, so it differs every run, and a cold region can cover all of those
+		// (2026-11-09: spawned near -470,300, every place snowy): then further out, 2 km across.
+		for (int i = 0; i < 256 && snowy(); i++) {
+			ox = px - 1024 + (i % 16) * 128;
+			oz = pz - 1024 + (i / 16) * 128;
+		}
 		results.check("still #6: a place for the scene where water doesn't freeze, at " + ox + "," + oz, !snowy());
 		build();
 		findTimes();

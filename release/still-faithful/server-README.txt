@@ -14,7 +14,8 @@ as beta's own rule says it should be. Still Faithful's own: what later versions 
 (stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats,
 minecarts that meet on every track, animals that stay once a player has looked after them, fences shaped as in later
 versions, chests that pair as in later versions, wooden tools, boats and other wooden things that burn in a
-furnace), each on a switch in config/stillfaithful-polish.properties.
+furnace, skeletons shooting from their eyes, squid that swim on under the surface instead of bouncing against it),
+each on a switch in config/stillfaithful-polish.properties.
 
 Players can join with vanilla beta 1.7.3 or any of the three editions. The server's changes work for everyone;
 walking close past fence posts and faster glowstone mining need Still Faithful on both sides (other clients walk into
