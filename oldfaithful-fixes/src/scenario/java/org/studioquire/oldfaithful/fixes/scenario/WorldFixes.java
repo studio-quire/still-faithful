@@ -88,6 +88,21 @@ public final class WorldFixes {
 		}
 	}
 
+	/**
+	 * Open sky over these columns, from y up, for the scenes that need the room: they stand at fixed heights wherever
+	 * the world puts them, and in some worlds a hill or a tree stands there too (2026-11-09: #64's pig in stone, so none
+	 * spawned, fix or no fix; a tree's leaves a block over #56's pool, where the pig dropped from 17 landed, hurt as by a
+	 * fall of 15; a hill over half the pool, to 9 above it, with land over 104 near the scenes at 100). From the top
+	 * down, so each column's sky light follows the blocks out.
+	 */
+	private static void openSky(ServerWorld world, int x0, int z0, int x1, int z1, int y) {
+		for (int x = x0; x <= x1; x++) {
+			for (int z = z0; z <= z1; z++) {
+				for (int up = 127; up >= y; up--) world.setBlockWithoutNotifyingNeighbors(x, up, z, 0, 0);
+			}
+		}
+	}
+
 	/** #55: a lone door top on a chest, a redstone torch placed beside it. */
 	private static void doorTop(ServerWorld world, int x, int z) {
 		int y = 100;
@@ -126,6 +141,7 @@ public final class WorldFixes {
 			int[] p = places[i];
 			int x = p[0] + 6 * i, z = p[1], y = 100;
 			load(world, x - 2, z - 2, x + 2, z + 2);
+			openSky(world, x - 1, z - 1, x + 1, z + 1, y);
 			for (int dx = -1; dx <= 1; dx++) {
 				for (int dz = -1; dz <= 1; dz++) world.setBlockWithoutNotifyingNeighbors(x + dx, y - 1, z + dz, Block.GRASS_BLOCK.id, 0);
 			}
@@ -140,6 +156,7 @@ public final class WorldFixes {
 	/** #66: whether a squid may spawn in a cell of lava, and (the same test) one of water. */
 	private static void squid(ServerWorld world, int x, int z) {
 		int y = 100;
+		openSky(world, x - 1, z - 1, x + 3, z + 1, y);
 		world.setBlockWithoutNotifyingNeighbors(x, y, z, Block.LAVA.id, 0);
 		world.setBlockWithoutNotifyingNeighbors(x + 2, y, z, Block.WATER.id, 0);
 		boolean lava = NaturalSpawnerInvoker.oldfaithful$isValidSpawnPos(SpawnGroup.WATER_CREATURE, world, x, y, z);
@@ -195,6 +212,7 @@ public final class WorldFixes {
 	private static void falls(ServerWorld world, int x0, int z0) {
 		int floor = 90;
 		int n = HEIGHTS.length;
+		openSky(world, x0 - 4, z0 - 4, x0 + 2 * n + 3, z0 + 4, floor);
 		// Seven wide: a pig wanders a little even while it falls, and one that reaches the rim isn't the water's test.
 		for (int x = -4; x <= 2 * n + 3; x++) {
 			for (int z = -4; z <= 4; z++) {
@@ -231,6 +249,7 @@ public final class WorldFixes {
 	 */
 	private static void stepsUnderRoof(ServerWorld world, int tx, int z0, boolean roof) {
 		int floor = 100;
+		openSky(world, tx - 8, z0 - 2, tx + 8, z0 + 2, floor + 1);
 		for (int x = tx - 8; x <= tx + 8; x++) {
 			for (int z = z0 - 2; z <= z0 + 2; z++) {
 				world.setBlockWithoutNotifyingNeighbors(x, floor - 1, z, Block.STONE.id, 0);

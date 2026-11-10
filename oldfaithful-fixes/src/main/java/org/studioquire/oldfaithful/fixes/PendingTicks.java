@@ -1,6 +1,8 @@
 package org.studioquire.oldfaithful.fixes;
 
+import java.util.AbstractSet;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +26,11 @@ import net.minecraft.world.World;
  * it now waits, parked off the queue so it never takes a turn from the 1,000 the world runs a tick, and goes back on the
  * queue once its surroundings are loaded (checked every {@link #SWEEP_TICKS}). A world's spawn area alone leaves tens
  * of thousands of liquid ticks at its edge, so retrying them on the queue itself would starve every other tick.
+ * <p>
+ * The queue is one list for the whole world, and new land leaves it long (some 400 ticks a chunk, a million after a
+ * few thousand chunks made with nobody near). A save writes many chunks with the queue standing still, so a chunk's
+ * ticks come from the queue grouped by chunk, made in one pass and kept for as long as the queue is known not to have
+ * changed ({@link Counted}); reading the whole queue for each chunk took a stop from seconds to most of a minute.
  */
 public final class PendingTicks {
 	public static final String TAG = "TileTicks";
@@ -35,6 +42,9 @@ public final class PendingTicks {
 	/** World's queue, opened by the world mixin: pending ticks, the same ordered by due time, and the parked ones. */
 	public interface Queue {
 		Set<BlockEvent> oldfaithful$pending();
+
+		/** Puts another set in the world's field: the same ticks, held by {@link Counted}. */
+		void oldfaithful$setPending(Set<BlockEvent> pending);
 
 		TreeSet<BlockEvent> oldfaithful$ordered();
 
@@ -49,6 +59,121 @@ public final class PendingTicks {
 		void oldfaithful$setTicks(NbtList ticks);
 	}
 
+	/**
+	 * The world's set of pending ticks, with every change to it counted. Beta keeps the set and the queue in step (a
+	 * tick goes on or off both together, and the game stops if their sizes ever differ), so while the count stands the
+	 * queue is as it was, and the queue grouped by chunk at that count is still the queue. The set itself is whatever
+	 * the world had (beta's HashSet, the speed mod's TickSet) and answers as before; it's wrapped the first time a
+	 * chunk's ticks are asked for, after any mod that swaps the set as the world is made.
+	 */
+	static final class Counted extends AbstractSet<BlockEvent> {
+		private final Set<BlockEvent> set;
+		private long changes;
+
+		/** The queue's ticks by chunk ({@link #key}), each chunk's in the queue's order, or null. */
+		private Map<Long, List<BlockEvent>> byChunk;
+		// What byChunk was made from: the queue, the count of changes then, and the queue's size as a second check.
+		private TreeSet<BlockEvent> groupedFrom;
+		private long groupedAt;
+		private int groupedSize;
+
+		Counted(Set<BlockEvent> set) {
+			this.set = set;
+		}
+
+		/** The queue grouped by chunk: the grouping kept if the queue hasn't changed since, or a new one. */
+		Map<Long, List<BlockEvent>> byChunk(TreeSet<BlockEvent> ordered) {
+			if (byChunk == null || groupedFrom != ordered || groupedAt != changes || groupedSize != ordered.size()) {
+				Map<Long, List<BlockEvent>> lists = new HashMap<>();
+				// Ticks queued together are mostly one chunk's, so the last list found is usually the one wanted.
+				long lastKey = 0;
+				List<BlockEvent> last = null;
+				for (BlockEvent e : ordered) {
+					long key = key(e.x >> 4, e.z >> 4);
+					if (last == null || key != lastKey) {
+						last = lists.computeIfAbsent(key, k -> new ArrayList<>());
+						lastKey = key;
+					}
+					last.add(e);
+				}
+				byChunk = lists;
+				matches(ordered);
+			}
+			return byChunk;
+		}
+
+		/** The grouping is the queue as it stands now. */
+		void matches(TreeSet<BlockEvent> ordered) {
+			groupedFrom = ordered;
+			groupedAt = changes;
+			groupedSize = ordered.size();
+		}
+
+		void forget() {
+			byChunk = null;
+		}
+
+		@Override
+		public boolean add(BlockEvent e) {
+			boolean added = set.add(e);
+			if (added) changes++;
+			return added;
+		}
+
+		@Override
+		public boolean remove(Object o) {
+			boolean removed = set.remove(o);
+			if (removed) changes++;
+			return removed;
+		}
+
+		@Override
+		public void clear() {
+			changes++;
+			set.clear();
+		}
+
+		@Override
+		public boolean contains(Object o) {
+			return set.contains(o);
+		}
+
+		@Override
+		public int size() {
+			return set.size();
+		}
+
+		@Override
+		public Iterator<BlockEvent> iterator() {
+			Iterator<BlockEvent> it = set.iterator();
+			return new Iterator<BlockEvent>() {
+				@Override
+				public boolean hasNext() {
+					return it.hasNext();
+				}
+
+				@Override
+				public BlockEvent next() {
+					return it.next();
+				}
+
+				@Override
+				public void remove() {
+					it.remove();
+					changes++;
+				}
+			};
+		}
+	}
+
+	private static Counted counted(Queue queue) {
+		Set<BlockEvent> pending = queue.oldfaithful$pending();
+		if (pending instanceof Counted) return (Counted) pending;
+		Counted counted = new Counted(pending);
+		queue.oldfaithful$setPending(counted);
+		return counted;
+	}
+
 	public static long key(int chunkX, int chunkZ) {
 		return (long) chunkX << 32 ^ chunkZ & 0xFFFFFFFFL;
 	}
@@ -58,21 +183,31 @@ public final class PendingTicks {
 	 * the world.
 	 */
 	public static NbtList collect(World world, int chunkX, int chunkZ, boolean remove) {
-		Queue queue = (Queue) world;
-		long now = world.getTime();
+		return collect((Queue) world, world.getTime(), chunkX, chunkZ, remove);
+	}
+
+	static NbtList collect(Queue queue, long now, int chunkX, int chunkZ, boolean remove) {
+		Long key = key(chunkX, chunkZ);
 		NbtList out = new NbtList();
-		List<BlockEvent> taken = new ArrayList<>();
-		for (BlockEvent e : queue.oldfaithful$ordered()) {
-			if (e.x >> 4 == chunkX && e.z >> 4 == chunkZ) taken.add(e);
-		}
-		for (BlockEvent e : taken) out.add(write(e, now));
-		if (remove) {
-			for (BlockEvent e : taken) {
-				queue.oldfaithful$ordered().remove(e);
-				queue.oldfaithful$pending().remove(e);
+		Counted pending = counted(queue);
+		TreeSet<BlockEvent> ordered = queue.oldfaithful$ordered();
+		Map<Long, List<BlockEvent>> byChunk = pending.byChunk(ordered);
+		List<BlockEvent> queued = byChunk.get(key);
+		if (queued != null) {
+			for (BlockEvent e : queued) out.add(write(e, now));
+			if (remove) {
+				boolean all = true;
+				for (BlockEvent e : queued) all &= ordered.remove(e) & pending.remove(e);
+				// The queue has lost this chunk's ticks and nothing else, so the grouping without them is the queue again.
+				if (all) {
+					byChunk.remove(key);
+					pending.matches(ordered);
+				} else {
+					pending.forget();
+				}
 			}
 		}
-		List<BlockEvent> parked = remove ? queue.oldfaithful$parked().remove(key(chunkX, chunkZ)) : queue.oldfaithful$parked().get(key(chunkX, chunkZ));
+		List<BlockEvent> parked = remove ? queue.oldfaithful$parked().remove(key) : queue.oldfaithful$parked().get(key);
 		if (parked != null) {
 			// Overdue: due as soon as they can run.
 			for (BlockEvent e : parked) out.add(write(e, now));

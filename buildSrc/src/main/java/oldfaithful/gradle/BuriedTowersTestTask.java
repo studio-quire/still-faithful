@@ -40,7 +40,7 @@ import org.gradle.api.tasks.TaskAction;
 /**
  * Buried Towers on really generated worlds, on the real server through library/tower-check. {@code check} makes each seed's square in several visiting orders, across a restart and a crash, and
  * over an older world made without the mod, and compares what stood in them; {@code view} makes a few towers and writes what stands there for {@code tools/tower_view.py}; {@code spacing} writes
- * where sites would stand.
+ * where sites would stand; {@code compare} runs a seed's with-and-without comparison again on what a {@code check} left.
  * <p>
  * How it's laid out. Every world is a {@link World}: a folder, a server package with some mods in it, and a script (a method under "The worlds") that starts the server there, drives it through
  * its console and checks what comes back. Worlds share nothing, so {@link #runAll} runs a few side by side and prints each one's lines whole, in the order they were listed, whatever order they
@@ -123,7 +123,7 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 	@Input
 	public abstract Property<Boolean> getDumps();
 
-	/** {@code tools/user_busy.ps1}: prints what the user is running that says they're using the PC, or nothing. */
+	/** {@code tools/user_busy.ps1}, this project's own PC's script and not in the public repositories: prints what the person at the PC is running that says they're using it, or nothing. Without the file, nobody counts as playing. */
 	@Internal
 	public abstract RegularFileProperty getUserBusy();
 
@@ -420,7 +420,7 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 		if (worlds.size() > 1) getLogger().lifecycle("    {} worlds, {} at a time: {} s, where one after another takes {} s", worlds.size(), atOnce, tenths(System.nanoTime() - began), tenths(sum));
 	}
 
-	/** As many as asked, but one while the user has a game or heavy app of their own running, as tools/gwl.sh does with its launch slots. */
+	/** As many as asked, but one while the user has a game or heavy app of their own running, as this project's own queue for game launches does with its slots (tools/gwl.sh, not in the public repositories either). */
 	private int atOnce() throws InterruptedException {
 		int asked = Math.max(1, getParallel().get());
 		if (asked == 1 || !WINDOWS || !getUserBusy().isPresent() || !getUserBusy().get().getAsFile().isFile()) return asked;
@@ -471,6 +471,14 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 			worlds.add(new World(run, seed, seed + "-lost", seed + " lost", this::lostChunk));
 		}
 		runAll(worlds, slowest);
+		compare(run);
+	}
+
+	/**
+	 * What two of a seed's worlds show together. {@code compare} is this alone, with no server started, on the squares a run left in the run folder: for a change to the comparison itself, or a
+	 * second look at a run.
+	 */
+	private void compare(Path run) {
 		for (long seed : getSeeds().get()) {
 			try {
 				withAndWithout(run, seed);
@@ -700,6 +708,11 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 			}
 			return n;
 		}
+
+		/** Where in the world cell {@code i} of chunk {@code c} is: x, y, z. */
+		int[] place(int c, int i) {
+			return new int[] {(c / size + x0) * 16 + (i >> 11), i & 127, (c % size + z0) * 16 + (i >> 7 & 15)};
+		}
 	}
 
 	private static boolean fluid(int id) {
@@ -719,16 +732,30 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 		return fluid(p) && (fluid(q) || flowMade(q) || falling(q)) || fluid(q) && (flowMade(p) || falling(p));
 	}
 
-	/** A seed's square with the mod against without it, both made in rows: the spawners, the cells that differ, and the veins. For a look; nothing here fails the test. */
+	/** A check that isn't one world's, printed as theirs are. */
+	private void expect(String what, boolean ok) {
+		getLogger().lifecycle("{}: {}", ok ? "ok  " : "FAIL", what);
+		if (!ok) failures.add(what);
+	}
+
+	/**
+	 * A seed's square with the mod against without it, both made in rows: the spawners and the cells that differ, for a look, and the ore, which is held to beta's ({@link #oreAsBeta}). The squares
+	 * are the two worlds' {@code cells.bin}, and where the towers are comes from the report the world with the mod wrote ({@code World.reports}).
+	 */
 	private void withAndWithout(Path run, long seed) throws IOException {
 		Path without = run.resolve(seed + "-plain").resolve("cells.bin"), with = run.resolve(seed + "-rows").resolve("cells.bin");
-		if (!Files.exists(without) || !Files.exists(with)) {
-			getLogger().lifecycle("    seed {}: nothing to compare, as a world wasn't made (its failure is below)", seed);
+		Path report = run.resolve(seed + "-rows").resolve("report-" + seed + "-rows.txt");
+		if (!Files.exists(without) || !Files.exists(with) || !Files.exists(report)) {
+			expect("seed " + seed + ": with and without the mod can't be compared, as a world's square or its report isn't in " + run, false);
 			return;
 		}
 		Square plain = Square.read(without), rows = Square.read(with);
+		List<int[]> sites = new ArrayList<>();
+		for (String line : Files.readAllLines(report)) {
+			String[] p = line.split(" ");
+			sites.add(new int[] {Integer.parseInt(p[0]), Integer.parseInt(p[1])});
+		}
 		getLogger().lifecycle("    seed {}: {} spawners without the mod, {} with it", seed, plain.count(SPAWNER), rows.count(SPAWNER));
-		// Every ore and rock outside a tower's reach as it is without the mod; a vetoed dungeon's own cells are what's meant to differ.
 		long solid = 0, flow = 0;
 		List<String> samples = new ArrayList<>();
 		for (int c = 0; c < plain.ids.length; c++) {
@@ -746,35 +773,65 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 			}
 		}
 		getLogger().lifecycle("    seed {}, with and without the mod over the whole square: {} solid cells, {} by flow; {}", seed, solid, flow, samples);
-		veinsOutside(plain, rows, seed);
+		oreAsBeta(plain, rows, sites, seed);
+	}
+
+	private static boolean ore(int id) {
+		return id >= 14 && id <= 16 || id == 21 || id == 56 || id == 73;
 	}
 
 	/**
-	 * Ores with the mod against without it, chunk by chunk: chunks a tower has nothing to do with should be cell for cell beta's, but for the rooms of dungeons that are no longer there. Which chunks are
-	 * different and how, for a look.
+	 * Ore with the mod is where beta puts it. The mod changes ore in two kinds of place and no other: the chunks a tower reaches, where it stands in the rock, and the rooms of beta's dungeons, none
+	 * of which it lets be made. Beta carves a dungeon's room before it lays a chunk's ore, so without the room the veins run on through the rock it would have taken; and the core's veto makes
+	 * every random draw the dungeon would have, so all that comes after it in the chunk lands where it did. An ore cell that differs anywhere else is the mod moving beta's ore, and fails the test,
+	 * by chunk. Ore doesn't flow, fall or grow, so unlike the rest of the square it's the same from run to run.
+	 * <p>
+	 * A room is known by its spawner, there without the mod and not with it: the cells beta's {@code DungeonFeature} writes are within 4 of it across and from 1 under it to 3 over, and in them
+	 * only ore the mod's world has where beta's has none is the room's doing. A room whose spawner something took afterwards (a lake of a chunk made later could) would be read as a failure here;
+	 * the seeds in use have none.
 	 */
-	private void veinsOutside(Square plain, Square with, long seed) {
-		int same = 0, roomsOnly = 0, moved = 0;
+	private void oreAsBeta(Square plain, Square with, List<int[]> sites, long seed) {
+		List<int[]> rooms = new ArrayList<>();
+		for (int c = 0; c < plain.ids.length; c++) {
+			for (int i = 0; i < CELLS; i++) {
+				if ((plain.ids[c][i] & 0xFF) == SPAWNER && (with.ids[c][i] & 0xFF) != SPAWNER) rooms.add(plain.place(c, i));
+			}
+		}
+		long inTowers = 0, inRooms = 0, elsewhere = 0;
 		StringBuilder where = new StringBuilder();
 		for (int c = 0; c < plain.ids.length; c++) {
 			if (!plain.populated[c] || !with.populated[c]) continue;
-			int ores = 0, others = 0;
+			int cx = c / plain.size + plain.x0, cz = c % plain.size + plain.z0, here = 0;
+			boolean tower = false;
+			for (int[] s : sites) tower |= cx >= s[0] - TOWER_REACH >> 4 && cx <= s[0] + TOWER_REACH >> 4 && cz >= s[1] - TOWER_REACH >> 4 && cz <= s[1] + TOWER_REACH >> 4;
+			String first = "";
 			for (int i = 0; i < CELLS; i++) {
 				int p = plain.ids[c][i] & 0xFF, q = with.ids[c][i] & 0xFF;
-				if (p == q) continue;
-				boolean ore = p >= 14 && p <= 16 || q >= 14 && q <= 16 || p == 21 || q == 21 || p == 56 || q == 56 || p == 73 || q == 73;
-				if (ore) ores++;
-				else others++;
+				if (p == q || !ore(p) && !ore(q)) continue;
+				if (tower) {
+					inTowers++;
+					continue;
+				}
+				int[] at = plain.place(c, i);
+				boolean room = false;
+				if (ore(q) && !ore(p)) {
+					for (int[] r : rooms) room |= Math.abs(at[0] - r[0]) <= 4 && Math.abs(at[2] - r[2]) <= 4 && at[1] >= r[1] - 1 && at[1] <= r[1] + 3;
+				}
+				if (room) {
+					inRooms++;
+				} else if (here++ == 0) {
+					first = at[0] + "," + at[1] + "," + at[2] + " is " + p + " without it and " + q + " with";
+				}
 			}
-			if (ores == 0 && others == 0) same++;
-			else if (ores < 12) roomsOnly++;
-			else {
-				moved++;
-				if (where.length() < 200) where.append(' ').append(c / plain.size + plain.x0).append(',').append(c % plain.size + plain.z0).append(':').append(ores);
+			if (here > 0) {
+				elsewhere += here;
+				if (where.length() < 400) where.append(elsewhere == here ? ": " : "; ").append(here).append(" in chunk ").append(cx).append(',').append(cz).append(" (").append(first).append(')');
 			}
 		}
-		getLogger().lifecycle("    seed {}: chunks identical {}, a few ore cells {}, veins moved {}{}", seed, same, roomsOnly, moved, where);
-		lines.add("seed " + seed + " chunks identical " + same + ", a few ore cells " + roomsOnly + ", veins moved " + moved + where);
+		String counted = "seed " + seed + ": ore with the mod is beta's but where a tower stands or a dungeon isn't made: " + inTowers + " cells differ in the towers' chunks, " + inRooms
+				+ " in the rooms of " + rooms.size() + " dungeons, " + elsewhere + " anywhere else" + where;
+		expect(counted, elsewhere == 0);
+		lines.add(counted);
 	}
 
 	@TaskAction
@@ -792,11 +849,17 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 		dumps = getDumps().get();
 		java = getJavaExecutable().get();
 		hurry = getHurry().get();
-		Path run = freshRunDir();
-		if (getMode().get().equals("view")) view(run);
-		else if (getMode().get().equals("spacing")) spacing(run);
-		else check(run);
-		Files.write(run.resolve("harness-output.log"), lines);
+		String mode = getMode().get();
+		if (mode.equals("compare")) {
+			// What a run left in its folder, which stays as it is.
+			compare(getRunDir().get().getAsFile().toPath());
+		} else {
+			Path run = freshRunDir();
+			if (mode.equals("view")) view(run);
+			else if (mode.equals("spacing")) spacing(run);
+			else check(run);
+			Files.write(run.resolve("harness-output.log"), lines);
+		}
 		if (!failures.isEmpty()) throw new GradleException("Buried Towers' test failed:\n" + String.join("\n", failures));
 	}
 }

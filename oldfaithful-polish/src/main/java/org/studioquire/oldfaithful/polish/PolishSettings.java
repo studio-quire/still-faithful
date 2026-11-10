@@ -34,7 +34,7 @@ public final class PolishSettings implements SettingsProvider {
 			{"blocks.chestsFaceYou", WORLD, "Chest Facing", "A chest faced away from the block behind it, or south; never the way you chose."},
 			{"blocks.chestPairs", WORLD, "Chest Pairs",
 					"Any two chests side by side joined, and none could go beside a double chest. Needs Chest Facing."},
-			{"furnace.woodenFuel", WORLD, "Wooden Fuel", "A furnace burned planks, logs, sticks and most wooden blocks, but not wooden tools, doors, signs, ladders or boats."},
+			{"furnace.woodenFuel", WORLD, "Wooden Fuel", "A furnace burned planks, logs, sticks and most wooden blocks, but not tools, doors, signs, ladders or boats."},
 			{"render.chestLids", CLIENT, "Chest Lids", "A double chest's lid had a border down the middle, one lid to each half."},
 			{"blocks.fenceShape", CLIENT, "Fence Shape",
 					"Fences were whole blocks to walk into and aim at. On a server, walking past posts needs this change there too."},

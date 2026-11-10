@@ -7,6 +7,14 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.5.1 (2026-11-09)
+
+On Old Faithful 0.2.4, which saves faster in a world with many blocks waiting to update (see its changelog), and Pure
+Faithful 0.1.5.
+
+- Wooden Fuel's description in the settings took three lines where there's room for two, so it could run over the line
+  under it. It's shorter now.
+
 ## 0.5.0 (2026-11-09)
 
 On Old Faithful 0.2.3 and Pure Faithful 0.1.5, as 0.4.1 was. In Still Faithful's own mod, on its own switch under

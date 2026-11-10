@@ -4,8 +4,8 @@
 
 For checking a test pack (local/prism/FaithfulLibrary-dev-stagehand.zip) before the user imports it, e.g. with
 `tools/stagehand.py --dir <game folder> --world-wait 60 locate tower` while the world is held. Always give stagehand.py
-the --dir: on its own it finds the user's Prism instance. A game launch, so it takes a gwl.sh slot (`tools/gwl.sh`'s
---exec form). The zip is unpacked fresh into <run dir>/instance each time and the label's game folder is a new copy of
+the --dir: on its own it finds the user's Prism instance. A game launch, so here it goes through this project's queue for them (`tools/gwl.sh`'s
+--exec form; that script is this PC's own and not in the public repositories). The zip is unpacked fresh into <run dir>/instance each time and the label's game folder is a new copy of
 its .minecraft. Needs `./gw :harness:remapJar` built and the start-up test's sounds in local/cache/selftest-sounds.
 Prints the game folder once it's set up, then waits for the game, which stops itself after the world ticks.
 """

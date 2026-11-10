@@ -115,7 +115,7 @@ class ServerWorldFixesTest {
 		}
 		Files.writeString(run.resolve("server.properties"), String.join("\n", "level-name=world-" + (withFixes ? "fixed" : "beta"),
 				"online-mode=false", "server-ip=127.0.0.1", "server-port=" + port, "view-distance=4", "spawn-monsters=false",
-				"spawn-animals=true", ""));
+				"spawn-animals=true", "level-seed=" + System.getProperty("oldfaithful.fixes.seed", ""), ""));
 		String java = ProcessHandle.current().info().command().orElse("java");
 		Process process = new ProcessBuilder(java, "-Xmx768m", "-Doldfaithful.fixes.scenario=world", "-cp", System.getProperty("oldfaithful.server.classpath"),
 				"net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui").directory(run.toFile()).redirectErrorStream(true).start();

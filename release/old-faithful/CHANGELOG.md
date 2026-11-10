@@ -5,6 +5,16 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.4 (2026-11-09)
+
+Released with Still Faithful 0.5.1, which carries it; on Pure Faithful 0.1.5, as 0.2.3 was.
+
+- Saving is faster in a world with many blocks waiting to update. Old Faithful saves those waiting updates with their
+  chunks (Saved Block Ticks, under Redstone and Lighting: it's why a repeater clock runs on after a reload), and until now a save
+  went through every one of them in the world for each chunk it wrote, so the more were waiting, the slower it was. New
+  land leaves hundreds of thousands, mostly water and lava: on a server that had made a lot of it, saving took 43
+  seconds, and now takes 4. What's saved is the same.
+
 ## 0.2.3 (2026-11-09)
 
 Released with Still Faithful 0.4.0, which carries it; on Pure Faithful 0.1.5, whose servers make new land faster (see

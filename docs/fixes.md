@@ -119,7 +119,10 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
 ## Tests
 
 - `./gw :oldfaithful-fixes:test`: `SliderSteps` (every percentage labelled as itself; which are reachable pixel by
-  pixel at GUI scales 1 to 6; the knob on whole pixels); `ServerMarker`. Seconds.
+  pixel at GUI scales 1 to 6; the knob on whole pixels); `ServerMarker`; `PendingTicks` (#42: a chunk's ticks as the
+  mod finds them, from the queue grouped by chunk, against the whole queue read for that chunk, through random ticks
+  queued, run, parked, saved and unloaded with the game's own `BlockEvent`s; and the grouping made once while the queue
+  stands). Seconds.
 - `serverTest`, `clientAudit` and `clientAuditSdl` carry the mod, so every one of its mixins is applied and audited.
 - `./gw :harness:clientStartupTestFixed`: the unseen start-up test with Pure's mods and this one, then `FixesCheck`
   in the running world, each scene set up away from the player: water on a torch (#19), a furnace on a lava bucket
@@ -144,6 +147,21 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   the spawn, sometimes fell outside the area loaded at start; the scenario read the unloaded chunk there
   as air and the test failed (once in seven runs, 2026-11-02; the clock was whole on disk). Its chunks are now loaded explicitly, and the test checks
   the clock is in place before counting.)
+  Its second test, `everyTickSavedAndRestored` (2026-11-09, the scenario mod's `TickCensus`), is every tick rather than
+  one clock's: a square of new chunks loaded away from the spawn with nobody near, eight a tick, which leaves a long
+  queue (24 chunks a side: about 450,000 ticks). Then, within one tick: each chunk's ticks worked out by the test in
+  one pass over the world's queue; the mod asked for every loaded chunk's; 48 chunks unloaded, those with parked ticks
+  first; the world saved; every chunk's record read back from the region files by the test's own reading of the
+  format. Each record must hold exactly its chunk's ticks, in order (queued by due time, then parked), and the queue
+  must have lost exactly the unloaded chunks' ticks. After a restart, loading the square must put exactly those ticks
+  back, each in its chunk and due after its saved delay (a block saved twice, parked and queued again since, comes
+  back once). It prints how long the unloads and the save took. About 25 s more. `-Pticks.square=48` for the towers
+  test's size (a queue near a million), `-Pfixes.seed=N` for the same land again (`ServerWorldFixesTest`'s world too),
+  and `-Pfixes.jar=<jar>` runs the task's tests on another build of the mod: the released 0.2.3 passes this one too,
+  with the save of 2,881 chunks at 43 s where it's now 4 (`docs/bugs.md` #42). Its servers carry the speed mod too, as
+  every edition does: that mod puts its own set (`TickSet`) in the world's field of pending ticks, and it's the set
+  `PendingTicks.Counted` then goes round, so the census is of the two together; it says which set the world had in its
+  first tick, and the test fails unless that's `TickSet`. Beta's own HashSet under the count is the unit test's.
 - `ServerWorldFixesTest` (run with `serverTicksTest`, about 45 s more): the world fixes from the piston hunt on the
   real server, with this mod and then without it (each must show beta's bug there), each in a new world, by the
   scenario mod's `WorldFixes`: a lone door top on a chest beside a new redstone torch (#55), pigs dropped from 12 to 31
@@ -152,7 +170,11 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   along redstone ore (#76: none lit), its water test up a column of water (#77: never dry, against a quarter of the heights), a falling
   sand some ticks into its fall in a cell of sand (#67), and on a zombie through its own move: 400 walks across a trench
   under a roof and in the open (#74: 0 sank with the fix, 64 without; the open air identical), 1000 walks to a wall past x 1024,
-  then written and read (#75: 0 left inside, 10 without).
+  then written and read (#75: 0 left inside, 10 without). The scenes stand at fixed heights (the pool at 90, the rest at
+  100) in whatever land a new world has there, so those that need room open the sky over themselves first (#56, #64,
+  #66, #74; 2026-11-09): a tree's leaves a block over the pool, and a hill over half of it, each failed #56 with the
+  fix as pigs landed on them (two of three runs that day; both worlds pass with `-Pfixes.seed=2887346908578568466` and
+  `2340498244118505845`).
 - `./gw :oldfaithful-fixes:squidWatch [-Psquids.ticks=12000]` (#76, #77; 2026-11-06): a measurement, not a pass or fail (`SquidWatch`, `SquidWatchRun`). The real server with this mod and without it, side by side, each a new world with real squid in tanks: water 30 deep starting on the floor and at any height, 3 deep, 1 deep, a trough of thinning flow, dry land. Their height over time, footsteps, splashes and how they behave at the surface, in `local/run/squid-watch/<label>-<time>/watch.txt`. As long as its ticks at 20 a second; the numbers in `docs/bugs.md` #77.
 - `./gw :harness:fixesMultiplayerTest` (2026-11-02): the multiplayer fixes on the server package, in all four mixes:
   a server with and without this mod, each joined by the real client (hidden on a private desktop, as the start-up

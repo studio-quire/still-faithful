@@ -27,6 +27,8 @@ import org.junit.jupiter.api.Test;
  * #42 on the real b1.7.3 dedicated server: a repeater clock built and left running, the server saved and stopped, then
  * started again. With the fix the clock is still running after the restart; then the same world on a server without the
  * fix (the negative control, and proof that vanilla still loads a world with saved ticks): stopped, and no errors.
+ * And every tick of every chunk, on the long queue that new land leaves: what an unload and a save write for each chunk
+ * and what a restart puts back, tick for tick (the scenario mod's TickCensus).
  * Run with {@code ./gw :oldfaithful-fixes:serverTicksTest}.
  */
 @Tag("server")
@@ -41,14 +43,14 @@ class ServerTicksTest {
 	void repeaterClockSurvivesRestart() throws Exception {
 		fresh();
 		int built;
-		try (Server s = new Server("build", true)) {
+		try (Server s = new Server("build", true, false)) {
 			built = switches(s);
 			s.saveAndStop();
 		}
 		assertTrue(built > 0, "the clock never ran (" + built + " switches): the scenario is broken");
 
 		int fixed;
-		try (Server s = new Server("watch", true)) {
+		try (Server s = new Server("watch", true, false)) {
 			fixed = switches(s);
 			s.saveAndStop();
 			assertClean(s);
@@ -56,13 +58,45 @@ class ServerTicksTest {
 		assertTrue(fixed > 0, "with the fix, the clock stood still after a restart");
 
 		int vanilla;
-		try (Server s = new Server("watch", false)) {
+		try (Server s = new Server("watch", false, false)) {
 			vanilla = switches(s);
 			s.saveAndStop();
 			assertClean(s);
 		}
 		assertEquals(0, vanilla, "without the fix the clock should stop on a restart (is the scenario testing anything?)");
 		System.out.println("  switches: built " + built + ", after a restart " + fixed + ", after a restart without the fix " + vanilla);
+	}
+
+	/**
+	 * A square of new chunks loaded with nobody near (24 a side, or {@code -Pticks.square}; a seed with
+	 * {@code -Pfixes.seed}), then in one tick an unload of some and a save of the rest: every chunk's record on disk
+	 * holds exactly its ticks, in order. After a restart, loading the square puts exactly those back on the queue.
+	 * The census prints how long the unload and the save took.
+	 * With the speed mod beside this one, as every edition ships them: it puts its own set (TickSet) in the world's field
+	 * of pending ticks, and that's the set the mod then counts changes to. The census says which set the world had.
+	 */
+	@Test
+	void everyTickSavedAndRestored() throws Exception {
+		fresh();
+		try (Server s = new Server("bulk", true, true)) {
+			census(s);
+			// Said in the new world's first tick, before the mod's first save or unload puts its own set round it.
+			String set = s.lines().stream().filter(l -> l.contains("[fixes-scenario] bulk: pending ticks in ")).findFirst()
+					.orElseThrow(() -> new AssertionError("the census never said which set the world had"));
+			assertTrue(set.endsWith(".TickSet"), "the speed mod's set wasn't the world's: " + set);
+			s.stop();
+		}
+		try (Server s = new Server("bulk-check", true, true)) {
+			census(s);
+			s.stop();
+			assertClean(s);
+		}
+	}
+
+	private static void census(Server s) throws InterruptedException {
+		s.await(l -> l.contains("[fixes-scenario] bulk: PASS") || l.contains("[fixes-scenario] bulk: FAILED"), 600);
+		List<String> failed = s.lines().stream().filter(l -> l.contains("[fixes-scenario] bulk: FAIL")).toList();
+		assertTrue(failed.isEmpty(), String.join("; ", failed));
 	}
 
 	/**
@@ -104,7 +138,8 @@ class ServerTicksTest {
 			port = s.getLocalPort();
 		}
 		Files.writeString(run.resolve("server.properties"), String.join("\n", "level-name=world", "online-mode=false",
-				"server-ip=127.0.0.1", "server-port=" + port, "view-distance=4", "spawn-monsters=false", ""));
+				"server-ip=127.0.0.1", "server-port=" + port, "view-distance=4", "spawn-monsters=false",
+				"level-seed=" + System.getProperty("oldfaithful.fixes.seed", ""), ""));
 	}
 
 	private static void delete(Path dir) throws IOException {
@@ -118,19 +153,22 @@ class ServerTicksTest {
 		private final List<String> lines = new ArrayList<>();
 		private final OutputStream stdin;
 
-		Server(String scenario, boolean withFixes) throws IOException {
+		Server(String scenario, boolean withFixes, boolean withSpeed) throws IOException {
 			Path mods = run.resolve("mods");
 			try (Stream<Path> old = Files.list(mods)) {
 				for (Path p : old.toList()) Files.delete(p);
 			}
 			List<String> wanted = new ArrayList<>(List.of("oldfaithful.fixes.scenario.mod"));
 			if (withFixes) wanted.add("oldfaithful.fixes.mod");
+			if (withSpeed) wanted.add("oldfaithful.speed.mod");
 			for (String property : wanted) {
 				Path mod = Path.of(System.getProperty(property));
 				Files.copy(mod, mods.resolve(mod.getFileName()));
 			}
 			String java = ProcessHandle.current().info().command().orElse("java");
-			process = new ProcessBuilder(java, "-Xmx768m", "-Doldfaithful.fixes.scenario=" + scenario, "-cp", System.getProperty("oldfaithful.server.classpath"),
+			int square = Integer.getInteger("oldfaithful.fixes.bulk", 24);
+			process = new ProcessBuilder(java, square > 32 ? "-Xmx1536m" : "-Xmx768m", "-Doldfaithful.fixes.scenario=" + scenario,
+					"-Doldfaithful.fixes.bulk=" + square, "-cp", System.getProperty("oldfaithful.server.classpath"),
 					"net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui").directory(run.toFile()).redirectErrorStream(true).start();
 			stdin = process.getOutputStream();
 			Thread reader = new Thread(() -> {
@@ -172,6 +210,10 @@ class ServerTicksTest {
 		void saveAndStop() throws Exception {
 			send("save-all");
 			await(l -> l.contains("Save complete."), 120);
+			stop();
+		}
+
+		void stop() throws Exception {
 			send("stop");
 			assertTrue(process.waitFor(120, TimeUnit.SECONDS), "server didn't stop");
 		}

@@ -83,7 +83,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
 		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
-		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules")) {
+		for (String id : List.of("faithful-core", "alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules")) {
 			expect("as shipped: the loader lists " + id, played.stream().anyMatch(l -> l.contains(id)));
 		}
 		expect("the new world's file has seen Water Bottles", Files.isRegularFile(shipped.resolve("saves/oldfaithful-startup/faithful-world.properties"))
@@ -122,7 +122,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Path plainDir = serverFolder(run, "server-plain", port);
 		Path plainMods = plainDir.resolve("mods"), held = plainDir.resolve("held");
 		Files.createDirectories(held);
-		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "hearty-food", "item-repair", "wild-saplings")) {
+		for (String mod : List.of("faithful-core", "oldfaithful-settings", "water-bottles", "alchemy", "blue-flowers", "world-rules", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "wild-saplings")) {
 			Files.move(plainMods.resolve(nameOf(plainMods, mod)), held.resolve(nameOf(plainMods, mod)));
 		}
 		start(plainDir, "every library jar out");
@@ -183,6 +183,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Files.delete(mods.resolve(nameOf(mods, "alchemy")));
 		Files.delete(mods.resolve(nameOf(mods, "buried-towers")));
 		Files.delete(mods.resolve(nameOf(mods, "blue-flowers")));
+		Files.delete(mods.resolve(nameOf(mods, "explosive-arrows")));
 		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
 		List<String> command = windows ? List.of("cmd", "/c", dir.resolve("start.bat").toString()) : List.of("sh", dir.resolve("start.sh").toString());
 		List<String> refused;
@@ -256,11 +257,11 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	/** What the loader's mod list said: nothing of the library's, by id. */
 	private static boolean loadedNothing(List<String> output) {
 		return output.stream().noneMatch(l -> l.contains("- faithful-core ") || l.contains("- world-rules ") || l.contains("- water-bottles ") || l.contains("- blue-flowers ") || l.contains("- buried-towers ") || l.contains("- hearty-food ") || l.contains("- item-repair ") || l.contains("- alchemy ") || l.contains("- wild-saplings ")
-				|| l.contains("- plain-f3 ") || l.contains("- no-toasts "));
+				|| l.contains("- explosive-arrows ") || l.contains("- plain-f3 ") || l.contains("- no-toasts "));
 	}
 
 	private String allOn() throws IOException {
-		return String.join("\n", "mods-library/alchemy.jar", "mods-library/blue-flowers.jar", "mods-library/buried-towers.jar", "mods-library/faithful-core.jar", "mods-library/hearty-food.jar", "mods-library/item-repair.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
+		return String.join("\n", "mods-library/alchemy.jar", "mods-library/blue-flowers.jar", "mods-library/buried-towers.jar", "mods-library/explosive-arrows.jar", "mods-library/faithful-core.jar", "mods-library/hearty-food.jar", "mods-library/item-repair.jar", "mods-library/no-toasts.jar", "mods-library/plain-f3.jar",
 				"mods-library/water-bottles.jar", "mods-library/wild-saplings.jar", "mods-library/world-rules.jar", "");
 	}
 

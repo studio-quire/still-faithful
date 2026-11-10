@@ -2,8 +2,10 @@ package oldfaithful.gradle;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +29,10 @@ import org.gradle.api.tasks.TaskAction;
  * Mixin targets, rewritten to intermediary names, which Fabric Loader maps onto the player's own game jar. The jar is
  * then rewritten with its entries sorted and one fixed timestamp, so the same source gives the same bytes (the
  * remapper writes in thread order with the current time).
+ *
+ * <p>The jar is made beside its place and moved in whole, and one that would come out the same is left as it is:
+ * another build in this checkout may be reading it (a test copying its mods), and Gradle runs this again whenever
+ * buildSrc changes at all, when the same source gives the same bytes.
  */
 public abstract class RemapJarTask extends DefaultTask {
 	@InputFile
@@ -46,11 +52,39 @@ public abstract class RemapJarTask extends DefaultTask {
 	@TaskAction
 	public void remap() throws IOException {
 		List<Path> classpath = getClasspath().getFiles().stream().map(f -> f.toPath()).toList();
-		Remapping.remap(getInput().get().getAsFile().toPath(), getOutput().get().getAsFile().toPath(),
-				Remapping.provider(Remapping.readMappingsJar(getNamedMappings().get().getAsFile().toPath()),
-						"named", "intermediary"),
-				classpath, false, true);
-		normalize(getOutput().get().getAsFile().toPath());
+		Path output = getOutput().get().getAsFile().toPath();
+		Path made = output.resolveSibling(output.getFileName() + ".making-" + ProcessHandle.current().pid());
+		try {
+			Remapping.remap(getInput().get().getAsFile().toPath(), made,
+					Remapping.provider(Remapping.readMappingsJar(getNamedMappings().get().getAsFile().toPath()),
+							"named", "intermediary"),
+					classpath, false, true);
+			normalize(made);
+			if (Files.isRegularFile(output) && Files.mismatch(made, output) == -1) return;
+			replace(made, output);
+		} finally {
+			Files.deleteIfExists(made);
+		}
+	}
+
+	/** Windows refuses to replace a file that is open, so a reader gets a few seconds to finish. */
+	private static void replace(Path made, Path output) throws IOException {
+		for (int attempt = 0;; attempt++) {
+			try {
+				Files.move(made, output, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+				return;
+			} catch (AtomicMoveNotSupportedException e) {
+				throw e;
+			} catch (IOException e) {
+				if (attempt == 50) throw new IOException(output + " can't be replaced: is a game or another build still reading it?", e);
+				try {
+					Thread.sleep(200);
+				} catch (InterruptedException interrupted) {
+					Thread.currentThread().interrupt();
+					throw e;
+				}
+			}
+		}
 	}
 
 	private static final LocalDateTime EPOCH = LocalDateTime.of(1980, 2, 1, 0, 0);
@@ -69,7 +103,7 @@ public abstract class RemapJarTask extends DefaultTask {
 			if (manifest != null) put(zip, "META-INF/MANIFEST.MF", manifest);
 			for (Map.Entry<String, byte[]> e : entries.entrySet()) put(zip, e.getKey(), e.getValue());
 		}
-		Files.move(tmp, jar, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		Files.move(tmp, jar, StandardCopyOption.REPLACE_EXISTING);
 	}
 
 	private static void put(ZipOutputStream zip, String name, byte[] data) throws IOException {

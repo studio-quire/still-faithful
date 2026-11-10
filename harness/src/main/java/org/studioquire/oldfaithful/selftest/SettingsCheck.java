@@ -574,8 +574,10 @@ final class SettingsCheck {
 		return true;
 	}
 
-	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "Wild Saplings", "World Rules");
-	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules");
+	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Explosive Arrows", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Water Bottles", "Wild Saplings", "World Rules");
+	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "water-bottles", "wild-saplings", "world-rules");
+	/** A mod's own settings, besides its rules, as its page shows them in a pack as it comes: the whole button, so each at its default. */
+	private static final java.util.Map<String, List<String>> PACK_SETTINGS = java.util.Collections.singletonMap("Blue Flowers", java.util.Collections.singletonList("Yellow Flower: Dandelion"));
 
 	private static List<String> extra(String names) {
 		List<String> out = new ArrayList<>();
@@ -653,21 +655,23 @@ final class SettingsCheck {
 			click(mods, button(mods, ">"));
 		}
 		results.check("Mods: a wide button for each mod, over its pages: " + offered, offered.equals(wanted));
-		// With nothing on, a page is its on and off; with everything, its mod's rules too, and Lock Rules where there are any (in a world: this check runs in one).
+		// With nothing on, a page is its on and off; with everything, its mod's rules and settings too, and Lock Rules where there are any rules (in a world: this check runs in one).
 		java.util.Map<String, List<String>> rules = on ? rulesByMod() : java.util.Collections.emptyMap();
 		for (String name : PACK_NAMES) {
 			Screen page = openMod(mc, name);
 			String enabled = button(page, "Enabled:").text;
 			List<String> own = rules.getOrDefault(name, java.util.Collections.emptyList()), shown = new ArrayList<>(), stray = new ArrayList<>();
+			List<String> settings = on ? PACK_SETTINGS.getOrDefault(name, java.util.Collections.emptyList()) : java.util.Collections.emptyList(), settingsShown = new ArrayList<>();
 			boolean lock = false;
 			for (String text : allTexts(page)) {
 				String rule = own.stream().filter(text::startsWith).findFirst().orElse(null);
 				if (rule != null) shown.add(rule);
+				else if (settings.contains(text)) settingsShown.add(text);
 				else if (text.equals("Lock Rules")) lock = true;
 				else if (!text.startsWith("Enabled:") && !text.equals("Done") && !text.equals("<") && !text.equals(">")) stray.add(text);
 			}
-			results.check(name + "'s page: " + texts(page) + (own.isEmpty() ? "" : ", its rules " + own),
-					enabled.equals(on ? "Enabled: ON" : "Enabled: OFF") && shown.equals(own) && lock == !own.isEmpty() && stray.isEmpty());
+			results.check(name + "'s page: " + texts(page) + (own.isEmpty() ? "" : ", its rules " + own) + (settings.isEmpty() ? "" : ", its settings " + settings),
+					enabled.equals(on ? "Enabled: ON" : "Enabled: OFF") && shown.equals(own) && settingsShown.equals(settings) && lock == !own.isEmpty() && stray.isEmpty());
 		}
 		if (on) {
 			java.util.Set<String> before = listed();

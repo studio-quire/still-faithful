@@ -689,8 +689,19 @@ spawn area alone leaves tens of thousands of liquid ticks at its edge, which ret
 everything else). Ticks still run only with their surroundings loaded, so they never load chunks. Checked on the real
 server (`:oldfaithful-fixes:serverTicksTest`): a repeater clock built and running, the server stopped and started, the
 clock runs on; the same world on a vanilla server loads cleanly and its clock stands still. Noticed on the way: a new
-world's generation leaves some 240,000 liquid ticks, worked through at 1,000 a tick (about four minutes); vanilla
+world's generation leaves some 240,000 liquid ticks, worked through at 1,000 a tick (about 250 ticks, 13 s, as
+`serverTicksTest`'s wait showed 2026-11-09; this said four minutes before); vanilla
 dropped what was left on quitting, now it's saved and finished next time.
+A save or an unload takes each chunk's ticks from the queue grouped by chunk (2026-11-09, Claude Fable 5.2): one pass
+over the queue, kept until the queue changes, which the world's set of pending ticks reports by counting its changes
+(`PendingTicks.Counted`, wrapped round whatever set the world has). Up to 0.2.3 the whole queue was read for every chunk
+saved or unloaded, so a save cost chunks times ticks queued: about 17 ms a chunk on a queue of 940,000, which 2,304
+chunks made with nobody near leave. Measured on the real server on that land (`serverTicksTest -Pticks.square=48
+-Pfixes.seed=1733`, other sessions' tests and the user's game running): the save of 2,881 chunks 43.5 s with 0.2.3's
+jar, 4.1 s now; 48 chunks unloaded 1.2 s, now 0.04 s. What's written and what comes back is the same, tick for tick:
+`everyTickSavedAndRestored` (`docs/fixes.md` > Tests) passes on 0.2.3's jar and on this one. One grouping costs about
+three whole-queue reads (13 ms at 240,000 ticks), so a save of one or two chunks on a long queue is a little slower
+than it was, and everything larger faster.
 
 ### 43. A missing block entity crashes the game when its block is broken (T, Pure)
 Fixed (2026-11-02, after 0.1.0) in `oldfaithful-saves`: every loaded chunk's vanilla blocks with a block entity that

@@ -57,6 +57,11 @@ abstract class WorldMixin implements PendingTicks.Queue {
 	}
 
 	@Override
+	public void oldfaithful$setPending(Set<BlockEvent> pending) {
+		this.scheduledUpdateSet = pending;
+	}
+
+	@Override
 	public TreeSet<BlockEvent> oldfaithful$ordered() {
 		return this.scheduledUpdates;
 	}

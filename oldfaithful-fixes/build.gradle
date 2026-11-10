@@ -4,8 +4,13 @@ plugins { id 'oldfaithful.mod' }
 // which the game's launcher supplies at runtime (LWJGL 2 or our component).
 def mc = rootProject.oldfaithfulMinecraft
 
-// The scenario source set is a test-only server mod for `serverTicksTest` (#42): a repeater clock beside the spawn.
+// The scenario source set is a test-only server mod for `serverTicksTest` (#42): a repeater clock beside the spawn, and
+// every chunk's saved ticks counted (TickCensus, which asks this mod's PendingTicks).
 sourceSets { scenario }
+
+// The speed mod puts its own set in the world's field of pending ticks, the one this mod's PendingTicks wraps, and every
+// edition ships the two together: serverTicksTest's census of ticks runs with it.
+evaluationDependsOn(':oldfaithful-speed')
 
 dependencies {
     compileOnly("org.studioquire.oldfaithful.natives:lwjgl:${lwjgl_version}") { transitive = false }
@@ -14,7 +19,10 @@ dependencies {
     testImplementation project(':oldfaithful-settings')
     testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    // PendingTicksTest runs the grouping on the game's own BlockEvents.
+    testImplementation files(mc.namedJar)
     scenarioCompileOnly files(mc.namedJar)
+    scenarioCompileOnly sourceSets.main.output
     scenarioCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
     scenarioCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"
 }
@@ -60,16 +68,23 @@ tasks.register('serverTicksTest', Test) {
     useJUnitPlatform { includeTags 'server' }
     maxHeapSize = '256m'
     def remapped = tasks.named('remapJar')
-    dependsOn remapped, scenarioRemap
+    def speedMod = project(':oldfaithful-speed').tasks.named('remapJar')
+    dependsOn remapped, scenarioRemap, speedMod
     def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
     inputs.files(serverClasspath)
     outputs.upToDateWhen { false }
     testLogging { showStandardStreams = true; exceptionFormat = 'full' }
     doFirst {
         systemProperty 'oldfaithful.server.classpath', serverClasspath.asPath
-        systemProperty 'oldfaithful.fixes.mod', remapped.get().output.get().asFile.absolutePath
+        // -Pfixes.jar=<a jar of this mod>: the tests on another build of it, a released one say, in place of this one.
+        systemProperty 'oldfaithful.fixes.mod', providers.gradleProperty('fixes.jar').map { rootProject.file(it).absolutePath }
+                .getOrElse(remapped.get().output.get().asFile.absolutePath)
         systemProperty 'oldfaithful.fixes.scenario.mod', scenarioRemap.get().output.get().asFile.absolutePath
+        systemProperty 'oldfaithful.speed.mod', speedMod.get().output.get().asFile.absolutePath
         systemProperty 'oldfaithful.run', rootProject.file('local/run/fixes-server-test').absolutePath
+        // The side of the square of chunks whose ticks are counted through a save and a restart (-Pticks.square=48 for a long queue).
+        systemProperty 'oldfaithful.fixes.bulk', providers.gradleProperty('ticks.square').getOrElse('24')
+        systemProperty 'oldfaithful.fixes.seed', providers.gradleProperty('fixes.seed').getOrElse('')
     }
 }
 

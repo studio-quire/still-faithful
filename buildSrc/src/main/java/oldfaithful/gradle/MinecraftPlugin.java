@@ -1,10 +1,14 @@
 package oldfaithful.gradle;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.util.List;
 
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
+import org.gradle.api.file.Directory;
 import org.gradle.api.file.RegularFile;
 import org.gradle.api.provider.Provider;
 import org.gradle.api.tasks.JavaExec;
@@ -12,7 +16,8 @@ import org.gradle.api.tasks.TaskProvider;
 
 /**
  * Applied to the root project: obtains the game jars, builds the merged named jar mods compile against, and
- * offers a decompile for reading. Downloads and derived jars live in local/cache (ignored, survives `clean`).
+ * offers a decompile for reading. Downloads and derived jars live in local/cache (ignored, survives `clean`), which
+ * checkouts share: the derived jars in a folder named for what decides them ({@link PrepareMinecraftTask}).
  */
 public class MinecraftPlugin implements Plugin<Project> {
 	@Override
@@ -39,14 +44,30 @@ public class MinecraftPlugin implements Plugin<Project> {
 			t.getOutput().set(new File(cache, version + "-server.jar"));
 		});
 
+		// Worked out when first asked for, once: it reads the mappings, which resolves them.
+		String[] key = new String[1];
+		Provider<Directory> derived = project.getLayout().dir(project.provider(() -> {
+			if (key[0] == null) {
+				try {
+					key[0] = PrepareMinecraftTask.key(prop(project, "minecraft_client_sha1"), prop(project, "minecraft_server_sha1"),
+							intermediary.getSingleFile().toPath(), named.getSingleFile().toPath(),
+							List.of("tiny-remapper " + prop(project, "tiny_remapper_version"),
+									"mapping-io " + prop(project, "mapping_io_version"), "asm " + prop(project, "asm_version")));
+				} catch (IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			}
+			return new File(cache, version + "-merged-" + key[0]);
+		}));
+
 		TaskProvider<PrepareMinecraftTask> prepare = project.getTasks().register("prepareMinecraft", PrepareMinecraftTask.class, t -> {
 			t.setGroup("oldfaithful");
 			t.getClientJar().set(client.flatMap(DownloadTask::getOutput));
 			t.getServerJar().set(server.flatMap(DownloadTask::getOutput));
 			t.getIntermediaryMappings().fileProvider(project.provider(intermediary::getSingleFile));
 			t.getNamedMappings().fileProvider(project.provider(named::getSingleFile));
-			t.getMergedIntermediaryJar().set(new File(cache, version + "-merged-intermediary.jar"));
-			t.getNamedJar().set(new File(cache, version + "-merged-named.jar"));
+			t.getMergedIntermediaryJar().set(derived.map(d -> d.file(version + "-merged-intermediary.jar")));
+			t.getNamedJar().set(derived.map(d -> d.file(version + "-merged-named.jar")));
 		});
 
 		// For reading only: decompiled source never leaves local/.
