@@ -41,6 +41,24 @@ final class LibrarySelftestStage implements Stage {
 		}
 
 		List<Path> client = t.clientMods(t.subjects, true), joined = t.clientMods(t.subjects, true), server = t.serverMods(t.subjects, true);
+		// On an edition's mods too (-Plibrary.edition=old or still), for what only shows with them: Still Faithful's lighting and the like.
+		String edition = t.getSelftestEdition().get();
+		List<String> editionFlags = new ArrayList<>();
+		if (!edition.isEmpty()) {
+			List<Path> extra = new ArrayList<>();
+			t.getOldMods().getFiles().forEach(f -> extra.add(f.toPath()));
+			if (edition.equals("still")) {
+				t.getStillMods().getFiles().forEach(f -> extra.add(f.toPath()));
+				if (!t.getStillEdition().get().isEmpty()) editionFlags.add(LibraryTestTask.flag("oldfaithful.selftest.edition", t.getStillEdition().get()));
+			} else if (!edition.equals("old")) {
+				t.fail("harness", "options", "library.edition is old or still, not " + edition);
+				return;
+			}
+			client.addAll(extra);
+			joined.addAll(extra);
+			server.addAll(extra);
+			t.notes.add("selftest: on " + edition + " edition's mods as well (library.edition)");
+		}
 		List<String> onServer = new ArrayList<>(mods);
 		for (LibraryMod m : tests) {
 			client.add(m.jar());
@@ -72,12 +90,12 @@ final class LibrarySelftestStage implements Stage {
 		Path game = dir.resolve("single-player");
 		Files.createDirectories(game);
 		t.testsPassed.clear();
-		t.client("single player", game, client, List.of("-Doldfaithful.selftest.worldChecksOnly=true", "-Doldfaithful.selftest.recordText=true", "-Dfaithful.test=first", stall, planted));
+		t.client("single player", game, client, with(List.of("-Doldfaithful.selftest.worldChecksOnly=true", "-Doldfaithful.selftest.recordText=true", "-Dfaithful.test=first", stall, planted), editionFlags));
 		keepLog(game, "first");
 		keepSave(game);
 		mustHaveChecked(mods, "single player");
 		counted("single player");
-		t.client("single player, restarted", game, client, List.of("-Doldfaithful.selftest.worldChecksOnly=true", "-Doldfaithful.selftest.recordText=true", "-Dfaithful.test=restarted", stall, planted));
+		t.client("single player, restarted", game, client, with(List.of("-Doldfaithful.selftest.worldChecksOnly=true", "-Doldfaithful.selftest.recordText=true", "-Dfaithful.test=restarted", stall, planted), editionFlags));
 		keepLog(game, "restarted");
 		counted("single player, restarted");
 		if (t.getSinglePlayerOnly().get()) {
@@ -86,32 +104,77 @@ final class LibrarySelftestStage implements Stage {
 			return;
 		}
 
-		try (HarnessServer host = new HarnessServer(t, dir.resolve("server"))) {
+		// Launches overlap where one would only wait for the other (2026-11-10: Alchemy's stage 72 s to 56): a client starts beside its
+		// server, or while the server restarts, and is let in when the server says it's done (LibraryTestTask.Joining); and each server without the
+		// set starts while the client before it plays, so it's ready when its own client is. Never two game clients at once.
+		// Not let in sooner, though the port is open before the world loads: a login would wait through the loading against the client's
+		// own limits (a minute without a packet, 90 s to get into the world), where a server has three minutes to start.
+		boolean without = t.subjects.stream().anyMatch(LibraryMod::content);
+		Path guest = dir.resolve("joined");
+		List<String> hostJvm = List.of("-Dfaithful.test=host", planted);
+		try (HarnessServer host = new HarnessServer(t, dir.resolve("server")); HarnessServer core = without ? new HarnessServer(t, dir.resolve("without").resolve("core-server")) : null) {
 			host.mods(server).properties(Map.of("spawn-animals", "true", "level-seed", String.valueOf(t.getSeed().get())));
+			if (without) core.mods(t.serverMods(List.of(), false)).properties(Map.of("level-seed", String.valueOf(t.getSeed().get())));
 			t.testsPassed.clear();
-			if (join(host, joined, dir.resolve("joined"), "first", "on a server", stall, planted)) {
-				mustHaveChecked(onServer, "on a server");
-				counted("on a server");
-				join(host, joined, dir.resolve("joined"), "restarted", "on a server, restarted", stall, planted);
-				counted("on a server, restarted");
+			host.launch(hostJvm);
+			boolean up;
+			try (LibraryTestTask.Joining first = t.joining("on a server", guest, joined, host.port, joinJvm("first", stall, planted))) {
+				up = letIn(host, first);
 			}
-			if (t.subjects.stream().anyMatch(LibraryMod::content)) serversWithout(dir.resolve("without"), joined, stall, planted);
+			if (up) keepLog(guest, "first");
+			else if (without) core.launch(List.of());
+			if (up) {
+				// This client waits at its menu while the server saves, stops and starts again.
+				try (LibraryTestTask.Joining second = t.joining("on a server, restarted", guest, joined, host.port, joinJvm("restarted", stall, planted))) {
+					stopHost(host, true, "on a server");
+					mustHaveChecked(onServer, "on a server");
+					counted("on a server");
+					host.launch(hostJvm);
+					up = host.awaitStart();
+					if (up) second.admit();
+					// Once this one is up, not beside it: three JVMs starting together each took about half as long again.
+					if (without) core.launch(List.of());
+					if (up) second.await();
+				}
+				if (up) keepLog(guest, "restarted");
+				stopHost(host, up, "on a server, restarted");
+				counted("on a server, restarted");
+			} else {
+				stopHost(host, false, "on a server");
+			}
+			if (without) serversWithout(dir.resolve("without"), core, joined, stall, planted);
 		} finally {
 			t.longLaunch = 0;
 		}
 	}
 
+	private List<String> joinJvm(String mode, String stall, String planted) {
+		List<String> jvm = new ArrayList<>(List.of("-Doldfaithful.selftest.joinWorldChecks=true", "-Dfaithful.test=" + mode, stall, planted));
+		jvm.addAll(joinFlags);
+		return jvm;
+	}
+
+	/** Lets the client in once the server is ready, and waits for it to play its tests through; false, the client ended, if the server didn't come up. */
+	private static boolean letIn(HarnessServer server, LibraryTestTask.Joining client) throws Exception {
+		if (!server.awaitStart()) return false;
+		client.admit();
+		client.await();
+		return true;
+	}
+
+	private void stopHost(HarnessServer host, boolean up, String where) throws Exception {
+		if (up && !host.save()) t.fail("harness", "save", "save-all didn't finish [" + where + "]");
+		Integer[] exit = {null};
+		t.scan("server: " + where, host.stop(exit));
+		if (!up) t.fail("harness", "failed-to-start", "the server didn't start [" + where + "]");
+		else if (exit[0] == null) t.fail("harness", "stop", "the server didn't stop within two minutes [" + where + "]");
+	}
+
 	/**
-	 * A client with the set's content on servers that have none of it, which admit it: one with the core alone, then the real one. Each mod's
-	 * {@code faithful:test-without} runs there, as an op that can {@code /give} itself what it needs.
+	 * A client with the set's content on servers that have none of it, which admit it: one with the core alone ({@code core}, started
+	 * already), then the real one. Each mod's {@code faithful:test-without} runs there, as an op that can {@code /give} itself what it needs.
 	 */
-	private void serversWithout(Path dir, List<Path> jars, String stall, String planted) throws Exception {
-		try (HarnessServer core = new HarnessServer(t, dir.resolve("core-server"))) {
-			core.mods(t.serverMods(List.of(), false)).properties(Map.of("level-seed", String.valueOf(t.getSeed().get())));
-			if (core.start(List.of())) joinWithout("on a server with only the core", dir.resolve("core-client"), jars, core.port, stall, planted);
-			else t.fail("harness", "failed-to-start", "a server with only the core");
-			t.scan("server: only the core", core.stop(null));
-		}
+	private void serversWithout(Path dir, HarnessServer core, List<Path> jars, String stall, String planted) throws Exception {
 		Path plain = dir.resolve("real-server");
 		Files.createDirectories(plain);
 		Files.copy(t.getServerJar().get().getAsFile().toPath(), plain.resolve("minecraft_server.jar"), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
@@ -121,22 +184,29 @@ final class LibrarySelftestStage implements Stage {
 		}
 		Files.writeString(plain.resolve("server.properties"), String.join("\n", "level-name=world", "online-mode=false", "server-ip=127.0.0.1", "server-port=" + port, "view-distance=3", "spawn-monsters=false", "spawn-animals=false", "level-seed=" + t.getSeed().get(), ""));
 		Files.writeString(plain.resolve("ops.txt"), "OldFaithfulTest\n");
+		List<String> jvm = List.of("-Doldfaithful.selftest.joinWorldChecks=true", "-Dfaithful.test=without", stall, planted);
+		// The real server starts as the core's client does: nine seconds of making its world, over by the time that client has played.
 		try (GameProcess real = new GameProcess(List.of(t.getJavaExecutable().get(), "-Xmx512m", "-jar", "minecraft_server.jar", "nogui"), plain, plain.resolve("harness-output.log"), Map.of())) {
-			if (real.await(l -> l.contains("Done ("), 120) == null) {
-				t.fail("harness", "failed-to-start", "the real server");
-				return;
+			t.testsPassed.clear();
+			try (LibraryTestTask.Joining client = t.joining("on a server with only the core", dir.resolve("core-client"), jars, core.port, jvm)) {
+				if (letIn(core, client)) counted("on a server with only the core");
+				else t.fail("harness", "failed-to-start", "a server with only the core");
 			}
-			joinWithout("on the real server", dir.resolve("real-client"), jars, port, stall, planted);
+			t.scan("server: only the core", core.stop(null));
+
+			t.testsPassed.clear();
+			try (LibraryTestTask.Joining client = t.joining("on the real server", dir.resolve("real-client"), jars, port, jvm)) {
+				if (real.await(l -> l.contains("Done ("), 120) == null) {
+					t.fail("harness", "failed-to-start", "the real server");
+					return;
+				}
+				client.admit();
+				client.await();
+				counted("on the real server");
+			}
 			real.send("stop");
 			real.waitFor(60);
 		}
-	}
-
-	private void joinWithout(String where, Path game, List<Path> jars, int port, String stall, String planted) throws Exception {
-		Files.createDirectories(game);
-		t.testsPassed.clear();
-		t.client(where, game, jars, List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, "-Doldfaithful.selftest.joinWorldChecks=true", "-Dfaithful.test=without", stall, planted));
-		counted(where);
 	}
 
 	/** A launch's log is overwritten by the next in that folder, and a pass is only worth what can be read back. */
@@ -252,21 +322,10 @@ final class LibrarySelftestStage implements Stage {
 		return bytes.toByteArray();
 	}
 
-	private boolean join(HarnessServer host, List<Path> jars, Path game, String mode, String where, String stall, String planted) throws Exception {
-		Files.createDirectories(game);
-		boolean up = host.start(List.of("-Dfaithful.test=host", planted));
-		if (up) {
-			List<String> jvm = new ArrayList<>(List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + host.port, "-Doldfaithful.selftest.joinWorldChecks=true", "-Dfaithful.test=" + mode, stall, planted));
-			jvm.addAll(joinFlags);
-			t.client(where, game, jars, jvm);
-			keepLog(game, mode);
-			if (!host.save()) t.fail("harness", "save", "save-all didn't finish [" + where + "]");
-		}
-		Integer[] exit = {null};
-		t.scan("server: " + where, host.stop(exit));
-		if (!up) t.fail("harness", "failed-to-start", "the server didn't start [" + where + "]");
-		else if (exit[0] == null) t.fail("harness", "stop", "the server didn't stop within two minutes [" + where + "]");
-		return up;
+	private static List<String> with(List<String> a, List<String> b) {
+		List<String> all = new ArrayList<>(a);
+		all.addAll(b);
+		return all;
 	}
 
 	private void mustHaveChecked(List<String> mods, String where) {

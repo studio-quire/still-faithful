@@ -5,7 +5,10 @@ licence obligations and how each is met, and the steps to publish. Three edition
 since 0.1.0), **Old Faithful**, which is Pure Faithful plus its own mods (public since 0.1.0, 2026-11-02, on Pure
 Faithful 0.1.2), and **Still Faithful**, which is Old Faithful plus its own mod (public since 0.1.0, 2026-11-03, on
 Old Faithful 0.1.2 and Pure Faithful 0.1.3). Windows only for now (roadmap phase 7). The **Faithful Library**, optional
-mods over Old and Still Faithful, is released on them with its own version (below).
+mods for any of them, is released as jars on their own with its own version, and **More Faithful**, Still Faithful with
+the library's mods, is a pack on Still Faithful and the library (below). One ladder (the user's, 2026-11-10): each pack
+is the one before it with more, so More Faithful builds on Still Faithful only; the library's packs on Old and Still
+Faithful (0.1.0 to 0.4.0) became More Faithful, and the one on Old Faithful went.
 
 ## Names
 
@@ -34,14 +37,17 @@ dusk violet seal; its config file and log prefix say `stillfaithful-polish`. Its
 editions' snapshots with the folder: the pack `StillFaithful-<v>.zip`, the server package `StillFaithful-server-<v>.zip`,
 the repository `studio-quire/still-faithful`, the page `studioquire.org/still-faithful/`.
 
-The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the packs `OldFaithful-Library-<v>.zip` and `StillFaithful-Library-<v>.zip`, the server packages `...-Library-server-<v>.zip`, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. A library pack's icon is its edition's own seal (the user's call, 2026-11-06); the glow around them is the site's card's and link preview's only (`tools/library_card.py`).
+The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `explosive-arrows`, `wild-saplings`, `wary-creepers`, `wolf-packs`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the jars, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. Its mods' metadata links there.
+
+More Faithful's words, version and seal are `more_*` in the root's `gradle.properties`, its texts in `release/more-faithful/`: the pack `MoreFaithful-<v>.zip`, the server package `MoreFaithful-server-<v>.zip`, the repository `studio-quire/more-faithful`, the page `studioquire.org/more-faithful/`, the dev packs `MoreFaithful-dev*.zip`. It has no mods of its own, so no public id. Through 0.4.0 it was the library's pack `StillFaithful-Library-<v>.zip`, beside `OldFaithful-Library-<v>.zip`, on the library's releases. Its icon is its own seal, crimson with the rim and β in silver as the editions' are (`more_release_icon=morefaithful`, `prism/release/icons/final/morefaithful-*`, drawn by `tools/icon_candidates.py`; the user's pick, 2026-11-10). Inside the game it names itself while any of its mods is on (In the game, below).
 
 ## Building one
 
     ./gw release                 # Pure Faithful: everything into local/release/<version>/, with SHA256SUMS.txt
     ./gw releaseFixed            # Old Faithful: into local/release/old-faithful-<version>/
     ./gw releaseStill            # Still Faithful: into local/release/still-faithful-<version>/
-    ./gw releaseLibrary          # the Faithful Library: into local/release/faithful-library-<version>/
+    ./gw releaseLibrary          # the Faithful Library's jars: into local/release/faithful-library-<version>/
+    ./gw releaseMore             # More Faithful: into local/release/more-faithful-<version>/
 
 Neither publishes anything. GitHub rewrites `+` in asset names, so assets have none. Pure Faithful's release:
 
@@ -77,14 +83,20 @@ The Faithful Library's:
 
 | File | What it is |
 |---|---|
-| `OldFaithful-Library-<v>.zip`, `StillFaithful-Library-<v>.zip` | The packs: the edition's pack with Faithful Core and every mod in `.minecraft/mods-library/` under version-less names, a `selection.txt` with all of them on, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
-| `OldFaithful-Library-server-<v>.zip`, `StillFaithful-Library-server-<v>.zip` | The edition's server package with the core, settings and the server-side mods on in `mods/` under versioned names, as in the packs; Plain F3 and No Toasts are client-only, so not there |
-| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,item-repair,wild-saplings,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is only here, in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default |
+| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,item-repair,wild-saplings,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default; nor, from 0.6.0, is Wary Creepers, which the user took out of More Faithful for now |
 | `SHA256SUMS.txt` | For the release notes |
 
-Old Faithful's, Still Faithful's and the library's releases have no component file, natives or separate sources zip: Pure Faithful's mods and component
+More Faithful's:
+
+| File | What it is |
+|---|---|
+| `MoreFaithful-<v>.zip` | The pack: Still Faithful's pack with Faithful Core and every mod of its list in `.minecraft/mods-library/` under version-less names, a `selection.txt` with all of them on, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
+| `MoreFaithful-server-<v>.zip` | Still Faithful's server package with the core, settings and the server-side mods on in `mods/` under versioned names, as in the pack; Plain F3 and No Toasts are client-only, so not there |
+| `SHA256SUMS.txt` | For the release notes |
+
+Old Faithful's, Still Faithful's, the library's and More Faithful's releases have no component file, natives or separate sources zip: Pure Faithful's mods and component
 on their own are on the Pure Faithful release each names (below), Old Faithful's mods on the Old Faithful release
-Still Faithful's names, and each pack and server package carries its own sources.
+Still Faithful's names, the library's mods on the library's release More Faithful names, and each pack and server package carries its own sources.
 
 Every zip entry has one fixed timestamp and a fixed order, so a rebuild from the same commit and mirror gives the same
 bytes (checked for both editions: two runs, identical `SHA256SUMS.txt`; Pure Faithful's 0.1.1 rebuilt byte for byte
@@ -106,7 +118,7 @@ README and notices header) and builds both from the same templates; Old Faithful
 `release/old-faithful/`. A project marked `oldfaithful_edition=fixed` that the script's `fixedMods` doesn't list stops
 the build, so a new Old Faithful mod is placed in the pack and server package on purpose. Still Faithful's edition is
 added to `releaseEditions` by `gradle/still-faithful.gradle` (its texts in `release/still-faithful/`), with the same
-rule for its `stillMods`. The library's two packs are added by `gradle/library.gradle` (`release/library/`), with the same rule for its `libraryMods`, against every mod in `library/` without `library_test=true` or `library_jar_only=true`; the second is a jar in the release and nothing more. The library's pack test names the packs' mods too, so a new one goes into its lists as well: `buildSrc/.../LibraryPackTestTask.java` (the loader's list, the server's jars, the mods a vanilla client can join with) and the Mods menu's names and ids in `harness/.../SettingsCheck.java`.
+rule for its `stillMods`. The library's release and More Faithful are added by `gradle/library.gradle` (`release/library/`, `release/more-faithful/`): its `packMods` gives each content pack, up the ladder, its own mods, and every mod in `library/` must be in one unless it says `library_test=true` or `library_jar_only=true` (the second is a jar in the library's release and nothing more). A pack's words, version, release task, parts check, dev packs and pack test all come from that one entry, and the pack test reads which mods are client-only or have content from their `fabric.mod.json`, so a new mod needs only its place in the list.
 
 ## The pack
 
@@ -133,6 +145,19 @@ rule for its `stillMods`. The library's two packs are added by `gradle/library.g
   component in it keeps Pure Faithful's name and version. No config files are shipped: each mod writes its own
   defaults, and Old Faithful's window defaults (remembered, maximised the first time) come from `oldfaithful-options`
   asking the display mod for them (`docs/options.md`), so standalone installs get them too.
+- **More Faithful's starting rules** (the user's values and their rule for updates, 2026-11-10; from
+  0.6.0): new worlds start with Mobs Break Blocks off, Blasts Destroy Items off, Sleeping off, Monster Light Dark Only, Apple
+  Drops on, Falling Hit Bonus off and Bows Wear Out on, the rest beta's. The lines of
+  `release/more-faithful/starting-rules.properties` go into the pack's `pack.properties` (below, In the game), which the
+  server package carries too, at its top (`gradle/library.gradle`; the dev packs as well). No config file is shipped: Faithful
+  Core gives each rule the pack's value the first time an install meets it and writes that into the install's own
+  `config/faithful-rules.properties`, where only the player changes it after. So the mods' own defaults stay beta's, worlds
+  that exist don't change, an install carried to a later version (its `.minecraft/config` copied over) keeps every start it
+  had even where the pack has since chosen otherwise, and a rule that's new in that version starts as the pack chose. A
+  rules file with no line for a rule hasn't met it, so one from 0.5.0 or before, which has lines only for the rules a
+  player pressed, takes the pack's values for the rest. A pack above it with no file of its own takes this one. Changing a
+  value is a line there and the READMEs' lists (`README.md`, `pack-README.txt`, `server-README.txt`), and reaches fresh
+  installs only; `morePackTest` checks the pack, the server package, a new world in each and an install carried over.
 - **Tested unseen**: `./gw :harness:clientStartupTestPack` and `clientStartupTestPackFixed` unpack each release pack
   and run the start-up test on what's inside it (its libraries, natives and mods, with the self-test mod beside
   them); Old Faithful's runs its fix checks in the world and its first-start checks too. Prism itself and the
@@ -180,21 +205,27 @@ rule for its `stillMods`. The library's two packs are added by `gradle/library.g
   Faithful's check) isn't there. Its own number, `still_edition_version`, started at 0.1.0. So a change to an Old
   Faithful mod (0.1.2 was one: the options mod's partly-live settings, for Still Faithful's Dusk) means an Old
   Faithful release with the Still Faithful that needs it.
-- **Releasing an edition means releasing the library's packs on it too** (user, 2026-11-06): whenever Old Faithful or Still Faithful (or Pure Faithful under them) goes out, a library release follows as part of the same job, so no library pack lags its base.
-- **The Faithful Library ships on released editions** too: `releaseLibrary` checks (`releaseLibraryPartsCheck`) all three editions' parts against their folders, and stops if one differs or isn't there. Its own number, `library_version`, one for the core, the mods and the packs, started at 0.1.0. A library pack carries its edition, which is why an edition's release brings a library release; the jars on their own don't care. README, changelog and notices name the editions by token, the changelog by hand.
+- **Releasing an edition means releasing the packs on it too** (user, 2026-11-06, for the library's packs then): whenever Still Faithful (or Old or Pure Faithful under it) goes out, a More Faithful release follows as part of the same job, so the pack never lags its base. So does a library release whose mods are in it.
+- **The Faithful Library's own number**, `library_version`, one for the core and the mods, started at 0.1.0; through 0.4.0 it was the packs' too. Its release is jars, which don't care about editions, so an edition's release needs none: only a change to the core or a mod does. `releaseLibrary` checks (`releaseLibraryPartsCheck`) that Faithful Settings is the Old Faithful release's it names.
+- **More Faithful ships on released editions and a released library**: `releaseMore` checks (`releaseMorePartsCheck`) Pure, Old and Still Faithful's parts against their folders and the library's jars against `local/release/faithful-library-<library_version>/`, and stops if one differs or isn't there. Its own number, `more_edition_version`, goes on from the library's packs (0.4.0, so 0.5.0 first) since it's the same pack renamed. README, changelog and notices name the editions and the library by token, the changelog by hand.
 - **The component must change version whenever its bytes do**, which Pure Faithful's number guarantees (and the
   check above carries into Old Faithful): Prism keeps downloaded libraries in a shared cache by Maven path and never
   re-checks them, so a changed jar under an old version would never reach players.
 - Our natives carry their own build revision (`3.4.18+oldfaithful.1`); a rebuild that changes their bytes bumps it
   (the verification metadata fails otherwise).
 - Git tags `v<version>` on each public repository; GitHub release `v<version>`. Each edition's changelog gets an entry per release, in players' terms
-  (`CHANGELOG.md` Pure Faithful's, `release/old-faithful/CHANGELOG.md` Old Faithful's and
-  `release/still-faithful/CHANGELOG.md` Still Faithful's, each becoming its repository's `CHANGELOG.md`); the release notes are that entry plus `SHA256SUMS.txt`.
+  (`CHANGELOG.md` Pure Faithful's, `release/old-faithful/CHANGELOG.md` Old Faithful's,
+  `release/still-faithful/CHANGELOG.md` Still Faithful's, `release/library/CHANGELOG.md` the library's and `release/more-faithful/CHANGELOG.md` More Faithful's, each becoming its repository's `CHANGELOG.md`); the release notes are that entry plus `SHA256SUMS.txt`.
 - **In the game**: the title screen shows "Pure Faithful <version>" under beta's own "Minecraft Beta 1.7.3", in the
   same grey (the hardening mod's `Branding`; every Pure Faithful setup has that mod). An edition built on it names
   itself there instead: a mod with `"custom": {"purefaithful-hardening:branding": "<name>"}` in its `fabric.mod.json`
   makes the line "<name> <that mod's version>"; `oldfaithful-fixes` says "Old Faithful". The polish mod rewrites the
-  line to "Still Faithful <its version>" (`BrandingMixin`), since the first edition mod by id wins there. The client's log starts with
+  line to "Still Faithful <its version>" (`BrandingMixin`), since the first edition mod by id wins there. A content pack
+  (More Faithful) has no mod of its own, so it carries `.minecraft/mods-library/pack.properties` (its `name` and
+  `version`, and the rules its new worlds start with, written by `gradle/library.gradle`), and Faithful Core, loaded whenever any of its mods is on, names it there,
+  on the settings button in Options and on the settings screen (`Pack`, after the editions' mods by mixin priority). The
+  library's jars put into an instance by hand bring no such file, so the game goes on naming its edition, and with every
+  mod off the pack is Still Faithful and says so. The client's log starts with
   the mods and their versions. The start-up tests read the title screen's pixels, save the corner
   (`title-corner.png`) and check the line's text.
 
@@ -222,7 +253,7 @@ server package contain the same third-party software as Pure Faithful's, so the 
 | `OpenAL.dll`, OpenAL Soft 1.25.2 (+ pffft, {fmt}, BSD parts) | LGPL-2.0-or-later (its COPYING is the Library GPL 2) | §6: prominent notice and licence; the Library's complete source (with the scripts used to build it) accompanying it, or from the same place; replaceable by the user | Notice; COPYING; the source archive and `natives/build.py` (as `build-natives.py`) in the pack's `sources/`, and on the release page beside the separate natives jar; the DLL is a separate file the game loads at run time, unmodified |
 | MSVC's static runtime in our DLLs | Microsoft's | Nothing for statically linked runtime code | |
 
-Mojang's game, assets and server are never shipped, apart from small transformative sprites like the Golden Rose's recolour (user, 2026-11-06). Every player-facing text carries "Not an official Minecraft
+Mojang's game, assets and server are never shipped, apart from small transformative uses like the Golden Rose's recoloured sprite (user, 2026-11-06). Every player-facing text carries "Not an official Minecraft
 product. Not approved by or associated with Mojang or Microsoft."
 
 Doubts, judged rather than asked of a lawyer: whether tiny-remapper's sources plus the loader's (with the loader's
@@ -231,8 +262,8 @@ distribution model); FreeB 1.1 is honoured as written, not leaning on SGI's 2008
 
 ## The public repositories
 
-Each edition's public repository (`studio-quire/pure-faithful`, `studio-quire/old-faithful`, `studio-quire/still-faithful`, and the library's, `studio-quire/faithful-library`)
-is a snapshot of the project's working repository, made for each release by a tool that checks what goes
+Each edition's public repository (`studio-quire/pure-faithful`, `studio-quire/old-faithful`, `studio-quire/still-faithful`, the library's, `studio-quire/faithful-library`, and More Faithful's,
+`studio-quire/more-faithful`) is a snapshot of the project's working repository, made for each release by a tool that checks what goes
 public; its history starts at the edition's first release.
 
 ## Publishing

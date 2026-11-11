@@ -43,6 +43,11 @@ public final class StartupCheck {
 	private static final String REARRANGE = System.getProperty("oldfaithful.selftest.rearrange");
 	/** host:port of a test server to join instead of making a world (MultiplayerCheck). */
 	private static final String JOIN = System.getProperty("oldfaithful.selftest.joinServer");
+	/**
+	 * A file the join waits for at the main menu: the task starts this client beside its server, or while the server restarts, and makes
+	 * the file once the server is ready (LibraryTestTask.Joining), so the client's own start-up isn't spent after the server's.
+	 */
+	private static final String JOIN_WHEN = System.getProperty("oldfaithful.selftest.joinWhen");
 	private static final long STALL_MS = Long.getLong("oldfaithful.selftest.stallMs", 150_000L);
 	/** The world checks of other mods alone: no edition's own checks, which expect its switches as they ship (`:harness:libraryTest`). */
 	private static final boolean WORLD_CHECKS_ONLY = Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks") || Boolean.getBoolean("oldfaithful.selftest.worldChecksOnly");
@@ -52,7 +57,7 @@ public final class StartupCheck {
 	private static final String EXPECT_MISSING = System.getProperty("oldfaithful.selftest.expectMissing");
 	/** The conflict harness: host:port of a server to try, reporting what screen it ends on instead of playing. */
 	private static final String TRY_SERVER = System.getProperty("oldfaithful.selftest.tryServer");
-	/** After a refusal's drawn: presses Match This Server's Mods and reports what the screen says then (`libraryPackTest`). */
+	/** After a refusal's drawn: presses Match This Server's Mods and reports what the screen says then (`morePackTest`). */
 	private static final boolean USE_SET = Boolean.getBoolean("oldfaithful.selftest.useServerSet");
 	/** The conflict harness: host:port of a hostile server, joined again and again until its kick says it's done. */
 	private static final String HOSTILE = System.getProperty("oldfaithful.selftest.hostile");
@@ -69,14 +74,14 @@ public final class StartupCheck {
 	private static int worldCheck;
 	private static final long JOIN_LIMIT_MS = 90_000L;
 	private static long joinStarted;
-	private static int refusedTicks;
+	private static int refusedTicks, refusedFromFrame;
 
 	private static final SelfTest results = new SelfTest();
 	private static int phase;
 	private static int wait;
 	/** Passes of the game's loop that drew (GameRendererStartupMixin), each after one read of the window's events. */
 	public static int frames;
-	private static int pausedUntilFrame;
+	private static int pausedUntilFrame, drawnFromFrame;
 	private static int worldTicks;
 	private static FixesCheck fixes;
 	private static OptionsCheck options;
@@ -147,8 +152,11 @@ public final class StartupCheck {
 	 */
 	private static void titleLineCheck() {
 		FabricLoader loader = FabricLoader.getInstance();
-		String expected = EDITION != null
-				? EDITION.split(":")[0] + " " + loader.getModContainer(EDITION.split(":")[1]).get().getMetadata().getVersion().getFriendlyString()
+		// "Name:mod id" takes the version that mod carries; "Name:=version" (a content pack's, from its marker) is given outright.
+		String[] edition = EDITION != null ? EDITION.split(":", 2) : null;
+		String expected = edition != null
+				? edition[0] + " " + (edition[1].startsWith("=") ? edition[1].substring(1)
+						: loader.getModContainer(edition[1]).get().getMetadata().getVersion().getFriendlyString())
 				: loader.getModContainer("oldfaithful-fixes")
 				.map(m -> "Old Faithful " + m.getMetadata().getVersion().getFriendlyString())
 				.orElseGet(() -> "Pure Faithful " + loader.getModContainer("purefaithful-hardening").get().getMetadata().getVersion().getFriendlyString());
@@ -188,21 +196,8 @@ public final class StartupCheck {
 					connect(mc, TRY_SERVER != null ? TRY_SERVER : HOSTILE);
 					phase = TRY_SERVER != null ? 41 : 42;
 				} else if (JOIN != null) {
-					// `:harness:fixesMultiplayerTest`: the multiplayer fixes, on a test server.
-					String[] hostPort = JOIN.split(":");
-					mc.setScreen(new net.minecraft.client.gui.screen.ConnectScreen(mc, hostPort[0], Integer.parseInt(hostPort[1])));
-					if (FENCE_WALK) {
-						// `:harness:fencesMultiplayerTest`: Still Faithful's fences walked into on a test server.
-						phase = 23;
-						return;
-					}
-					if (Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks")) {
-						// `:harness:libraryRulesTest`: another mod's world checks, as a client on a server.
-						phase = 21;
-						return;
-					}
-					multiplayer = new MultiplayerCheck(results);
-					phase = 20;
+					if (JOIN_WHEN != null && !new java.io.File(JOIN_WHEN).exists()) phase = 22;
+					else join(mc);
 				} else if (MENU_ONLY) {
 					finish(mc);
 				} else {
@@ -265,7 +260,7 @@ public final class StartupCheck {
 			case 40:
 				// The core's screen, as a player meets it: drawn, then gone through.
 				if (mc.currentScreen == null || !mc.currentScreen.getClass().getSimpleName().equals("MissingContentScreen")) return;
-				if (++wait < 10) return;
+				if (!drawn(10)) return;
 				wait = 0;
 				String shown = LibraryScreens.text();
 				results.check("missing content screen: drawn, naming " + EXPECT_MISSING + " (" + shown + ")", shown.contains(EXPECT_MISSING) && shown.contains("aren't here"));
@@ -273,7 +268,7 @@ public final class StartupCheck {
 				phase = 43;
 				return;
 			case 43:
-				if (++wait < 3) return;
+				if (!drawn(3)) return;
 				wait = 0;
 				results.check("missing content screen: Make a Backup and Play", LibraryScreens.click(mc.currentScreen, "Make a Backup and Play"));
 				phase = 4;
@@ -288,7 +283,7 @@ public final class StartupCheck {
 				}
 				if (!refusal(mc)) return;
 				if (wait == 0) LibraryScreens.clear();
-				if (++wait < 15) return;
+				if (!drawn(15)) return;
 				wait = 0;
 				System.out.println("[library-harness] SCREEN " + mc.currentScreen.getClass().getSimpleName() + " | " + LibraryScreens.text());
 				results.pass("the refusal was drawn");
@@ -296,7 +291,7 @@ public final class StartupCheck {
 				phase = 44;
 				return;
 			case 44:
-				if (++wait < 3) return;
+				if (!drawn(3)) return;
 				if (USE_SET) {
 					wait = 0;
 					results.check("Match This Server's Mods is on the refusal", LibraryScreens.click(mc.currentScreen, "Match This Server's Mods"));
@@ -307,7 +302,7 @@ public final class StartupCheck {
 				finish(mc);
 				return;
 			case 45:
-				if (++wait < 15) return;
+				if (!drawn(15)) return;
 				System.out.println("[library-harness] SET " + LibraryScreens.text());
 				finish(mc);
 				return;
@@ -315,7 +310,7 @@ public final class StartupCheck {
 				// A hostile server: each attack must end in a screen, and the next connection follows.
 				if (!refusal(mc)) return;
 				if (wait == 0) LibraryScreens.clear();
-				if (++wait < 4) return;
+				if (!drawn(4)) return;
 				wait = 0;
 				String said = LibraryScreens.text();
 				LibraryScreens.clear();
@@ -390,6 +385,10 @@ public final class StartupCheck {
 				if (mc.world == null || mc.player == null || mc.currentScreen != null) return;
 				if (++worldTicks < 20) return;
 				optionsOrFinish(mc);
+				return;
+			case 22:
+				// At the main menu until the server is ready.
+				if (new java.io.File(JOIN_WHEN).exists()) join(mc);
 				return;
 			case 23:
 				if (refused(mc)) return;
@@ -466,6 +465,36 @@ public final class StartupCheck {
 
 	private static boolean pausing() {
 		return --wait > 0 || frames < pausedUntilFrame;
+	}
+
+	/** Connects to the test server, and sets what's checked there. */
+	private static void join(Minecraft mc) {
+		// `:harness:fixesMultiplayerTest`: the multiplayer fixes, on a test server.
+		connect(mc, JOIN);
+		if (FENCE_WALK) {
+			// `:harness:fencesMultiplayerTest`: Still Faithful's fences walked into on a test server.
+			phase = 23;
+		} else if (Boolean.getBoolean("oldfaithful.selftest.joinWorldChecks")) {
+			// `:harness:libraryRulesTest`: another mod's world checks, as a client on a server.
+			phase = 21;
+		} else {
+			multiplayer = new MultiplayerCheck(results);
+			phase = 20;
+		}
+	}
+
+	/**
+	 * A wait for what a screen draws (its text read back, a picture of it), counted in {@link #wait} from 0: so many ticks, and two
+	 * frames drawn besides. Ticks alone can pass with nothing drawn, as in {@link #pause}: after a slow frame the loop runs up to
+	 * ten of them before it draws again. A {@link #pausing} that waited on its frames leaves {@link #wait} below 0 (the paste before
+	 * the missing content screen, on just such a slow start), which starts the count as 0 does.
+	 */
+	private static boolean drawn(int ticks) {
+		if (wait <= 0) {
+			wait = 0;
+			drawnFromFrame = frames;
+		}
+		return ++wait >= ticks && frames >= drawnFromFrame + 2;
 	}
 
 	private static void connect(Minecraft mc, String hostPort) {
@@ -578,8 +607,9 @@ public final class StartupCheck {
 		if (JOIN == null || mc.currentScreen == null) return false;
 		String screen = mc.currentScreen.getClass().getSimpleName();
 		if (!screen.equals("MismatchScreen") && !(mc.currentScreen instanceof net.minecraft.client.gui.screen.DisconnectedScreen)) return false;
-		// Its text is read from what's been drawn.
-		if (++refusedTicks < 10) return true;
+		// Its text is read from what's been drawn: ticks, and frames besides (drawn()).
+		if (refusedTicks == 0) refusedFromFrame = frames;
+		if (++refusedTicks < 10 || frames < refusedFromFrame + 2) return true;
 		results.fail("refused by the server, on " + screen + ": " + LibraryScreens.text(), new AssertionError());
 		finish(mc);
 		return true;

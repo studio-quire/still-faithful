@@ -56,7 +56,9 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   a low cave or a doorway two blocks high their arrows no longer stick in the ceiling: they can hit you there.
   Standing elsewhere, you're hit about as often as beta's hit you. On the move it can differ: walking straight at one
   you're hit more often, as beta's arrows came down over a player walking in, and along a ledge just above or below
-  one close by, less or more often (Skeleton Arrows). On a server, the server's switch.
+  one close by, less or more often. A skeleton riding a spider shoots past its spider, as in later versions, so close
+  below one you're hit more often than in beta, where its arrows hit the spider (Skeleton Arrows). On a server, the
+  server's switch.
 - **Squid** that swim up to the surface slow as they near it and swim on just under it, their backs at the waterline,
   instead of bouncing against it a few times a second (Squid Surfacing). On a server, the server's switch.
 - **Blasts and small things show from further away.** Beta made no particle more than 16 blocks from you, so a blast

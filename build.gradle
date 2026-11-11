@@ -137,59 +137,9 @@ tasks.register('prismFixedInstance', Zip) {
 }
 
 
-// Faithful Library to try (docs/release.md): Still Faithful's dev instance with the library's mods in mods-library/, chosen by
-// the list a launch is told of, all on to begin with. `./gw prismLibraryInstance`, after `prismStillInstance` exists.
-if (file('oldfaithful-core').isDirectory() && findProject(':oldfaithful-polish') != null) {
-    def inLibraryPacks = { !it.file('gradle.properties').text.contains('library_test=true') && !it.file('gradle.properties').text.contains('library_jar_only=true') }
-    def shippedLibrary = { subprojects.findAll { it.path.startsWith(':library:') && it.file('build.gradle').isFile() && inLibraryPacks(it) } }
-    // The test pack for a session to drive also has Stagehand, which ships in no pack (docs/stagehand.md).
-    def libraryInstance = { String task, String zipName, String what, List extras ->
-        tasks.register(task, Zip) {
-            group = 'oldfaithful'
-            description = "Builds local/prism/${zipName}: Still Faithful's dev instance with ${what} in mods-library/."
-            def still = tasks.named('prismStillInstance')
-            dependsOn still
-            def libraryProjects = [project(':oldfaithful-core')] + shippedLibrary() + extras
-            def jars = libraryProjects.collect { it.tasks.named('remapJar') }
-            from({ zipTree(still.get().archiveFile) }) {
-                filesMatching('instance.cfg') {
-                    filter { String line ->
-                        line == 'name=Still Faithful (dev)' ? 'name=Faithful Library (dev)' :
-                        line == 'JvmArgs=--enable-native-access=ALL-UNNAMED' ? 'JvmArgs=--enable-native-access=ALL-UNNAMED -Dfabric.addMods=@mods-library/selection.txt' : line
-                    }
-                }
-            }
-            // Named without their versions: the list a launch reads has to stay right when a pack update replaces a jar.
-            from(jars) { into '.minecraft/mods-library'; rename { it.replaceFirst(/-\d.*\.jar$/, '.jar') } }
-            def list = layout.buildDirectory.file("library-selection/${task}/selection.txt")
-            doFirst {
-                def f = list.get().asFile
-                f.parentFile.mkdirs()
-                f.text = jars.collect { "mods-library/${it.get().output.get().asFile.name.replaceFirst(/-\d.*\.jar$/, '.jar')}" }.join('\n') + '\n'
-            }
-            from(layout.buildDirectory.dir("library-selection/${task}")) { into '.minecraft/mods-library' }
-            duplicatesStrategy = DuplicatesStrategy.FAIL
-            destinationDirectory = layout.projectDirectory.dir('local/prism')
-            archiveFileName = zipName
-        }
-    }
-    libraryInstance('prismLibraryInstance', 'FaithfulLibrary-dev.zip', 'the Faithful Library', [])
-    libraryInstance('prismLibraryStagehandInstance', 'FaithfulLibrary-dev-stagehand.zip', 'the Faithful Library and Stagehand', [project(':library:stagehand')])
-    // A server with the library, for trying World Rules with others: the server package plus the core, settings and mods.
-    tasks.register('libraryServerPackage', Sync) {
-        group = 'oldfaithful'
-        description = 'local/server-package/FaithfulLibrary-server: the server package with the Faithful Library.'
-        dependsOn tasks.named('serverPackage')
-        from('local/server-package/OldFaithful-server')
-        from(project(':oldfaithful-settings').tasks.named('remapJar')) { into 'mods' }
-        from(([project(':oldfaithful-core')] + shippedLibrary()).collect { it.tasks.named('remapJar') }) { into 'mods' }
-        into 'local/server-package/FaithfulLibrary-server'
-    }
-}
-
 // The server package: beta 1.7.3's server, which the owner supplies, run through Fabric Loader
-// with our hardening mod; start scripts that check the server jar's hash. Written to local/server-package/, never
-// committed; :harness:multiplayerTest runs the game from it.
+// with our hardening mod; start scripts that check the server jar's hash. Written to build/server-package/, this
+// checkout's own; :harness:multiplayerTest runs the game from a copy of it.
 // Applied inside each task's configuration, which runs lazily, after the subprojects are evaluated. The notices,
 // licences, sources and the editions come from gradle/release.gradle, as for the pack; the dev tasks here build Pure
 // Faithful's, and `releaseServerFixed` Old Faithful's (its own README and mods).
@@ -219,26 +169,39 @@ ext.serverPackageContents = { spec, Map ed = releaseEditions.pure ->
     with sourcesSpec(false, ed)
   })
 }
-tasks.register('serverPackage', Sync) {
+// Where the game tests take it from. Under build/, so each checkout has its own: in local/, which checkouts share, one
+// checkout's tests ran on the package another had built last, and a build that had made it once took it for its own
+// from then on (through a linked local/ Gradle doesn't see another checkout's writes).
+ext.serverPackageDir = layout.buildDirectory.dir('server-package/OldFaithful-server')
+tasks.register('serverPackage', Copy) {
     group = 'oldfaithful'
-    description = 'Builds local/server-package/OldFaithful-server/: the hardened b1.7.3 server package (bring your own server jar).'
+    description = 'Builds build/server-package/OldFaithful-server/: the hardened b1.7.3 server package (bring your own server jar).'
     inputs.property('serverSha1', minecraft_server_sha1)
     serverPackageContents(it)
     includeEmptyDirs = false
-    into layout.projectDirectory.dir('local/server-package/OldFaithful-server')
+    // Made in a folder of this build's own and settled into place file by file: tests in this checkout copy the package
+    // while other builds here run, so a file is never written where it's read, and one that hasn't changed isn't touched.
+    def place = serverPackageDir.get().asFile
+    def making = new File(place.parentFile, "making-${UUID.randomUUID()}")
+    into making
+    // Every time, as the folder it copies into is new every time: the cost is 5 MB copied, and settling leaves a
+    // package that's already right as it is.
+    outputs.upToDateWhen { false }
+    doFirst { oldfaithful.gradle.Folders.sweep(place.parentFile.toPath(), 'making-', java.time.Duration.ofHours(1)) }
+    doLast { oldfaithful.gradle.Folders.settle(making.toPath(), place.toPath()) }
 }
 tasks.register('serverPackageZip', Zip) {
     group = 'oldfaithful'
-    description = 'Zips the server package into local/server-package/OldFaithful-server.zip.'
+    description = 'Zips the server package into build/server-package/OldFaithful-server.zip.'
     inputs.property('serverSha1', minecraft_server_sha1)
     into('OldFaithful-server') { serverPackageContents(it) }
     includeEmptyDirs = false
-    destinationDirectory = layout.projectDirectory.dir('local/server-package')
+    destinationDirectory = layout.buildDirectory.dir('server-package')
     archiveFileName = 'OldFaithful-server.zip'
 }
 
 apply from: 'gradle/release.gradle'
 // Still Faithful, the third edition: its pack and dev instance, where its files exist.
 if (file('gradle/still-faithful.gradle').isFile()) apply from: 'gradle/still-faithful.gradle'
-// The Faithful Library's release, where its files exist.
+// The Faithful Library's release, the packs built on it (More Faithful) and their dev instances, where its files exist.
 if (file('gradle/library.gradle').isFile()) apply from: 'gradle/library.gradle'

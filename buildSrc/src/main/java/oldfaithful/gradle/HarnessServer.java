@@ -65,7 +65,18 @@ final class HarnessServer implements AutoCloseable {
 
 	/** Starts it; false if it stopped before it was ready, which {@link #stop} then reports. */
 	boolean start(List<String> jvm) throws Exception {
+		launch(jvm);
+		return awaitStart();
+	}
+
+	/** Starts its process and comes back at once, for a start that something else goes on beside: {@link #awaitStart}. */
+	void launch(List<String> jvm) throws IOException {
 		process = new GameProcess(task.serverCommand(jvm), dir, dir.resolve("harness-output-" + ++runs + ".log"), Map.of());
+		up = false;
+	}
+
+	/** Waits until it's ready; false if it stopped before that, which {@link #stop} then reports. */
+	boolean awaitStart() throws InterruptedException {
 		// A failed start leaves the process up: the console thread outlives the server's.
 		String line = process.await(l -> l.contains("Done (") || l.contains("Stopping server") || l.startsWith("java.lang."), 180);
 		up = line != null && line.contains("Done (");

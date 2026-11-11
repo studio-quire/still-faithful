@@ -7,6 +7,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -131,6 +132,8 @@ class ServerTicksTest {
 			for (Path p : old.toList()) {
 				if (Files.isDirectory(p) && Files.getLastModifiedTime(p).toMillis() < cutoff) delete(p);
 			}
+		} catch (IOException | UncheckedIOException e) {
+			// Another run starting now is clearing the same folders: what's left is a later run's.
 		}
 		Files.createDirectories(run.resolve("mods"));
 		int port;

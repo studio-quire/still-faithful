@@ -37,7 +37,7 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   pointed at (what beta did, in a sentence), or the section's note.
 - **Mods**: a wide button per mod with a page, by name, five to a page with the same arrows, whether the mod is on said
   beside it ("OFF*" when a change on its page waits for a restart). Its page has **Enabled: ON** alone in the top row where
-  the mod sits in `mods-library/` (Faithful Library's switch: its README), then the mod's own
+  the mod sits in `mods-library/` (More Faithful's switch: its README), then the mod's own
   settings and world rules below, eight to a page. With no line of its own the page shows the mod's description. A mod
   that's off isn't running, so its page has only Enabled until it is; a mod in `mods/` with settings has its page without Enabled.
   A page can have one button of its own beside Enabled (`PageButton`): the core's **Lock Rules**, on every page with world rules while

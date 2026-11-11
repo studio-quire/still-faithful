@@ -26,8 +26,8 @@ import org.gradle.api.tasks.TaskAction;
 
 /**
  * Faithful Core's base layer and World Rules, end to end: the server package with them against raw clients
- * (vanilla, with the core, and hostile), the rules' scenes on the real server, the real client (hidden) joining it, a server
- * with a mod that must match, and the real client in single player. Then the lock on both: locked from the console and by the page's
+ * (vanilla, with the core, and hostile), the rules' scenes on the real server, the real client (hidden) joining it with the
+ * mods and with nothing of the library, a server with a mod that must match, and the real client in single player. Then the lock on both: locked from the console and by the page's
  * button, still locked after a restart or a reopen, and unlocked by taking its line out of the world's file with the game stopped.
  */
 public abstract class LibraryRulesTestTask extends ClientStartupTask {
@@ -199,23 +199,8 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 			p.respawn();
 			p.stand(20, 50);
 			scene("ruletest kept RuleTester false");
-			time();
 			monsters(p);
 		}
-	}
-
-	/** Real commands, in a long day. */
-	private void time() throws Exception {
-		server.send("rule day_length triple");
-		Thread.sleep(500);
-		server.send("time set 13000");
-		scene("ruletest time 13000");
-		Thread.sleep(4000);
-		scene("ruletest mark");
-		server.send("time add 500");
-		scene("ruletest added 500");
-		server.send("rule day_length normal");
-		server.send("time set 6000");
 	}
 
 	/** Natural spawning with the rule on and off, in each dimension, each with a player there as it needs. */
@@ -282,7 +267,7 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 	private void clientOnServer(Path run, int port) throws Exception {
 		server.send("rule keep_inventory true");
 		server.send("rule sleeping false");
-		server.send("rule day_length triple");
+		server.send("rule weather rain");
 		Thread.sleep(500);
 		Path game = run.resolve("client-on-server");
 		Files.createDirectories(game.resolve("mods"));
@@ -295,12 +280,9 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		server.send("rule sleeping true");
 	}
 
-	/** Nothing of the library on the client, on a server with every rule that reaches a client: it must play, and its sun's steps are measured. */
+	/** Nothing of the library on the client, on a server holding rain by its rule: it must play, in that rain. */
 	private void plainClientOnServer(Path run, int port) throws Exception {
 		server.send("rule weather rain");
-		server.send("time set 12600");
-		// A minute standing at dusk: a monster could kill the player, and the next stage would rejoin as them, dead.
-		server.send("rule natural_monsters false");
 		Path game = run.resolve("plain-client-on-server");
 		Files.createDirectories(game.resolve("mods"));
 		List<String> serverJars = getServerMods().getFiles().stream().map(File::getName).toList();
@@ -309,14 +291,9 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		}
 		prepare(game, false);
 		lines.add("--- plain client on the server");
-		List<String> played = launch(game, false, List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, "-Doldfaithful.selftest.joinWorldChecks=true",
-				"-Doldfaithful.selftest.sunSteps=1200"), failures);
-		lines.addAll(played);
-		played.stream().filter(l -> l.contains("sun steps")).forEach(getLogger()::lifecycle);
-		expect("the plain client measured its sun", played.stream().anyMatch(l -> l.contains("sun steps")));
-		server.send("rule day_length normal");
+		lines.addAll(launch(game, false, List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, "-Doldfaithful.selftest.joinWorldChecks=true",
+				"-Doldfaithful.selftest.expectRain=true"), failures));
 		server.send("rule weather normal");
-		server.send("rule natural_monsters true");
 	}
 
 	/** What the server said to a console command, from its output. */

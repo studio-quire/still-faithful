@@ -31,7 +31,7 @@ import jfr_profile  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
 JAVA = ROOT / "local" / "tools" / "jdk21" / "bin" / "java.exe"
-PACKAGE = ROOT / "local" / "server-package" / "OldFaithful-server"
+PACKAGE = ROOT / "build" / "server-package" / "OldFaithful-server"
 SERVER_JAR = ROOT / "local" / "cache" / "minecraft" / "b1.7.3-server.jar"
 PACK_MODS = ["world-rules", "water-bottles", "hearty-food", "alchemy", "blue-flowers", "item-repair", "buried-towers"]
 
@@ -140,6 +140,8 @@ def main():
     ap.add_argument("--top", type=int, default=25)
     args = ap.parse_args()
 
+    if not PACKAGE.is_dir():
+        sys.exit(f"no server package in {PACKAGE}: run `./gw serverPackage` in this checkout first")
     run = ROOT / "local" / "run" / "gen-bench" / args.label
     if run.exists():
         shutil.rmtree(run)

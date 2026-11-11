@@ -8,6 +8,7 @@ import net.minecraft.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.mob.SkeletonEntity;
+import net.minecraft.entity.mob.SpiderEntity;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.MathHelper;
@@ -21,12 +22,14 @@ import org.studioquire.oldfaithful.selftest.WorldCheck;
 /**
  * Skeleton Arrows ({@code mobs.skeletonArrows}): where a skeleton's arrow starts against its eyes, then how often
  * skeletons hit, shooting through the game's own attack and arrows at targets with a player's box and the point a
- * skeleton aims at on a player in single player, in four scenes of 15 lanes side by side, 20 volleys each: level ground
- * 6 blocks across, a player 4 up a cliff and 4 down one 5 across, and a tunnel one wide and two high 5 across. Each
- * share of hits is checked against what a re-run of beta's arrow code gives for the same scene
- * ({@code tools/skeleton_arrows.py scenes}), within four standard deviations of 300 shots and a point: with the switch,
- * beta's own share in the open and on the cliffs (just moving the start would give about 58% up the cliff, not 74%),
- * and hits in the tunnel; without it, beta's shares, and none in the tunnel, where beta's arrow starts in the ceiling.
+ * skeleton aims at on a player in single player, in five scenes of 15 lanes side by side, 20 volleys each: level ground
+ * 6 blocks across, a player 4 up a cliff and 4 down one 5 across, a tunnel one wide and two high 5 across, and spider
+ * jockeys 4 above a player 5 across. Each share of hits is checked against what a re-run of beta's arrow code
+ * gives for the same scene ({@code tools/skeleton_arrows.py scenes}), within four standard deviations of 300 shots and
+ * a point: with the switch, beta's own share in the open, on the cliffs and from the jockeys (just moving the start
+ * would give about 58% up the cliff, not 74%, and the jockeys' arrows would nearly all hit their spiders), and hits in
+ * the tunnel; without it, beta's shares, and none in the tunnel, where beta's arrow starts in the ceiling. No arrow may
+ * hit a jockey's own spider, either way.
  */
 public final class SkeletonCheck implements WorldCheck {
 	private static final String KEY = "mobs.skeletonArrows";
@@ -40,27 +43,56 @@ public final class SkeletonCheck implements WorldCheck {
 		final Kind kind;
 		final int across, rise;
 		final double polished, beta;
+		final boolean jockey;
 		final List<Lane> lanes = new ArrayList<>();
 
 		Scene(String name, Kind kind, int across, int rise, double polished, double beta) {
+			this(name, kind, across, rise, polished, beta, false);
+		}
+
+		Scene(String name, Kind kind, int across, int rise, double polished, double beta, boolean jockey) {
 			this.name = name;
 			this.kind = kind;
 			this.across = across;
 			this.rise = rise;
 			this.polished = polished;
 			this.beta = beta;
+			this.jockey = jockey;
 		}
 	}
 
 	private static final class Lane {
 		final SkeletonEntity skeleton;
 		final Target target;
+		final Mount mount;
 		final double farX;
 
-		Lane(SkeletonEntity skeleton, Target target, double farX) {
+		Lane(SkeletonEntity skeleton, Target target, Mount mount, double farX) {
 			this.skeleton = skeleton;
 			this.target = target;
+			this.mount = mount;
 			this.farX = farX;
+		}
+	}
+
+	/** A jockey's spider: a spider's box where the game seats its rider, standing still, counting its rider's hits. */
+	private static final class Mount extends SpiderEntity {
+		final SkeletonEntity rider;
+		int hits;
+
+		Mount(World world, SkeletonEntity rider) {
+			super(world);
+			this.rider = rider;
+		}
+
+		@Override
+		public void tick() {
+		}
+
+		@Override
+		public boolean damage(Entity source, int amount) {
+			if (source == rider) hits++;
+			return true;
 		}
 	}
 
@@ -113,6 +145,7 @@ public final class SkeletonCheck implements WorldCheck {
 			new Scene("a player 4 up a cliff, 5 across", Kind.CLIFF, 5, 4, 73.5, 73.6),
 			new Scene("a player 4 down a cliff, 5 across", Kind.CLIFF, 5, -4, 67.1, 65.9),
 			new Scene("a tunnel one wide and two high, 5 across", Kind.TUNNEL, 5, 0, 57.3, 0.0),
+			new Scene("spider jockeys 4 above a player, 5 across", Kind.CLIFF, 5, -4, 65.7, 64.5, true),
 	};
 	private final List<ArrowEntity> flying = new ArrayList<>();
 	private SelfTest results;
@@ -163,7 +196,10 @@ public final class SkeletonCheck implements WorldCheck {
 		if (volleys == VOLLEYS) {
 			report();
 			for (Scene scene : scenes) {
-				for (Lane lane : scene.lanes) lane.target.markDead();
+				for (Lane lane : scene.lanes) {
+					lane.target.markDead();
+					if (lane.mount != null) lane.mount.markDead();
+				}
 			}
 			return true;
 		}
@@ -220,6 +256,11 @@ public final class SkeletonCheck implements WorldCheck {
 			boolean ok = want == 0 ? hits == 0 : Math.abs(share - want) <= 4 * sd + 1;
 			results.check(String.format(Locale.ROOT, "still skeleton arrows: %s, %d of %d hit (%.1f%%; the re-run of beta's code gives %.1f%% %s)",
 					scene.name, hits, shots, share, want, on ? "for these arrows" : "for beta's"), ok);
+			if (scene.jockey) {
+				int own = 0;
+				for (Lane lane : scene.lanes) own += lane.mount.hits;
+				results.check(String.format(Locale.ROOT, "still skeleton arrows: %s, %d of %d hit their own spider (none, both ways)", scene.name, own, shots), own == 0);
+			}
 		}
 	}
 
@@ -267,10 +308,20 @@ public final class SkeletonCheck implements WorldCheck {
 		fill(back, Y + low, z - 2, back, Y + Math.max(0, scene.rise) + 5, z + 2, stone);
 		SkeletonEntity skeleton = new SkeletonEntity(world);
 		skeleton.setPositionAndAnglesKeepPrevAngles(sx + 0.5, Y, z + 0.5, -90.0F, 0.0F);
+		Mount mount = null;
+		if (scene.jockey) {
+			mount = new Mount(world, skeleton);
+			mount.setPositionAndAnglesKeepPrevAngles(sx + 0.5, Y, z + 0.5, -90.0F, 0.0F);
+			world.spawnEntity(mount);
+			skeleton.setVehicle(mount);
+			mount.updatePassengerPosition();
+			// Seated by the game; the world would tick a mount's passenger, and these skeletons only shoot when told.
+			mount.passenger = null;
+		}
 		Target target = new Target(world, skeleton);
 		target.setPositionAndAnglesKeepPrevAngles(tx + 0.5, Y + scene.rise, z + 0.5, 0.0F, 0.0F);
 		world.spawnEntity(target);
-		scene.lanes.add(new Lane(skeleton, target, back + 1.0));
+		scene.lanes.add(new Lane(skeleton, target, mount, back + 1.0));
 	}
 
 	private void fill(int x0, int y0, int z0, int x1, int y1, int z1, int id) {

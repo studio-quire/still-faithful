@@ -29,7 +29,7 @@ import org.gradle.api.tasks.TaskAction;
 public abstract class MultiplayerTestTask extends GameTestTask {
 	private static final Pattern SAFE_PLAYER_FILE = Pattern.compile("[A-Za-z0-9_]+\\.dat");
 
-	/** local/server-package/OldFaithful-server, as :serverPackage writes it. */
+	/** The server package, as :serverPackage writes it (build/server-package/OldFaithful-server). */
 	@InputDirectory
 	@PathSensitive(PathSensitivity.RELATIVE)
 	public abstract DirectoryProperty getServerPackage();

@@ -2,7 +2,7 @@
 
     python tools/pack_start.py <zip> <run dir> <label> [--style simple|complex] [--world-ticks N]
 
-For checking a test pack (local/prism/FaithfulLibrary-dev-stagehand.zip) before the user imports it, e.g. with
+For checking a test pack (local/prism/MoreFaithful-dev-stagehand.zip) before the user imports it, e.g. with
 `tools/stagehand.py --dir <game folder> --world-wait 60 locate tower` while the world is held. Always give stagehand.py
 the --dir: on its own it finds the user's Prism instance. A game launch, so here it goes through this project's queue for them (`tools/gwl.sh`'s
 --exec form; that script is this PC's own and not in the public repositories). The zip is unpacked fresh into <run dir>/instance each time and the label's game folder is a new copy of
@@ -10,6 +10,7 @@ its .minecraft. Needs `./gw :harness:remapJar` built and the start-up test's sou
 Prints the game folder once it's set up, then waits for the game, which stops itself after the world ticks.
 """
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -25,9 +26,7 @@ ap.add_argument("run")
 ap.add_argument("label")
 ap.add_argument("--style", help="Buried Towers' style for the new world")
 ap.add_argument("--world-ticks", type=int, default=2400, help="how long the world is held, at 20 a second")
-ap.add_argument("--extra-mods", help="mods the pack has past a release pack's, by name, comma-separated, for the settings check; Stagehand for a zip named for it")
 a = ap.parse_args()
-extra = a.extra_mods if a.extra_mods is not None else ("Stagehand" if "stagehand" in Path(a.zip).name.lower() else "")
 
 run = Path(a.run).resolve()
 inst = run / "instance"
@@ -38,6 +37,21 @@ for d in (inst, natives):
 with zipfile.ZipFile(a.zip) as z:
     z.extractall(inst)
 natives.mkdir(parents=True)
+
+# The pack's mods as the settings check wants them (id:Name, the core aside), from its own jars: a session's pack may have more than a release's.
+# And what it should call itself: its pack.properties, which Faithful Core reads (all its mods are on here), else Still Faithful.
+edition = "Still Faithful:stillfaithful-polish"
+marker = inst / ".minecraft/mods-library/pack.properties"
+if marker.is_file():
+    named = dict(l.split("=", 1) for l in marker.read_text(encoding="utf-8").splitlines() if "=" in l and not l.startswith("#"))
+    edition = f"{named['name'].strip()}:={named.get('version', '').strip()}"
+pack_mods = []
+for jar in sorted((inst / ".minecraft/mods-library").glob("*.jar")):
+    with zipfile.ZipFile(jar) as z:
+        info = json.loads(z.read("fabric.mod.json"))
+    if info["id"] != "faithful-core":
+        pack_mods.append(f"{info['id']}:{info['name']}")
+
 for jar in (inst / "libraries").glob("*natives-windows*.jar"):
     with zipfile.ZipFile(jar) as z:
         for n in z.namelist():
@@ -59,8 +73,10 @@ shutil.copytree(REPO / "local/cache/selftest-sounds/resources", game / "resource
 wave = str(game / "sound.wav").replace("\\", "/")
 (game / "alsoft.ini").write_text(f"[general]\nchannels = stereo\nsample-type = int16\nfrequency = 44100\n[wave]\nfile = {wave}\n")
 if a.style:
+    # The install's own choice for new worlds, as if picked on Create World's page; every other rule starts as the pack has it.
     (game / "config").mkdir(exist_ok=True)
-    (game / "config" / "faithful-rules.properties").write_text(f"rule.buried-towers.style={a.style}\n")
+    with open(game / "config" / "faithful-rules.properties", "a", encoding="iso-8859-1", newline="") as rules:
+        rules.write(f"rule.buried-towers.style={a.style}\r\n")
 
 cfg = (inst / "instance.cfg").read_text()
 pack_args = next(l.split("=", 1)[1] for l in cfg.splitlines() if l.startswith("JvmArgs=")).split()
@@ -71,8 +87,8 @@ java = str(REPO / "local/tools/jdk21/bin/java.exe")
 cmd = [java, "-Dmixin.debug.countInjections=true", "-Xmx1g", "-Doldfaithful.lwjgl.hidden=true", "-Doldfaithful.selftest.startup=true",
        f"-Djava.library.path={natives}", f"-Dorg.lwjgl.librarypath={natives}"] + pack_args + [
        "-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600",
-       "-Doldfaithful.selftest.expectMaximized=false", "-Doldfaithful.selftest.edition=Still Faithful:stillfaithful-polish",
-       f"-Doldfaithful.selftest.packExtraMods={extra}", f"-Doldfaithful.selftest.worldTicks={a.world_ticks}", f"-Doldfaithful.selftest.stallMs={(a.world_ticks // 20 + 150) * 1000}",
+       "-Doldfaithful.selftest.expectMaximized=false", f"-Doldfaithful.selftest.edition={edition}",
+       f"-Doldfaithful.selftest.packMods={','.join(pack_mods)}", f"-Doldfaithful.selftest.worldTicks={a.world_ticks}", f"-Doldfaithful.selftest.stallMs={(a.world_ticks // 20 + 150) * 1000}",
        "-cp", os.pathsep.join(cp), "net.fabricmc.loader.impl.launch.knot.KnotClient", "--username", "OldFaithfulTest", "--gameDir", str(game)]
 env = dict(os.environ, ALSOFT_DRIVERS="wave", ALSOFT_CONF=str(game / "alsoft.ini"))
 timeout = a.world_ticks // 20 + 240

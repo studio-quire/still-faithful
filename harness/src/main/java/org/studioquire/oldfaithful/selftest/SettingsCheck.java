@@ -52,10 +52,15 @@ final class SettingsCheck {
 	private final Path config = FabricLoader.getInstance().getConfigDir();
 	private final Path list = FabricLoader.getInstance().getGameDir().resolve("mods-library").resolve("selection.txt");
 	private final boolean library = Files.isDirectory(list.getParent());
-	/** A release's library pack (`libraryPackTest`): {@code on}, everything on, as shipped; {@code off}, nothing on; {@code absent}, the same with no list at all. */
+	/** A release's content pack (`morePackTest`): {@code on}, everything on, as shipped; {@code off}, nothing on; {@code absent}, the same with no list at all. */
 	private static final String PACK = System.getProperty("oldfaithful.selftest.libraryPack");
-	/** Mods a test pack carries past what a release pack does, by name (a session's pack has Stagehand): only `tools/pack_start.py` passes any, so a release pack's list stays exact. */
-	private static final List<String> PACK_EXTRA = extra(System.getProperty("oldfaithful.selftest.packExtraMods", ""));
+	/**
+	 * The pack's mods as {@code id:Name,...}, from the build (its list, each mod's name in its fabric.mod.json), or from the pack's own jars for a session's
+	 * test pack (`tools/pack_start.py`): the Mods menu should offer exactly these.
+	 */
+	private static final java.util.Map<String, String> PACK_MODS = packMods(System.getProperty("oldfaithful.selftest.packMods", ""));
+	private static final List<String> PACK_NAMES = new ArrayList<>(PACK_MODS.values());
+	private static final List<String> PACK_IDS = new ArrayList<>(PACK_MODS.keySet());
 	private int startWidth, startHeight, startScale;
 	private final List<String> layoutProblems = new ArrayList<>();
 	private int layoutsChecked;
@@ -309,7 +314,7 @@ final class SettingsCheck {
 			openMod(m, "World Rules");
 			return true;
 		});
-		steps.add(capture("levels/3-world-rules-pointed", "Day Length"));
+		steps.add(capture("levels/3-world-rules-pointed", "Weather"));
 		steps.add(m -> {
 			Screen rules = openMod(m, "World Rules");
 			press(rules, button(rules, "Enabled:"));
@@ -424,6 +429,13 @@ final class SettingsCheck {
 		press(options, ours);
 		results.check("\"" + BUTTON + "\" opens the settings screen (" + mc.currentScreen.getClass().getSimpleName() + ")",
 				mc.currentScreen.getClass().getName().equals(PKG + "SettingsScreen"));
+		String title;
+		try {
+			title = (String) field(mc.currentScreen, "title");
+		} catch (ReflectiveOperationException e) {
+			title = e.toString();
+		}
+		results.check("the settings screen is titled \"" + title + "\", as its button names it", BUTTON.equals(title + "..."));
 		return true;
 	}
 
@@ -533,7 +545,7 @@ final class SettingsCheck {
 				enabled.text.equals("Enabled: ON") && enabled.x == rules.width / 2 - 155 && enabled.y == rules.height / 6
 						&& lock.x == rules.width / 2 + 5 && lock.y == enabled.y && lock.active
 						&& ((ButtonWidgetAccessor) enabled).oldfaithful$width() == 150 && ((ButtonWidgetAccessor) lock).oldfaithful$width() == 150
-						&& button(rules, "Mobs Break Blocks:").y == rules.height / 6 + 24 && has(rules, "Day Length: Normal"));
+						&& button(rules, "Mobs Break Blocks:").y == rules.height / 6 + 24 && has(rules, "Weather: Normal"));
 		java.util.Set<String> before = new java.util.HashSet<>(Files.readAllLines(list));
 		press(rules, enabled);
 		List<String> off = Files.readAllLines(list);
@@ -574,15 +586,16 @@ final class SettingsCheck {
 		return true;
 	}
 
-	private static final List<String> PACK_NAMES = java.util.Arrays.asList("Alchemy", "Blue Flowers", "Buried Towers", "Explosive Arrows", "Hearty Food", "Item Repair", "No Toasts", "Plain F3", "Wary Creepers", "Water Bottles", "Wild Saplings", "Wolf Packs", "World Rules");
-	private static final List<String> PACK_IDS = java.util.Arrays.asList("alchemy", "blue-flowers", "buried-towers", "explosive-arrows", "hearty-food", "item-repair", "no-toasts", "plain-f3", "wary-creepers", "water-bottles", "wild-saplings", "wolf-packs", "world-rules");
 	/** A mod's own settings, besides its rules, as its page shows them in a pack as it comes: the whole button, so each at its default. */
 	private static final java.util.Map<String, List<String>> PACK_SETTINGS = java.util.Collections.singletonMap("Blue Flowers", java.util.Collections.singletonList("Yellow Flower: Dandelion"));
 
-	private static List<String> extra(String names) {
-		List<String> out = new ArrayList<>();
-		for (String n : names.split(",")) if (!n.trim().isEmpty()) out.add(n.trim());
-		return out;
+	private static java.util.Map<String, String> packMods(String given) {
+		java.util.Map<String, String> mods = new java.util.TreeMap<>();
+		for (String m : given.split(",")) {
+			int colon = m.indexOf(':');
+			if (colon > 0) mods.put(m.substring(0, colon).trim(), m.substring(colon + 1).trim());
+		}
+		return mods;
 	}
 
 	private java.util.Set<String> listed() throws Exception {
@@ -641,8 +654,8 @@ final class SettingsCheck {
 			results.check("nothing on: the list is " + (PACK.equals("absent") ? "absent" : "there and empty"), PACK.equals("absent") ? !Files.exists(list) : listed().isEmpty());
 		}
 		List<String> wanted = new ArrayList<>();
+		results.check("the test was told the pack's mods", !PACK_MODS.isEmpty());
 		List<String> names = new ArrayList<>(PACK_NAMES);
-		names.addAll(PACK_EXTRA);
 		java.util.Collections.sort(names);
 		for (String name : names) wanted.add(name + "...");
 		Screen mods = openMenu(mc, "Mods");

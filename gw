@@ -1,5 +1,9 @@
 #!/bin/sh
 # Runs the Gradle wrapper with the portable JDK in local/tools/jdk21 when present (docs/building.md).
+# The JDK goes by its real place, any link on the way followed: a git worktree's local/ is a link to the main
+# checkout's, and a Gradle daemon serves whichever checkout asks next while keeping the JDK path it was started
+# with. Started through a worktree's link, it lost its JDK when that worktree was removed, under a build from
+# another checkout (2026-11-10). By the real place, every checkout starts and shares daemons on one path that stays.
 here="$(cd "$(dirname "$0")" && pwd)"
-[ -d "$here/local/tools/jdk21" ] && export JAVA_HOME="$here/local/tools/jdk21"
+jdk="$(cd "$here/local/tools/jdk21" 2>/dev/null && pwd -P)" && export JAVA_HOME="$jdk"
 exec "$here/gradlew" "$@"

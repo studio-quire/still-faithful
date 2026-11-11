@@ -22,7 +22,7 @@ import net.minecraft.world.chunk.LegacyChunkCache;
  * looking blind. Generated a tile of 8 by 8 chunks a tick, the client's chunk cache centred on each tile in turn (it
  * only serves chunks within 15 of its centre). Writes {@code survey.bin}: four little-endian ints (x0, z0, width,
  * depth), then per column, z-major, five bytes: the top block's height and id, the ground's height and id (the top
- * ignoring leaves, logs and plants), and the biome's index in {@code survey.txt}'s list.
+ * ignoring leaves, logs and plants), and the biome's index in {@code survey.txt}'s list. Any block of a mod's is id 255.
  */
 final class Survey {
 	private static final int TILE = 8;
@@ -84,10 +84,15 @@ final class Survey {
 		}
 		int i = ((z - z0) * w + (x - x0)) * 5;
 		cells[i] = (byte) top;
-		cells[i + 1] = (byte) c.getBlockId(lx, top, lz);
+		cells[i + 1] = id(c.getBlockId(lx, top, lz));
 		cells[i + 2] = (byte) ground;
-		cells[i + 3] = (byte) c.getBlockId(lx, ground, lz);
+		cells[i + 3] = id(c.getBlockId(lx, ground, lz));
 		cells[i + 4] = (byte) b;
+	}
+
+	/** A mod's block (the library's start at 512) as 255: a byte holds beta's ids only. */
+	private static byte id(int id) {
+		return (byte) Math.min(id, 255);
 	}
 
 	private static boolean isGround(int id) {

@@ -7,6 +7,16 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.6.1 (2026-11-10)
+
+On Old Faithful 0.2.4 and Pure Faithful 0.1.5, as 0.6.0 was.
+
+- A skeleton riding a spider no longer shoots its own spider (Skeleton Arrows). Since 0.6.0 its arrows started at its
+  eyes, just above the spider, so the more steeply it shot down at you, the more of them hit the spider instead: nearly
+  all when it was 4 blocks above you and up to 6 blocks away. Now they pass it, as in later versions. From a few blocks
+  off you're hit about as often as before 0.6.0; right below it, more often, since there even beta's arrows hit the
+  spider. On a server, the server's switch.
+
 ## 0.6.0 (2026-11-10)
 
 On Old Faithful 0.2.4 and Pure Faithful 0.1.5, as 0.5.1 was. In Still Faithful's own mod, on new switches under Polish,

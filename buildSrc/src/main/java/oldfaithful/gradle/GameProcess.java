@@ -16,7 +16,11 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-/** A game process whose combined output is captured line by line, logged to a file, and can be waited on. */
+/**
+ * A game process whose combined output is captured line by line, logged to a file, and can be waited on. It never
+ * outlives the build: closing it ends it with all it started, and if the build's own process is killed first,
+ * {@link Orphans} sees to it.
+ */
 final class GameProcess implements AutoCloseable {
 	private final Process process;
 	private final List<String> lines = new ArrayList<>();
@@ -31,6 +35,7 @@ final class GameProcess implements AutoCloseable {
 		ProcessBuilder builder = new ProcessBuilder(command).directory(workDir.toFile()).redirectErrorStream(true);
 		builder.environment().putAll(environment);
 		process = builder.start();
+		Orphans.watch(process);
 		commands = new OutputStreamWriter(process.getOutputStream(), StandardCharsets.UTF_8);
 		PrintWriter log = new PrintWriter(Files.newBufferedWriter(logFile, StandardCharsets.UTF_8), true);
 		reader = new Thread(() -> {
@@ -129,7 +134,8 @@ final class GameProcess implements AutoCloseable {
 	@Override
 	public void close() {
 		// A process started through a script (cmd /c start.bat) leaves its java child running if only it is ended.
-		process.descendants().forEach(ProcessHandle::destroyForcibly);
+		// Only while it runs: what a process that has ended started can't be told from a stranger's (OrphanReaper.started).
+		OrphanReaper.started(process.toHandle()).forEach(ProcessHandle::destroyForcibly);
 		if (process.isAlive()) {
 			process.destroy();
 			try {

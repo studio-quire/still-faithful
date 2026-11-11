@@ -5,7 +5,8 @@ beta's arrow from over the head, the arrow from the eyes with beta's aim, and th
 oldfaithful-polish aims it (SkeletonAim, mirrored here). Vectorised over shots with numpy.
 
   python tools/skeleton_arrows.py tables [--mp] [--n N]   hit rates by range, height, standing and walking, roofs
-  python tools/skeleton_arrows.py scenes                  the shares SkeletonCheck expects for its four scenes
+  python tools/skeleton_arrows.py scenes                  the shares SkeletonCheck expects for its five scenes
+  python tools/skeleton_arrows.py jockey [--mp] [--n N]   a spider jockey: hits on the player, and on its own spider
 
 The skeleton's feet are at the origin, in the middle of its block; the player straight along +x, `across` blocks away,
 its feet `rise` up. Single player (the default): the player's y is its feet + 1.62 and it answers 0.12 for its eyes;
@@ -21,6 +22,10 @@ LIFT = float(np.float32(1.4))
 BIG = 1000.0
 WALK = 0.22
 RANGES = range(2, 10)
+# A spider jockey: the skeleton's feet sit SEAT over its spider's (SpiderEntity.getPassengerRidingHeight, 0.9F * 0.75
+# - 0.5), and the spider's box (1.4 wide, 0.9 high, under it) is in the arrow's way: beta spares only the shooter.
+SEAT = float(np.float32(0.9)) * 0.75 - 0.5
+SPIDER = (-1.0, 1.0, -0.3, float(np.float32(0.9)) + 0.3, -1.0, 1.0)  # grown 0.3, as the arrow tests it
 
 
 # --- Aims. Each takes beta's aim from where the arrow starts (dy to the target's eyes less 0.2, plus 0.2 a block
@@ -117,19 +122,23 @@ def scene(kind, across, rise_):
     raise ValueError(kind)
 
 
-def shots(n, across, rise_, lift, rng, aim=beta_aim, mp=False, walk=(0.0, 0.0), kind='level', max_ticks=80):
-    """(hits, n), or None where the skeleton wouldn't shoot (10 or more away, or it can't see the player)."""
+def shots(n, across, rise_, lift, rng, aim=beta_aim, mp=False, walk=(0.0, 0.0), kind='level', max_ticks=80,
+          jockey=False, spare_mount=False):
+    """(hits, n, hits on its own spider), or None where the skeleton wouldn't shoot (10 or more away, or it can't see
+    the player). jockey: the skeleton rides a spider whose feet are at the origin; spare_mount: the arrow passes its
+    spider for its first 4 ticks, as beta's does its shooter."""
     solids = scene(kind, across, rise_)
     t_y, t_eye = (rise_, 1.62) if mp else (rise_ + 1.62, 0.12)
-    if math.hypot(across, t_y) >= 10.0:  # target.getDistance(skeleton), entity y to entity y
+    feet = SEAT if jockey else 0.0
+    if math.hypot(across, t_y - feet) >= 10.0:  # target.getDistance(skeleton), entity y to entity y
         return None
     for b in solids:  # canSee: eyes to eyes
-        if crossings(np.array([0.0]), np.array([SKEL_EYE]), np.array([0.0]),
-                     np.array([across]), np.array([t_y + t_eye - SKEL_EYE]), np.array([0.0]), b)[0] <= 1.0:
+        if crossings(np.array([0.0]), np.array([feet + SKEL_EYE]), np.array([0.0]),
+                     np.array([across]), np.array([t_y + t_eye - feet - SKEL_EYE]), np.array([0.0]), b)[0] <= 1.0:
             return None
     # The eyes less 0.1, 0.16 to the side by the skeleton's yaw (facing the player), then the lift.
     yaw = math.radians(math.degrees(math.atan2(0.0, across)) - 90.0)
-    ax, az, ay = -math.cos(yaw) * 0.16, -math.sin(yaw) * 0.16, SKEL_EYE - 0.1 + lift
+    ax, az, ay = -math.cos(yaw) * 0.16, -math.sin(yaw) * 0.16, feet + SKEL_EYE - 0.1 + lift
     dy = t_y + t_eye - 0.2 - ay
     vy0, spread = aim(dy + across * 0.2, across)
     norm = math.sqrt(across * across + vy0 * vy0)  # setVelocity(dx, vy0, dz, 0.6, spread)
@@ -141,6 +150,7 @@ def shots(n, across, rise_, lift, rng, aim=beta_aim, mp=False, walk=(0.0, 0.0), 
         # Starting inside a block (beta's under a low ceiling): stuck at once.
         alive &= ~((px > x0) & (px < x1) & (py > y0) & (py < y1) & (pz > z0) & (pz < z1))
     hit = np.zeros(n, bool)
+    mount = np.zeros(n, bool)
     for t in range(max_ticks):
         if not alive.any():
             break
@@ -152,13 +162,18 @@ def shots(n, across, rise_, lift, rng, aim=beta_aim, mp=False, walk=(0.0, 0.0), 
         block = frac <= 1.0
         s = np.where(block, frac, 1.0)
         player = (tx - 0.6, tx + 0.6, rise_ - 0.3, rise_ + 2.1, tz - 0.6, tz + 0.6)  # its box grown 0.3
-        ent = crossings(px, py, pz, vx * s, vy * s, vz * s, player) <= 1.0
+        fp = crossings(px, py, pz, vx * s, vy * s, vz * s, player)
+        fm = (crossings(px, py, pz, vx * s, vy * s, vz * s, SPIDER) if jockey and not (spare_mount and t < 4)
+              else np.full(n, 2.0))
+        ent = (fp <= 1.0) & (fp <= fm)
+        on_mount = (fm <= 1.0) & (fm < fp)
         hit |= alive & ent
-        alive &= ~ent & ~block
+        mount |= alive & on_mount
+        alive &= ~ent & ~on_mount & ~block
         px, py, pz = px + vx, py + vy, pz + vz
         vx, vy, vz = vx * 0.99, vy * 0.99 - 0.03, vz * 0.99
         alive &= py > min(0.0, rise_) - 12
-    return int(hit.sum()), n
+    return int(hit.sum()), n, int(mount.sum())
 
 
 # --- Tables. ---
@@ -166,6 +181,22 @@ def shots(n, across, rise_, lift, rng, aim=beta_aim, mp=False, walk=(0.0, 0.0), 
 def rate(n, across, rise_, way, mp=False, walk=(0.0, 0.0), kind='level', seed=0):
     r = shots(n, across, rise_, way[1], np.random.default_rng(seed), aim=way[2], mp=mp, walk=walk, kind=kind)
     return None if r is None else 100.0 * r[0] / r[1]
+
+
+def jockey(n, mp):
+    """Standing players at each range and height from a spider jockey: hits on the player / on the spider, in %."""
+    ways = (('beta', LIFT, beta_aim, False), ('polished', 0.0, polished_aim, False),
+            ('polished, spider spared', 0.0, polished_aim, True))
+    print('across                                     ' + ''.join(f'{h:>8d}' for h in RANGES))
+    for r in (0, 2, 4, -1, -2, -3, -4, -6):
+        kind = 'level' if r == 0 else 'cliff'
+        for name, lift, aim, spare in ways:
+            cells = []
+            for h in RANGES:
+                got = shots(n, h, r, lift, np.random.default_rng(3), aim=aim, mp=mp, kind=kind, jockey=True,
+                            spare_mount=spare)
+                cells.append('     --' if got is None else f'{100 * got[0] / n:3.0f}/{100 * got[2] / n:<3.0f}')
+            print(f'{kind} {r:+d} {name:30s}' + ' '.join(f'{c:>7s}' for c in cells))
 
 
 def walking(n, across, rise_, way, mp, kind, all_ways):
@@ -205,15 +236,21 @@ def scenes(n):
     for label, across, r, kind in (('level ground, 6 across', 6, 0, 'level'), ('4 up a cliff, 5 across', 5, 4, 'cliff'),
                                    ('4 down a cliff, 5 across', 5, -4, 'cliff'), ('tunnel, 5 across', 5, 0, 'roof2-w')):
         print(label, ' | '.join(f'{w[0]} {rate(n, across, r, w, kind=kind, seed=7):.1f}' for w in (BETA, EYES, POLISHED)))
+    # A spider jockey 4 over the player: hits on the player, then on the spider.
+    for name, way, spare in (('beta', BETA, False), ('polished', POLISHED, False), ('polished, spider spared', POLISHED, True)):
+        got = shots(n, 5, -4, way[1], np.random.default_rng(7), aim=way[2], kind='cliff', jockey=True, spare_mount=spare)
+        print(f'jockey, 4 down a cliff, 5 across, {name}: {100 * got[0] / n:.1f} / spider {100 * got[2] / n:.1f}')
 
 
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__.split('\n\n')[0])
-    p.add_argument('what', choices=('tables', 'scenes'))
+    p.add_argument('what', choices=('tables', 'scenes', 'jockey'))
     p.add_argument('--mp', action='store_true', help="a server's player (y at the feet)")
     p.add_argument('--n', type=int, default=None, help='shots a cell (tables 20000, scenes 400000)')
     a = p.parse_args()
     if a.what == 'tables':
         tables(a.n or 20000, a.mp)
+    elif a.what == 'jockey':
+        jockey(a.n or 20000, a.mp)
     else:
         scenes(a.n or 400000)

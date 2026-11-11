@@ -123,7 +123,7 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 	@Input
 	public abstract Property<Boolean> getDumps();
 
-	/** {@code tools/user_busy.ps1}, this project's own PC's script and not in the public repositories: prints what the person at the PC is running that says they're using it, or nothing. Without the file, nobody counts as playing. */
+	/** {@code tools/user_busy.ps1}, this project's own PC's script and not in the public repositories: asked {@code -For servers}, it prints what the person at the PC is running that leaves too little room beside it for several servers at once, or nothing. Without the file, nobody counts as playing. */
 	@Internal
 	public abstract RegularFileProperty getUserBusy();
 
@@ -420,12 +420,12 @@ public abstract class BuriedTowersTestTask extends ClientStartupTask {
 		if (worlds.size() > 1) getLogger().lifecycle("    {} worlds, {} at a time: {} s, where one after another takes {} s", worlds.size(), atOnce, tenths(System.nanoTime() - began), tenths(sum));
 	}
 
-	/** As many as asked, but one while the user has a game or heavy app of their own running, as this project's own queue for game launches does with its slots (tools/gwl.sh, not in the public repositories either). */
+	/** As many as asked, but one while the user has something of their own running that the script finds too little room beside (a game that leaves too little of the processor or memory, or anything where a dropped frame costs most), as this project's own queue for game launches does with its slots (tools/gwl.sh, not in the public repositories either). */
 	private int atOnce() throws InterruptedException {
 		int asked = Math.max(1, getParallel().get());
 		if (asked == 1 || !WINDOWS || !getUserBusy().isPresent() || !getUserBusy().get().getAsFile().isFile()) return asked;
 		try {
-			Process check = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", getUserBusy().get().getAsFile().getAbsolutePath())
+			Process check = new ProcessBuilder("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", getUserBusy().get().getAsFile().getAbsolutePath(), "-For", "servers")
 					.redirectError(ProcessBuilder.Redirect.DISCARD).start();
 			check.getOutputStream().close();
 			if (!check.waitFor(30, TimeUnit.SECONDS)) {

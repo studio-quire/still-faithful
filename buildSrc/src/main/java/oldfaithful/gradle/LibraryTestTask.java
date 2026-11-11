@@ -75,6 +75,10 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 	@Input
 	public abstract Property<String> getStillEdition();
 
+	/** The self-tests on an edition's mods as well ("old", "still"), as a player's pack has them: blank for Pure Faithful's alone. */
+	@Input
+	public abstract Property<String> getSelftestEdition();
+
 	/** {@code library/tags.txt}. */
 	@InputFile
 	@PathSensitive(PathSensitivity.NONE)
@@ -120,6 +124,7 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 		getSinglePlayerOnly().convention(false);
 		getClientSamples().convention(2);
 		getStillEdition().convention("");
+		getSelftestEdition().convention("");
 	}
 
 	private static final Pattern FAIL = Pattern.compile("\\[library-harness] FAIL (.*?) \\| (.*?) \\| (.*)");
@@ -328,13 +333,71 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 	List<String> client(String where, Path game, Collection<Path> jars, List<String> jvm) throws Exception {
 		List<String> started = new ArrayList<>();
 		List<String> lines = launchIn(game, jars, jvm, started);
+		judge(where, started, lines);
+		return lines;
+	}
+
+	/**
+	 * A hidden client that will join a server, started now on a thread of its own: it takes a few seconds to reach its main menu, which
+	 * needn't be spent after the server is ready, nor after the one before has stopped. At the menu it waits to be {@link Joining#admit
+	 * admitted} (StartupCheck's joinWhen), so it never tries a server that isn't ready. One game client at a time, as before: this
+	 * starts only once the last has ended.
+	 */
+	Joining joining(String where, Path game, Collection<Path> jars, int port, List<String> jvm) throws IOException {
+		return new Joining(where, game, jars, port, jvm);
+	}
+
+	final class Joining implements AutoCloseable {
+		private final String where;
+		private final Path gate;
+		private final List<String> started = new ArrayList<>();
+		private final ExecutorService thread = Executors.newSingleThreadExecutor();
+		private final Future<List<String>> lines;
+
+		private Joining(String where, Path game, Collection<Path> jars, int port, List<String> jvm) throws IOException {
+			this.where = where;
+			Files.createDirectories(game);
+			gate = game.resolve("join-now");
+			Files.deleteIfExists(gate);
+			List<String> all = new ArrayList<>(List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, flag("oldfaithful.selftest.joinWhen", gate.toAbsolutePath())));
+			all.addAll(jvm);
+			lines = thread.submit(() -> launchIn(game, jars, all, started));
+		}
+
+		/** The server is ready now ({@link HarnessServer#awaitStart}): the client connects when it gets to its menu, or at once if it's there. */
+		void admit() throws IOException {
+			if (!Files.exists(gate)) Files.createFile(gate);
+		}
+
+		/** Waits for the client to end, and reads its output as {@link #client} does: on this thread, so what it counts lands where the caller is. */
+		List<String> await() throws Exception {
+			List<String> out;
+			try {
+				out = lines.get();
+			} catch (ExecutionException e) {
+				throw e.getCause() instanceof Exception ex ? ex : e;
+			}
+			judge(where, started, out);
+			return out;
+		}
+
+		/** Ends a client that's still running (its server never came up, or the stage is stopping), unjudged. */
+		@Override
+		public void close() throws InterruptedException {
+			lines.cancel(true);
+			thread.shutdownNow();
+			// The launch's own clean-up ends the game; the folder is free again after it.
+			thread.awaitTermination(30, java.util.concurrent.TimeUnit.SECONDS);
+		}
+	}
+
+	private void judge(String where, List<String> started, List<String> lines) {
 		for (String s : started) {
 			// Stack frames and what scan() reads anyway only bury the line that says what happened.
 			String body = s.replace("error in the output:", "").trim();
 			if (!s.startsWith("log: ") && !body.startsWith("at ") && !body.startsWith("Caused by") && !body.startsWith("...") && !OFFLINE.matcher(body).find()) fail("unknown", "client", s + " [" + where + "]");
 		}
 		scan(where, lines);
-		return lines;
 	}
 
 	/** As {@link #client}, for a run that's refused or attacked, where the log is full of what it turned away: only that it ran and stopped counts. */

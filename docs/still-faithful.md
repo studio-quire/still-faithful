@@ -189,6 +189,18 @@ versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), w
   0.4.0 keeps it off until changed (the changelog says where); 0.4.1 and later never wrote it.
 - **Beside Wolf Packs**, whose wrap of `spawnEntity` in the same method tells the packs about a shot: different calls,
   both apply.
+- **Spider jockeys** (found 2026-11-10 after 0.6.0, on the user's question). The skeleton sits 0.175 over its spider's
+  feet (`getPassengerRidingHeight`, 0.9 * 0.75 - 0.5), and beta's arrow spares only its shooter, for its first 4 ticks.
+  From the eyes the arrow starts 0.4 over the spider's box as the arrow tests it (grown 0.3, so 1.2 high and 1.0 out
+  each way), where beta's started 1.8 over, so a shot steeply down went into the spider, the more the steeper (1 below,
+  only from right beside it; 4 below, out to 6 across): 4 below, 4 to 6 across, 0 to 6% on the player and 91 to 100% on
+  the spider, where beta's hit the player 57 to 70% (`tools/skeleton_arrows.py jockey`, standing). Even beta's hit its
+  own spider right below (4 down, 2 across: 96%). Fixed in `mixin/skeletons/ArrowEntityMixin`, a wrap of `isCollidable`
+  in `ArrowEntity.tick` beside #81's: a skeleton's arrow spares the skeleton's mount as it does the skeleton, as later
+  versions spare what the shooter rides. Below, wherever beta's arrow cleared the spider, the jockey now hits within 2
+  points of beta's; closer in, more, where beta's went into the spider (4 down: 2 across 74% against 2, 3 across 75
+  against 45). A client keeps the arrow's owner from its spawn packet, so one with the mod agrees; one without it may
+  show the arrow glancing off the spider for a moment while the server's flies on.
 
 ### Squid at the surface (the user's ask, 2026-11-10)
 
@@ -517,11 +529,14 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   cluster and blast changed any pixel, the others none, and the further blasts made no particle.
 - `SkeletonCheck` (skeleton arrows, the same run, last; `-Ptest.only=skeleton`, about 30 s with the start): where the
   arrow starts against the eyes, then the game's own `attack` and arrows from 15 skeletons a scene at targets with a
-  player's box and aiming point, 20 volleys: level ground 6 across, a player 4 up a cliff and 4 down one 5 across, and
-  a tunnel one wide and two high 5 across; each share of hits against the re-run's (`tools/skeleton_arrows.py
-  scenes`) within four standard deviations and a point. 2026-11-10: with the switch, the arrow 0.10 below the eyes,
-  73.3% (the re-run 71.8), 71.0 (73.5), 70.7 (67.1), 55.0 (57.3); with `-Pstill.beta`, 1.30 over them, 67.7 (72.1),
-  71.7 (73.6), 66.7 (65.9) and none of 300 in the tunnel. The start alone would give about 58% up the cliff.
+  player's box and aiming point, 20 volleys: level ground 6 across, a player 4 up a cliff and 4 down one 5 across,
+  a tunnel one wide and two high 5 across, and spider jockeys 4 above a player 5 across (a still spider seated by the
+  game, counting its rider's hits); each share of hits against the re-run's (`tools/skeleton_arrows.py scenes`) within
+  four standard deviations and a point, and no jockey's arrow in its own spider. 2026-11-10: with the switch, the arrow
+  0.10 below the eyes, 73.3% (the re-run 71.8), 71.0 (73.5), 70.7 (67.1), 55.0 (57.3); with `-Pstill.beta`, 1.30 over
+  them, 67.7 (72.1), 71.7 (73.6), 66.7 (65.9) and none of 300 in the tunnel. The start alone would give about 58% up
+  the cliff. The jockeys, the same day: 64.7% (65.7) with the switch and 64.7 (64.5) as beta, none in the spider; with
+  the switch but the mount's mixin left out, none on the player and all 300 in the spider.
 - `SquidCheck` (Squid Surfacing, the same run, last; `-Ptest.only=squid`, about 50 s with the start): ten squid in a pool
   10 by 10 and 3 deep, open to the sky, in a place where water doesn't freeze (in a snowy biome the top turns to ice,
   which is no water to a squid: the first run met it), 1,200 ticks of their own swimming, each tick of each squid in

@@ -35,7 +35,7 @@ import org.gradle.api.tasks.TaskAction;
  * standing where the clients see their eyes above water not drowned.
  */
 public abstract class FixesMultiplayerTestTask extends ClientStartupTask {
-	/** local/server-package/OldFaithful-server, as :serverPackage writes it. */
+	/** The server package, as :serverPackage writes it (build/server-package/OldFaithful-server). */
 	@InputDirectory
 	@PathSensitive(PathSensitivity.RELATIVE)
 	public abstract DirectoryProperty getServerPackage();

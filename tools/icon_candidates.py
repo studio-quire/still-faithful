@@ -8,6 +8,7 @@ The release's own icon is tools/make_icon.py's; this script never touches it.
 """
 import colorsys
 import html
+import importlib.util
 import math
 import shutil
 import sys
@@ -460,10 +461,10 @@ def luminance(c):
     return 0.2126 * r + 0.7152 * g + 0.0722 * b
 
 
-def matched(hue, sat, like):
+def matched(hue, sat, like, light=1.0):
     """The colour of this hue and HLS saturation with the same luminance as `like`, so a recoloured seal keeps
-    the original's light and dark."""
-    target, lo, hi = luminance(like), 0.0, 1.0
+    the original's light and dark; `light` scales that luminance, for a hue that needs to sit deeper."""
+    target, lo, hi = luminance(like) * light, 0.0, 1.0
     for _ in range(40):
         mid = (lo + hi) / 2
         c = tuple(round(v * 255) for v in colorsys.hls_to_rgb(hue / 360, mid, sat))
@@ -721,13 +722,20 @@ STILLS = [("a", "Dusk violet", 266, 266, "Chosen (2026-11-02). Violet, the hour 
 STILL_SILVER = (206, 208, 208)
 
 
-def still_seal(top_hue, bottom_hue, sat=0.5):
+def still_seal(top_hue, bottom_hue, sat=0.5, light=1.0):
     top, bottom, _ = BETA_PURE
-    t, b = matched(top_hue, sat, top), matched(bottom_hue, sat * 1.05, bottom)
+    t, b = matched(top_hue, sat, top, light), matched(bottom_hue, sat * 1.05, bottom, light)
     if top_hue == 232:
         t, b = matched(232, 0.45, (52, 96, 170)), matched(232, 0.5, (20, 34, 78))
     shadow = tuple(round(v * 255) for v in colorsys.hls_to_rgb(bottom_hue / 360, 0.11, 0.5))
     return c07_beta((t, b, STILL_SILVER), glyph_tint=STILL_SILVER, shadow=shadow)
+
+
+# More Faithful's seal (the user's pick, 2026-11-10, of Claude Fable 5.2's rounds): crimson, with the silver rim and beta
+# of Old and Still Faithful. The first warm seal, where the ladder goes from beta itself to beta with more in it. It sits
+# a little deeper than the first three: a red as light as Pure's blue is salmon.
+def more_seal():
+    return still_seal(355, 355, 0.6, 0.68)
 
 
 def stills_section():
@@ -773,7 +781,19 @@ def greens_section():
             f'{html.escape(GREEN_WHY)}</p>{"".join(rows)}</section>')
 
 
-def page(entries, has_current):
+def rounds(out):
+    """Candidate rounds kept beside the page as `<digits>*.py`, part of the workshop and not of the public script:
+    each has draw(ic, out), which writes its pictures, and sections(ic), its cards for the page, newest first."""
+    found = []
+    for path in sorted(out.glob("[0-9]*.py")):
+        spec = importlib.util.spec_from_file_location("round_" + path.stem, path)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        found.append(module)
+    return found
+
+
+def page(entries, has_current, extra=()):
     def imgs(src, big=True):
         cells = []
         for bg in ("dark", "light"):
@@ -800,6 +820,7 @@ def page(entries, has_current):
     cards.insert(0, greens_section())
     cards.insert(0, silvers_section())
     cards.insert(0, stills_section())
+    cards[:0] = extra
     grid = "".join(f'<figure><img src="{num}-{slug}.png" width="32" height="32" alt=""><figcaption>{num}</figcaption></figure>'
                    for num, slug, *_ in entries)
     return f"""<!DOCTYPE html>
@@ -884,12 +905,20 @@ def main(argv=None):
     still = still_seal(*next((t, b) for key, _, t, b, _ in STILLS if key == "a")).image()
     for size in (32, 64, 128, 256, 512):
         still.resize((size, size), Image.NEAREST).save(final / f"stillfaithful-{size}.png", optimize=True)
+    # More Faithful's: crimson (above).
+    more = more_seal().image()
+    for size in (32, 64, 128, 256, 512):
+        more.resize((size, size), Image.NEAREST).save(final / f"morefaithful-{size}.png", optimize=True)
     current = next((p for p in (ROOT / "prism" / "release" / n for n in ("purefaithful.png", "oldfaithful.png"))
                     if p.exists()), None)
     if current:
         img = Image.open(current)
         img.resize((32, 32), Image.NEAREST).save(out / "00-current.png", optimize=True)
-    (out / "index.html").write_text(page(entries, current is not None), encoding="utf-8", newline="\n")
+    ic, extra = sys.modules[__name__], []
+    for module in rounds(out):
+        module.draw(ic, out)
+        extra += module.sections(ic)
+    (out / "index.html").write_text(page(entries, current is not None, extra), encoding="utf-8", newline="\n")
 
 
 if __name__ == "__main__":

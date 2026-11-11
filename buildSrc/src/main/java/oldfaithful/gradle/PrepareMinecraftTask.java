@@ -9,12 +9,10 @@ import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HexFormat;
 import java.util.List;
-import java.util.stream.Stream;
 
 import net.fabricmc.mappingio.tree.MemoryMappingTree;
 import org.gradle.api.DefaultTask;
@@ -64,12 +62,13 @@ public abstract class PrepareMinecraftTask extends DefaultTask {
 	public void prepare() throws IOException {
 		Path merged = path(getMergedIntermediaryJar());
 		Path named = path(getNamedJar());
+		Path folder = named.getParent();
+		Files.createDirectories(folder);
+		// What a build that was killed half way left behind, whether or not the jars were finished since.
+		Folders.sweep(folder, MAKING, Duration.ofHours(1));
 		// Gradle runs this again whenever buildSrc changes at all; the folder's name says whether the jars would.
 		if (Files.exists(merged) && Files.exists(named)) return;
 
-		Path folder = named.getParent();
-		Files.createDirectories(folder);
-		sweep(folder);
 		// Beside where the jars go, so placing them is a rename within one volume; its own, as two builds may be here.
 		Path making = Files.createTempDirectory(folder, MAKING);
 		try {
@@ -93,7 +92,7 @@ public abstract class PrepareMinecraftTask extends DefaultTask {
 			place(madeMerged, merged);
 			place(madeNamed, named);
 		} finally {
-			delete(making);
+			Folders.delete(making);
 		}
 	}
 
@@ -149,30 +148,6 @@ public abstract class PrepareMinecraftTask extends DefaultTask {
 					throw e;
 				}
 			}
-		}
-	}
-
-	/** Clears what a build that was killed half way left behind. */
-	private static void sweep(Path folder) throws IOException {
-		Instant old = Instant.now().minus(Duration.ofHours(1));
-		List<Path> left;
-		try (Stream<Path> entries = Files.list(folder)) {
-			left = entries.filter(p -> p.getFileName().toString().startsWith(MAKING)).toList();
-		}
-		for (Path p : left) {
-			try {
-				if (Files.getLastModifiedTime(p).toInstant().isBefore(old)) delete(p);
-			} catch (IOException gone) {
-				// Another build swept it first.
-			}
-		}
-	}
-
-	private static void delete(Path dir) {
-		try (Stream<Path> files = Files.walk(dir)) {
-			for (Path p : files.sorted(Comparator.reverseOrder()).toList()) Files.deleteIfExists(p);
-		} catch (IOException e) {
-			// Left for a later sweep.
 		}
 	}
 

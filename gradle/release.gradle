@@ -85,13 +85,15 @@ ext.releaseTokens = { Map ed ->
         HOMEPAGE             : ed.homepage,
         ICON                 : ed.icon,
         SERVER_MODS          : ed.serverModsText,
-        // More launch arguments, each with its leading comma, in the pack's net.minecraft component: the library packs' list of mods.
+        // More launch arguments, each with its leading comma, in the pack's net.minecraft component: a content pack's list of mods.
         EXTRA_JVM_ARGS       : ed.extraJvmArgs ?: '',
-        // A library pack's edition, and the mods under it (gradle/library.gradle).
+        // A content pack's edition, what's under it, and the library whose mods it carries (gradle/library.gradle).
         EDITION_NAME         : ed.editionName ?: '',
         EDITION_VERSION      : ed.editionVersion ?: '',
         EDITION_LINE         : ed.editionLine ?: '',
         EDITION_REPO         : ed.editionRepo ?: '',
+        LIBRARY_VERSION      : ed.libraryVersion ?: '',
+        LIBRARY_REPO         : ed.libraryRepo ?: '',
         // Where the notices say OpenAL Soft's source is: the zip's real name, but for Pure Faithful 0.1.3's text, until its next release.
         OPENAL_SOURCES       : ed.openalSources ?: 'sources/openal-soft/',
         PURE_NAME            : release_name,
