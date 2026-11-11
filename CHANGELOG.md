@@ -7,6 +7,14 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.7.1 (2026-11-11)
+
+On Old Faithful 0.2.6 and Pure Faithful 0.1.6. Still Faithful's own mod is unchanged.
+
+- From Pure Faithful 0.1.6: the bow, doors opening and closing, and explosions sound as they did in beta, where launchers
+  today give later recordings. Beta's bow and doors, which Mojang no longer offers, are fetched once from Modification
+  Station's archive of beta's files. Pure Faithful's changelog has the detail.
+
 ## 0.7.0 (2026-11-11)
 
 On Old Faithful 0.2.5 and Pure Faithful 0.1.5.

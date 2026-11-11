@@ -10,6 +10,7 @@ import net.minecraft.client.texture.ImageDownload;
 import net.minecraft.client.texture.SkinImageProcessor;
 
 import org.studioquire.oldfaithful.hardening.Services;
+import org.studioquire.oldfaithful.hardening.assets.BetaSounds;
 import org.studioquire.oldfaithful.hardening.assets.LegacyAssets;
 import org.studioquire.oldfaithful.hardening.session.MojangSession;
 import org.studioquire.oldfaithful.hardening.skins.Skins;
@@ -94,8 +95,26 @@ final class ClientChecks {
 			}
 			t.check("sounds: all " + entries.size() + " present with the right sizes (missing " + missing + ")",
 					missing == 0 && entries.size() > 300);
+			betaSounds(gameDir);
 		} catch (Throwable e) {
 			t.fail("sounds", e);
+		}
+	}
+
+	/**
+	 * Beta's own bow, door and explosion sounds, fetched by the same run into this run's fresh cache (the bow and doors
+	 * from Modification Station, so over the network every time), each checked against its pin; then copied into the
+	 * kept folder's cache, which the game tests copy into their game folders, so they start with them and ask nobody.
+	 */
+	private void betaSounds(File gameDir) throws java.io.IOException {
+		Map<String, File> ready = Services.BETA_SOUNDS.ready();
+		File keep = new File(gameDir, "cache/purefaithful-hardening/beta-sounds");
+		keep.mkdirs();
+		for (BetaSounds.Pinned p : BetaSounds.PINNED) {
+			File file = ready.get(p.pool);
+			boolean ok = file != null && p.sha256.equals(BetaSounds.sha256(Files.readAllBytes(file.toPath())));
+			t.check("sounds: beta's own " + p.file + " fetched or found, and the pinned file", ok);
+			if (ok) Files.copy(file.toPath(), new File(keep, p.file).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		}
 	}
 }

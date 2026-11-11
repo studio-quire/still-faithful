@@ -18,7 +18,7 @@ Daemons and worktrees (Claude Fable 5.2, 2026-11-10). Every checkout's daemons r
 | `./gw build` | Compiles the mods, runs unit tests, remaps. Installable jars: `<mod>/build/libs/<mod>-<version>.jar` (the `-dev` jar is the named one, not for players). |
 | `./gw :harness:serverTest` | Headless dedicated server with our mods: boots, generates and saves a world, refuses an online-mode login through the hardened check, stops; fails on any error from our mixins. About 20 s. |
 | `./gw :harness:nativesTest` | Loads our LWJGL and OpenAL builds as a launcher does, with no visible window: display modes, an offscreen GL context, OpenAL device listing and silent mixing (`docs/natives.md`). A few seconds. |
-| `./gw :harness:clientAudit` | Starts the client through Fabric with no window, applies every client mixin, and exercises sounds, skins, capes and the session join against Mojang, launched with a made-up session that must not appear in the console or in `logs/purefaithful/latest.log`; then exits. The first run downloads all sounds (44 MB) into `local/cache/selftest-sounds`. |
+| `./gw :harness:clientAudit` | Starts the client through Fabric with no window, applies every client mixin, and exercises sounds, skins, capes and the session join against Mojang, launched with a made-up session that must not appear in the console or in `logs/purefaithful/latest.log`; then exits. The first run downloads all sounds (44 MB) into `local/cache/selftest-sounds`; every run fetches beta's own bow and doors from Modification Station, checks all four of beta's sounds against their pins and keeps them in that folder's `cache/` for the game tests. |
 | `-Poldfaithful.gameJava=<java>` | Runs any of those on another JRE (an absolute path), e.g. Prism's `jre-legacy` (8u51). All three pass on 8u51, 21 and 25. |
 | `-Poldfaithful.upstream` | Resolves from the original repositories instead of our mirror, for adding or updating a dependency (`docs/mirror.md`). |
 | `./gw decompileMinecraft` | Vineflower source of the merged named jar in `local/decomp/` for reading mixin targets. Never commit it. |
@@ -151,6 +151,7 @@ mods as dependencies (`modImplementation`). Loom stays an option if we ever need
 | SDL3, LWJGL 3 natives, libffi | 3.4.18 / 3.4.3 / 3.8.0, built by us | as LWJGL 2 above (`docs/natives.md`) |
 | Mods for the link check | `harness/linkcheck-mods.json` | SHA-512 from Modrinth; read only, never run or shipped |
 | Mojang's legacy asset index | `pre-1.6`, SHA-1 `3d8e5548…` | hard-coded in `LegacyAssets`; the mod refuses any other |
+| Beta's own bow, door and explosion sounds | four files, as beta 1.7.3's game downloaded them | size and SHA-256 hard-coded in `BetaSounds`; the explosion is Mojang's object `9e22b5ae…` (pre-1.6's `old_explode.ogg`), the bow and doors come from Modification Station's archive of Mojang's old resource bucket, whose bytes matched a second, independent archive's (2026-11-11). The client audit fetches them each run and keeps them in `local/cache/selftest-sounds/cache/`, which the game tests copy into their game folders. |
 
 Updating something: change the version in `gradle.properties`, run
 `./gw -Poldfaithful.upstream --write-verification-metadata sha256 build :harness:nativesTest prismDevInstance decompileMinecraft`,
@@ -185,11 +186,12 @@ FixesCheck's boat, burned at a spawn beside lava; spawns are random, so it comes
 `./gw :harness:clientStartupTest` (Claude Opus 5.5, 2026-11-01; allowed by the user the same day) launches the game
 the way the SDL dev instance does: Fabric's launch with the official jar, our LWJGL component and its natives, the
 hardening and display mods plus the self-test mod, Java 21, offline as `OldFaithfulTest`, in a fresh
-`local/run/client-startup` with the sounds copied in from `local/cache/selftest-sounds` (clientAudit fills it) and a
-tiny render distance. The self-test's `StartupCheck` drives it from the game's tick: the main menu comes up; the window
+`local/run/client-startup` with the sounds copied in from `local/cache/selftest-sounds` (clientAudit fills it; its `cache/`
+too, so beta's own bow, door and explosion sounds are there before the first load) and a tiny render distance. The self-test's `StartupCheck` drives it from the game's tick: the main menu comes up; the window
 is titled "Minecraft", exists and was never shown or active; the mouse is on the system's pointer settings; a synthetic
 Ctrl+V into Multiplayer's address field pastes what SDL reads from the clipboard (read, never written or printed);
-then a new world (`saves/oldfaithful-startup`) is created as the Create World screen does, runs 100 ticks, and the
+then a new world (`saves/oldfaithful-startup`) is created as the Create World screen does, runs 100 ticks (each of beta's own bow, door and
+explosion sounds must then be its pool's only sound, and the pinned file), and the
 game stops itself as its close button would. The launch carries a Prism window size (1000x600, in Prism's system
 property) and the window and the game must be that size. Two short launches follow in `window-memory/` with the display
 mod's `window.remember` on, to the main menu only: Prism asking for maximised over a placement kept from when it asked

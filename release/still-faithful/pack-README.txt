@@ -58,8 +58,11 @@ Still Faithful's own, each on its own switch:
 
 From Old Faithful: fixes for beta's own clear mistakes, lighting as beta's own rule says it should be, a field-of-view
 slider, and Options > Still Faithful... with every switch in the game, in menus of Fixes and Changes. From Pure Faithful: its own resizable window,
-borderless fullscreen (F11), speed with the same picture, safe logins, skins and sounds, and saves that survive
-crashes and power cuts.
+borderless fullscreen (F11), speed with the same picture, safe logins, skins and sounds, beta's own bow, door and
+explosion sounds where launchers give later recordings (the bow and doors fetched once from Modification Station's
+archive of beta's files), and saves that survive crashes and power cuts. To keep the game from fetching the bow and
+doors, set resources.download=false in .minecraft/config/purefaithful-hardening.properties before you first launch
+it, creating the file if it isn't there.
 
 Your worlds are in .minecraft/saves, in beta 1.7.3's own format: they open in the original game, Pure Faithful and
 Old Faithful too (there, placed leaves can decay again and kept animals can despawn).

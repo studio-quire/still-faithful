@@ -79,7 +79,11 @@ You need a Minecraft account that owns the game, and [Prism Launcher](https://pr
 2. In Prism Launcher: **Add Instance > Import**, choose the zip (or paste the download link), **OK**.
 3. Launch it. Prism downloads beta 1.7.3 and its sounds from Mojang, and, if you let it, a Java 21 runtime.
 
-Everything else is inside the zip; nothing else is downloaded, from us or anyone. The title screen shows "Old
+Everything else is inside the zip, and nothing comes from us. Besides Mojang (your login, skins and sounds) and the
+servers you join, the game reaches one other place: on its first start it fetches beta's own bow and door sounds
+(about 28 KB) from the archive of beta's files kept by Modification Station, a community of beta modders. To keep it
+from doing so, before you first launch it set `resources.download=false` in
+`.minecraft/config/purefaithful-hardening.properties`, creating the file if it isn't there. The title screen shows "Old
 Faithful" and its version under beta's own version line.
 
 ## For existing instances

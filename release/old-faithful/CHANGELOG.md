@@ -5,6 +5,14 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.6 (2026-11-11)
+
+Released with Still Faithful 0.7.1, which carries it; on Pure Faithful 0.1.6. Old Faithful's own mods are unchanged.
+
+- From Pure Faithful 0.1.6: the bow, doors opening and closing, and explosions sound as they did in beta, where launchers
+  today give later recordings. Beta's bow and doors, which Mojang no longer offers, are fetched once from Modification
+  Station's archive of beta's files. Pure Faithful's changelog has the detail.
+
 ## 0.2.5 (2026-11-11)
 
 Released with Still Faithful 0.7.0, which carries it; on Pure Faithful 0.1.5, as 0.2.4 was. Two new fixes, each on its

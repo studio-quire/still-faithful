@@ -12,9 +12,13 @@ From Pure Faithful:
 - Its own window again, resizable and sharp on high-resolution screens; F11 for borderless fullscreen; Ctrl+V
   pastes. Sound keeps working when you switch speakers or headphones. Vsync is on.
 - Faster: the same picture with less work, and the far view fills in steadily.
-- Safe online: logins, skins and sounds go to Mojang over HTTPS and are checked, and your account's access token is
-  never sent in the clear or written to logs. The game and the server are hardened against malicious servers and
-  clients.
+- Safe online: logins and skins go to Mojang over HTTPS, sounds come over HTTPS and are checked, and your account's
+  access token is never sent in the clear or written to logs. The game and the server are hardened against
+  malicious servers and clients.
+- The bow, doors and explosions sound as in beta, where launchers today give later recordings. Beta's bow and doors,
+  which Mojang no longer offers, are fetched once from Modification Station's archive of beta's files. To keep the
+  game from fetching them, set resources.download=false in .minecraft/config/purefaithful-hardening.properties
+  before you first launch it, creating the file if it isn't there.
 - Saves that survive crashes and power cuts. A part of a world that can't be read is kept in the world's corrupt/
   folder and reported, never silently replaced with new terrain.
 

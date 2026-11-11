@@ -193,7 +193,8 @@ Prism picked Mojang's 21.0.7 for the client check. What an instance can and can'
   "download Temurin 21 in Prism and pick it for the instance". No in-game nag: a hard-coded "current" version rots.
 - **Later, if it matters**: our own installer (phase 7) can fetch a pinned Temurin; or suggest upstream that Prism's
   automatic download fall back to Temurin, or let a component prefer it (an outward step, so the user's call).
-- Exposure meanwhile is modest: the game talks to Mojang over HTTPS and to servers through packet code we harden; the
+- Exposure meanwhile is modest: the game talks to Mojang (and, once, Modification Station's archive for beta's own
+  bow and door sounds) over HTTPS and to servers through packet code we harden; the
   JDK fixes missing from 21.0.7 are mostly in areas the game doesn't use, though TLS and image decoding are reached.
 
 ## Findings that matter

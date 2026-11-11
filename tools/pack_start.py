@@ -69,6 +69,8 @@ if game.exists():
 shutil.copytree(inst / ".minecraft", game)
 shutil.copy(harness, game / "mods")
 shutil.copytree(REPO / "local/cache/selftest-sounds/resources", game / "resources")
+if (REPO / "local/cache/selftest-sounds/cache").is_dir():  # beta's own bow, door and explosion sounds, as the hardening keeps them
+    shutil.copytree(REPO / "local/cache/selftest-sounds/cache", game / "cache", dirs_exist_ok=True)
 (game / "options.txt").write_text("viewDistance:3\n")
 wave = str(game / "sound.wav").replace("\\", "/")
 (game / "alsoft.ini").write_text(f"[general]\nchannels = stereo\nsample-type = int16\nfrequency = 44100\n[wave]\nfile = {wave}\n")

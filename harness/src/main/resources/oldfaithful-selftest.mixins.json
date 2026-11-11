@@ -19,6 +19,7 @@
     "WorldSpawnBenchMixin",
     "TitleScreenStartupMixin",
     "MultiplayerScreenAccessor",
+    "SoundManagerAccessor",
     "ScreenAccessor",
     "WorldRendererAccessor",
     "ChunkBuilderSceneAccessor",

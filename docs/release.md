@@ -130,7 +130,9 @@ rule for its `stillMods`. The library's release and More Faithful are added by `
   installed by Prism from the instance root because `iconKey` names it. `instance.cfg`'s `notes` (quoted, since
   Prism reads it with QSettings, which would split a comma) shows in Prism's Notes page.
 - **Inside, not fetched.** Every library is in the zip with Prism's `local` hint: one download, nothing fetched but
-  Minecraft and its sounds from Mojang (and Java, if the player lets Prism get it), no dependency on our hosting.
+  Minecraft and its sounds from Mojang (and Java, if the player lets Prism get it), no dependency on our hosting. The
+  game itself fetches beta's own bow and door sounds once, from Modification Station's archive (the hardening's
+  `BetaSounds`), and plays the launcher's later recordings without them.
   Prism doesn't hash-check local files, so the zip's SHA-256 in the release notes is the check.
 - **Windows only.** Only the Windows natives; the dev instance's Linux ones are left out until a Linux release.
 - **No instance JVM arguments.** The dev instance overrides the player's JVM arguments to pass

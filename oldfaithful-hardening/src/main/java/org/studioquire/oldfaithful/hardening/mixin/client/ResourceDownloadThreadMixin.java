@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import org.studioquire.oldfaithful.hardening.Config;
 import org.studioquire.oldfaithful.hardening.Services;
+import org.studioquire.oldfaithful.hardening.assets.BetaSounds;
 import org.studioquire.oldfaithful.hardening.assets.LegacyAssets;
 import org.studioquire.oldfaithful.hardening.util.Https;
 import org.studioquire.oldfaithful.hardening.util.Log;
@@ -23,6 +24,9 @@ import org.studioquire.oldfaithful.hardening.util.Log;
  * entities on, and wrote files wherever the list's names pointed (see {@link LegacyAssets}). The original download
  * code never runs; missing sounds come from Mojang over HTTPS, hash-checked, and then the game loads sounds from
  * disk exactly as it does when offline.
+ * <p>
+ * Beta's own bow, door and explosion sounds ({@link BetaSounds}) take the place of the later recordings launchers
+ * give: those already on disk before the game's sounds load, the rest as they arrive.
  * <p>
  * Loading from disk walks everything in resources/ and printed "Failed to add" for each file at its top level
  * (launchers put pack.mcmeta and a read-me there): the game only takes sounds and music from subfolders, and a name
@@ -40,6 +44,9 @@ abstract class ResourceDownloadThreadMixin {
 	@Inject(method = "run", at = @At("HEAD"), cancellable = true)
 	private void oldfaithful$run(CallbackInfo ci) {
 		ci.cancel();
+		BetaSounds beta = Services.BETA_SOUNDS;
+		// Before the first load, so the later recordings of those already here never join a pool.
+		beta.findLocal(resourcesDirectory);
 		// What's already here plays at once; what's missing is added file by file as it arrives, as vanilla's
 		// downloader did, so a slow or unreachable Mojang never holds back the sounds the game already has.
 		if (!cancelled) reload();
@@ -56,6 +63,33 @@ abstract class ResourceDownloadThreadMixin {
 			} catch (Exception e) {
 				Log.warn("Sounds not checked or downloaded: " + e);
 			}
+			try {
+				beta.fetchMissing(resourcesDirectory, () -> cancelled, (pool, file) -> {
+					if (cancelled || minecraft == null) return;
+					try {
+						BetaSounds.install(minecraft.soundManager, pool, file);
+					} catch (Exception e) {
+						Log.warn("Beta's " + pool + " fetched but not loaded: " + e);
+					}
+				});
+			} catch (Exception e) {
+				Log.warn("Beta's sounds not fetched: " + e);
+			}
+		} else if (!Config.INSTANCE.resourcesDownload && !beta.complete()) {
+			Log.info("Downloads are off (resources.download): " + (BetaSounds.PINNED.size() - beta.ready().size())
+					+ " of beta's own sounds aren't here, and their later recordings play");
+		}
+		beta.settle();
+	}
+
+	/** Every load from disk, the first and any the game forces later (which starts from an empty sound manager). */
+	@Inject(method = "reload", at = @At("TAIL"))
+	private void oldfaithful$betaSounds(CallbackInfo ci) {
+		if (minecraft == null) return; // the client audit runs the thread without a game
+		try {
+			Services.BETA_SOUNDS.installAll(minecraft.soundManager);
+		} catch (Exception e) {
+			Log.warn("Beta's sounds not loaded: " + e);
 		}
 	}
 

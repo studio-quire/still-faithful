@@ -360,9 +360,11 @@ public final class StartupCheck {
 			case 4:
 				if (mc.world == null || mc.player == null) return;
 				if (++worldTicks < WORLD_TICKS) return;
+				if (BetaSoundsCheck.waiting()) return;
 				results.check("world created, loaded and running: player at y " + Math.round(mc.player.y) + ", world time " + mc.world.getTime()
 						+ " after " + worldTicks + " game ticks" + (mc.currentScreen == null ? "" : ", but " + mc.currentScreen.getClass().getName() + " is open"), mc.world.getTime() >= WORLD_TICKS / 2 && mc.currentScreen == null);
 				results.check("sound system initialised (paulscode on our OpenAL)", paulscode.sound.SoundSystem.initialized());
+				BetaSoundsCheck.check(mc, results);
 				if (LedgeHunt.ENABLED) {
 					hunt = new LedgeHunt(results);
 					phase = 31;

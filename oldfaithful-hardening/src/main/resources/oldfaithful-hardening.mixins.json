@@ -17,6 +17,8 @@
     "client.MinecraftAppletMixin",
     "client.MinecraftMixin",
     "client.ResourceDownloadThreadMixin",
+    "client.SoundEntryAccessor",
+    "client.SoundManagerMixin",
     "client.TitleScreenMixin"
   ],
   "server": [

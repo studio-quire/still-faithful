@@ -352,7 +352,14 @@ public abstract class ClientStartupTask extends GameTestTask {
 			getLogger().lifecycle("No sounds in {} yet (clientAudit fills it); the game will download them (about 44 MB).", from);
 			return;
 		}
-		Path to = run.resolve("resources");
+		copyTree(from, run.resolve("resources"));
+		// Beta's own bow, door and explosion sounds as the hardening keeps them (clientAudit puts them there), so
+		// the game has them from its first load and asks no archive for them.
+		Path cache = getSoundsGameDir().get().getAsFile().toPath().resolve("cache");
+		if (Files.isDirectory(cache)) copyTree(cache, run.resolve("cache"));
+	}
+
+	private static void copyTree(Path from, Path to) throws IOException {
 		try (Stream<Path> walk = Files.walk(from)) {
 			for (Path p : walk.toList()) {
 				Path target = to.resolve(from.relativize(p).toString());
