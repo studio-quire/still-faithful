@@ -11,16 +11,19 @@ same terrain in less time.
 
 From Old Faithful: beta's clear mistakes fixed, each on a switch in config/oldfaithful-fixes.properties, and lighting
 as beta's own rule says it should be. Still Faithful's own: what later versions improved while the game stayed beta
-(stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats,
-minecarts that meet on every track, animals that stay once a player has looked after them, fences shaped as in later
-versions, chests that pair as in later versions, wooden tools, boats and other wooden things that burn in a
-furnace, skeletons shooting from their eyes, squid that swim on under the surface instead of bouncing against it),
+(stairs that drop themselves, placed leaves that stay, glowstone by hand, lava that thins out, sturdier boats
+that steer as in later versions, minecarts that meet on every track, animals that stay once a player has looked
+after them, fences shaped as in later versions, chests that pair as in later versions, wooden tools, boats and other
+wooden things that burn in a furnace, skeletons shooting from their eyes, squid that swim on under the surface
+instead of bouncing against it),
 each on a switch in config/stillfaithful-polish.properties.
 
 Players can join with vanilla beta 1.7.3 or any of the three editions. The server's changes work for everyone;
 walking close past fence posts and faster glowstone mining need Still Faithful on both sides (other clients walk into
 fences as whole blocks, and mine glowstone at beta's speed and still get the drop, which the server accepts), and
-players without it see chests paired the new way drawn oddly, though they open as they should.
+players without it see chests paired the new way drawn oddly, though they open as they should. Boats steer for
+players whose game has Old Faithful's Riding Look (Old Faithful, Still Faithful, More Faithful); others' boats paddle
+as in beta.
 
 What it can't change, because it's how beta 1.7.3's online mode works: a server a player joins could pass that
 player's login on to another server, so online mode isn't proof against a hostile server operator. Players should

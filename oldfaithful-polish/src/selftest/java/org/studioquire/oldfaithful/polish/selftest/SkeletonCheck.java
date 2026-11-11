@@ -28,8 +28,8 @@ import org.studioquire.oldfaithful.selftest.WorldCheck;
  * gives for the same scene ({@code tools/skeleton_arrows.py scenes}), within four standard deviations of 300 shots and
  * a point: with the switch, beta's own share in the open, on the cliffs and from the jockeys (just moving the start
  * would give about 58% up the cliff, not 74%, and the jockeys' arrows would nearly all hit their spiders), and hits in
- * the tunnel; without it, beta's shares, and none in the tunnel, where beta's arrow starts in the ceiling. No arrow may
- * hit a jockey's own spider, either way.
+ * the tunnel; without it, beta's shares, and none in the tunnel, where beta's arrow starts in the ceiling. Hardly any
+ * arrow hits a jockey's own spider, either way (beta's do, about 1 in 2,200 there).
  */
 public final class SkeletonCheck implements WorldCheck {
 	private static final String KEY = "mobs.skeletonArrows";
@@ -259,7 +259,9 @@ public final class SkeletonCheck implements WorldCheck {
 			if (scene.jockey) {
 				int own = 0;
 				for (Lane lane : scene.lanes) own += lane.mount.hits;
-				results.check(String.format(Locale.ROOT, "still skeleton arrows: %s, %d of %d hit their own spider (none, both ways)", scene.name, own, shots), own == 0);
+				// The re-run: 0.045% of beta's arrows hit their spider here, 0.002% with the switch; without the mount spared, all of them.
+				results.check(String.format(Locale.ROOT, "still skeleton arrows: %s, %d of %d hit their own spider (a stray one at most%s)", scene.name, own, shots,
+						on ? "" : ", or three for beta's"), own <= (on ? 1 : 3));
 			}
 		}
 	}

@@ -17,7 +17,7 @@ import org.studioquire.oldfaithful.selftest.StartupCheck;
  * lighting updates, the frame's rendering and the buffer swap. Each is a pass-through unless the benchmark launched
  * the game. Also, in the benchmark, the loop doesn't sleep 10 ms a frame for lacking focus (its window never
  * has focus, unseen), which would otherwise cap it near 100 frames per second; nor in a start-up test while render
- * chunks wait to be built ({@link StartupCheck#chunksWaiting}).
+ * chunks wait to be built ({@link StartupCheck#chunksWaiting}) or a culling scene reads frame after frame.
  */
 @Mixin(Minecraft.class)
 abstract class MinecraftBenchMixin {
@@ -85,6 +85,6 @@ abstract class MinecraftBenchMixin {
 
 	@WrapOperation(method = "run", at = @At(value = "INVOKE", target = "Lorg/lwjgl/opengl/Display;isActive()Z", remap = false))
 	private boolean oldfaithful$activeInBench(Operation<Boolean> original) {
-		return Bench.ENABLED || StartupCheck.chunksWaiting((Minecraft) (Object) this) || original.call();
+		return Bench.ENABLED || StartupCheck.chunksWaiting((Minecraft) (Object) this) || org.studioquire.oldfaithful.selftest.Culling.scene != null || original.call();
 	}
 }

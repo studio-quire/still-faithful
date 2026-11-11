@@ -13,6 +13,9 @@
     "autosave.RegionIoMixin",
     "boathandling.BoatEntityMixin",
     "boats.BoatEntityMixin",
+    "boatsteering.BoatEntityMixin",
+    "boatsteering.BoatItemMixin",
+    "boatsteering.LivingEntityAccessor",
     "chestpairs.ChestBlockMixin",
     "chests.BlockMixin",
     "fences.FenceBlockMixin",
@@ -51,6 +54,7 @@
     "fences.ClientNetworkHandlerMixin",
     "fences.WorldRendererMixin",
     "glowstone.ClientNetworkHandlerMixin",
+    "heldattack.MinecraftMixin",
     "itemsize.ItemRendererMixin",
     "particledistance.WorldRendererMixin",
     "shiftclick.FurnaceBlockEntityInvoker",
@@ -66,6 +70,8 @@
   ],
   "server": [
     "autosave.ServerChunkCacheMixin",
+    "boatsteering.ServerPlayerEntityMixin",
+    "boatsteering.ServerPlayNetworkHandlerMixin",
     "fences.ServerLoginNetworkHandlerMixin",
     "glowstone.ServerLoginNetworkHandlerMixin"
   ],

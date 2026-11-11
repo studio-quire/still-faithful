@@ -67,6 +67,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 60 | `multiplayer.tpFall` | server | /tp clears the fall the player had built up (only /tp, not the server's own teleports back) |
 | 61 | `multiplayer.drowningHeight` | server | Whether a player's eyes are in a fluid is measured 1.74 above the feet, as clients and single player measure |
 | 79 | `multiplayer.closedScreens` | server | When the client closes a container, the player's own screen takes its copies of what was sent for the slots both show; a slot it sent within the last second is sent again at once (`ClosedScreens`) |
+| 83 | `multiplayer.ridingLook` | client | While riding, the move packet that carried the motion alone (sent when the look had changed) is beta's full one with the look, every tick |
 | 62 | `multiplayer.spawnerMobs` | both | Server: a spawner's update packet carries its entity id (`SpawnerMobs`). Client: that id shown in the spawner |
 | 64 | `spawning.besideWater` | world | The fluid-in-a-box test reads only the box's own blocks west and north of 0, 0 too |
 | 66 | `spawning.squidInWater` | world | A water creature's place must be water, not any fluid |
@@ -78,6 +79,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 81 | `mobs.dyingBodies` | both, each its own | A mob at 0 health isn't pushable and its push loop in `tickMovement` passes over everything; arrows, snowballs, eggs, fishing lines and fireballs skip it (`dyingmobs`). A client decides whether a dying mob pushes its player (it hears the death from the server), the server everything else. The crosshair still meets it, as in later versions. Built in Still Faithful's polish first and moved here the same day (the user, 2026-11-08) |
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
+| 84 | `render.entityCulling` | client | An entity is culled by its box where it's drawn in that frame (between its last tick's place and this one's, as the renderer puts it), grown on every side by a block, a squid's by 1.5, a ghast's by 3, a dying mob's by its height besides, a sleeping player's to 2 (`EntityCulling`, a wrap of the box `renderEntities` hands the culler) |
 
 "World" means wherever the world runs: the server in multiplayer, the client in single player (beta has no
 integrated server). In multiplayer a server without the mod keeps beta's behaviour for those whatever the client has.
@@ -96,6 +98,10 @@ position, a destroy, the same chunks in another order), and a client-side one wo
 changes how the client shows what the server sent (#15, #50) or when it asks (#36: a vanilla server checks only each
 block's own mining time, which is unchanged). #49 is fixed on either side alone. Every mix is run by
 `fixesMultiplayerTest` (Tests, below).
+#83 is the client's alone and sends only what beta's client sends when its view holds still, a full move packet with
+the motion marked -999, which any server reads as beta's does: its yaw for the rider is the client's at every packet.
+A Still Faithful server with Boat Steering reads a rider's keys through it, and steers only for clients that send it
+(`docs/still-faithful.md` > Boat steering).
 #62 needs both sides but no marker: a fixed server's spawner packet is a sign packet at the spawner's position, which a
 vanilla client applies only where it has a sign, so it ignores it (the spawner stays a pig there); a fixed client on a
 vanilla server never receives one. #67's server sends a kept block again because a vanilla client's copy of the
@@ -110,6 +116,7 @@ changes a box, never a position, and rebuilds are each side's own: a fixed clien
 corrections, and a vanilla client on a fixed server is as before. Why #75 sits in `setPosition` for every entity rather than
 only at a load: `docs/bugs.md` #75.
 #76 and #77 need nothing from the other side and send nothing different. A remote squid on a client only interpolates, so where it swims is the server's (#77 on the server); #77 on the client only picks its animation (its tentacles and tilt), and #76 on the client is what stops the footsteps you hear, which a vanilla client on a fixed server still plays.
+#84 changes only what a client draws: it works on any server and sends nothing.
 #42 changes the save format only by adding `TileTicks` to chunks, which vanilla ignores: a world played with the fix
 opens in vanilla (its pending ticks are lost there, as always), and a vanilla world opens with the fix (nothing to
 restore). The multiplayer client's world keeps vanilla's queue; only the world that saves (the server, single player)
@@ -133,10 +140,17 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   from a later clock (#44), torches shift-click crafted into room for half of them (#45), pick block on redstone,
   red wool and a mob (#46), a minecart rolling at a dropped item (#31), a fish reeled in level with the feet (#34),
   and last the player in a boat and out of it, the boat nudged to a height where beta's rounding drops a rider (#27;
-  on vanilla the player fell 3.5 blocks). Also the player sneaking diagonally off an inside corner, through its own
+  on vanilla the player fell 3.5 blocks); then the boat goes, its water turns to stone and the player stands there,
+  since later checks start from the player's spot and once dropped it into that water to drown (2026-11-11). Also the player sneaking diagonally off an inside corner, through its own
   move (#57; on vanilla it steps over the gap), a step across a trench under a low roof (#74) and a box rebuilt a rounding step
   past a wall (#75). Each comes out the other way on vanilla (the new ones checked 2026-11-02
-  with their mixins off). About 25 s; output in `local/run/client-startup-fixed/`.
+  with their mixins off). Last, `CullingCheck` (#84): the camera held 180 blocks up, mobs placed with their box just out
+  of view while part of them shows, each where only its part of the fix draws it by beta's culler's own measure (a cow
+  0.1 out; a squid lying as out of water 1.15 out, past the block everyone gets; a ghast below the view 1.8 out; a
+  zombie fallen over dying 1.4 out; a pig moving a block a tick, drawn a tick behind 0.1 out while its box is 1.25
+  out), each drawn once regardless of culling and once the game's own way: the same pixels with the fix, none without
+  (`-Pfixes.switches="render.entityCulling=false"` writes the switch, and that check then expects beta's; both ways
+  passed 2026-11-11). About 25 s; output in `local/run/client-startup-fixed/`.
 - `./gw :oldfaithful-fixes:serverTicksTest` (#42): the real dedicated server with this mod and a test-only scenario
   mod (`src/scenario`). A repeater clock is built 400 blocks east of the spawn once the new world's generated liquid
   ticks have drained, counted running, the server saved and stopped; started again, the clock must be there and run on
@@ -183,7 +197,7 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   one-block pen sampled for drift (#15), three dirt blocks mined as the game's mouse handling would (#36), a raw-client
   player turned 45 degrees at a time by the server (#50), then it dies, a pig is removed meanwhile, it respawns (#49).
   Raw-packet clients check the server side after the first client: a finish of mining 10 blocks away (#5), a console
-  /tp to a player 130 blocks off (#16a, and the order of the chunks after it, #16b), a sign edited in the same tick as
+  /tp to a player 130 to 146 blocks off (#16a, and the order of the chunks after it, #16b: the player stands in a chunk's south-east corner block, west of 0 where it can, where beta's view square is a chunk off the one underfoot; with the order going by that square, the chunk underfoot came second, seen 2026-11-10), a sign edited in the same tick as
   a block beside it (#48), a player told on respawn that one who left while they were dead is gone (#49), an explosion beside a player hurt a
   quarter second earlier (#58: the push is sent), a player 10 blocks into a fall moved by the console's /tp and landing
   (#60: no damage), a player standing 20 s where the water's surface lies between the two eye heights (#61: no
@@ -191,7 +205,10 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   the fix), and through the mining and turning it watches squid in a tank 3 deep under the scene (#77, on a client with #15: above about half a block only on a fixed server, and no splashes; #76: steps only on a client without the fix). Then a chest
   is closed and a block placed from what it gave half a second later, with the client's reading held back meanwhile (#79:
   7 left on a fixed server, beta's resend puts back 8), and 3 dirt sent on the chest's window as it closes must still
-  arrive (the client drops that packet; both servers send it again). Where the
+  arrive (the client drops that packet; both servers send it again). Then the client is seated in a boat in a pool the
+  server builds 20 blocks south ("!oftest boat", "!oftest ride"), turns its view 3 degrees a tick, and 20 ticks in asks
+  where the server has it looking ("!oftest look", answered as a chat line the test takes; `BoatRide`) (#83, 2026-11-10:
+  57.0 on the server for the client's 57.0 with the fix, on either server; without it, 0.0, the look from before the turn). Where the
   side that matters lacks the fix, each check expects beta's bug instead (all seen: pigs 0.06 to 0.15 blocks off, 5
   dead ticks, turns 15 to 30 degrees short, the pig left frozen, no block, no spawn, the west edge first, no sign
   text). About 6 minutes; `-Pfixesmp.rawOnly=true` runs only the raw-client part (about 3 minutes). Runs in
@@ -210,6 +227,23 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   `-Pseams.fixes="render.seams=false"` and `-Pseams.polish="sky.dusk=beta"` write switches. Results are appended to
   `local/run/seam-results/seams.txt`, with each view's worst frame (holes magenta) and first frame (for comparing runs
   pixel by pixel). About 6 minutes.
+- `./gw :harness:cullingMeasure` (#84; Claude Opus 5.5, 2026-11-11): a measurement, not a pass/fail test
+  (`CullingMeasure`, its frame hooks in `Culling`). The hidden client with Old Faithful's mods, the camera held 180 blocks
+  up (nothing else within 30 blocks, so the depth buffer's near pixels are the probe's alone), and every common kind
+  (21: monsters, animals, squid, slimes, ghast, a player with a sword, a 16-letter name tag, boat, minecart, dropped
+  items, an arrow) in each of its poses (standing and both strides, a creeper swollen, a chicken's wings, a wolf sitting,
+  a squid's tilts and tentacles, a ghast charging, slimes landing and jumping, dying for four kinds) and facing every way,
+  slid out of view: past the side with the camera along +z and turned so the side's plane faces along x, past the top
+  and bottom level and with the camera pitched so those planes lie flat. The probe isn't ticked, its pose is set each
+  frame and every frame is drawn at the same point between ticks (beta's models sway with it, and the last pixels came
+  and went). For each slide: the pixels on screen where beta's culler first drops the box, then by halving the furthest
+  point any remain, where the box's distance outside the plane is the reach and the growth that would bring it in the
+  padding needed; then one frame the game's own way (with the fix, at that furthest point: drawn; without, just past
+  where beta drops it: not). `-Pculling.fixes="render.entityCulling=false"`, `-Pculling.kinds=cow,squid` (a kind's
+  name or its first word), `-Pculling.pictures=false`, `-Pculling.label`. Results in
+  `local/run/culling/<label>/culling.txt` and `sweeps.tsv`, and pictures of a cow, zombie, spider, squid and ghast as
+  beta drops them beside the fixed game (on a grass platform, the ghast in the sky). About 2 minutes for all; the
+  numbers in `docs/bugs.md` #84.
 - `:harness:ledgeHunt` (`docs/building.md`) is the measurement behind #74 and #75, with each switch on and off (`docs/bugs.md`).
 - Not checked by a test: #7, #39, #38, #30 and #34's hotbar, riding poses and death screen, and how #59's heads look
   (what's seen and heard: the user's check), #67's resending of kept blocks to a vanilla client (reasoned: a vanilla

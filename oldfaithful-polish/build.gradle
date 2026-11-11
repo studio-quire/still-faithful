@@ -20,6 +20,8 @@ dependencies {
     testImplementation project(':oldfaithful-settings')
     testImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
     testImplementation "net.fabricmc:sponge-mixin:${mixin_version}"
+    // BoatSteeringTest works out a riding client's motion with the game's own sine table.
+    testImplementation files(mc.namedJar)
     selftestCompileOnly files(mc.namedJar)
     selftestCompileOnly "net.fabricmc:fabric-loader:${fabric_loader_version}"
     selftestCompileOnly "net.fabricmc:sponge-mixin:${mixin_version}"

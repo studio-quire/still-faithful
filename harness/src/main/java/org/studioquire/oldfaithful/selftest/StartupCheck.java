@@ -90,6 +90,7 @@ public final class StartupCheck {
 	/** Still Faithful's fences walked into on a test server instead of the multiplayer fixes' checks. */
 	private static final boolean FENCE_WALK = Boolean.getBoolean("oldfaithful.selftest.fenceWalk");
 	private static FenceWalk fenceWalk;
+	private static BoatRide boatRide;
 	private static int fenceX = Integer.MIN_VALUE, fenceZ;
 	private static SceneShot scene;
 	private static LedgeHunt hunt;
@@ -107,6 +108,7 @@ public final class StartupCheck {
 	public static void tick(Minecraft mc) {
 		if (startedAt == 0) startedAt = System.currentTimeMillis();
 		readFrames(mc);
+		watchHealth(mc);
 		if (phase < 99 && System.currentTimeMillis() - startedAt > STALL_MS) {
 			results.fail("start-up test stalled in phase " + phase + " (screen " + mc.currentScreen + ")", new AssertionError());
 			finish(mc);
@@ -118,6 +120,39 @@ public final class StartupCheck {
 			results.fail("start-up test, phase " + phase, t);
 			finish(mc);
 		}
+	}
+
+	/** The player's health a tick ago; -1 out of a world. */
+	private static int lastHealth = -1;
+
+	/**
+	 * Says when and where the player was hurt, and what was about: a player who dies mid-test leaves every check after
+	 * it failing for no reason of its own (Still Faithful's whole runs, 2026-11-10 and 11: the boat check found its
+	 * rider gone and a death screen open; the player had drowned in FixesCheck's boat basin, and once burned at a
+	 * spawn beside lava).
+	 */
+	private static void watchHealth(Minecraft mc) {
+		net.minecraft.entity.player.PlayerEntity p = mc.player;
+		if (p == null || mc.world == null) {
+			lastHealth = -1;
+			return;
+		}
+		if (lastHealth >= 0 && p.health < lastHealth) {
+			String check = worldChecks != null && worldCheck < worldChecks.size() ? worldChecks.get(worldCheck).getClass().getSimpleName() : "-";
+			StringBuilder near = new StringBuilder();
+			for (Object o : mc.world.entities) {
+				if (!(o instanceof net.minecraft.entity.LivingEntity) || o == p) continue;
+				net.minecraft.entity.Entity e = (net.minecraft.entity.Entity) o;
+				double d = Math.sqrt(e.getSquaredDistance(p));
+				if (d < 16) near.append(String.format(java.util.Locale.ROOT, " %s %.1f", e.getClass().getSimpleName(), d));
+			}
+			int bx = net.minecraft.util.math.MathHelper.floor(p.x), by = net.minecraft.util.math.MathHelper.floor(p.y), bz = net.minecraft.util.math.MathHelper.floor(p.z);
+			System.out.println(String.format(java.util.Locale.ROOT,
+					"[oldfaithful-selftest] the player was hurt, health %d to %d, in phase %d (%s), at %.2f %.2f %.2f, block there %d, riding %s, air %d, fire %d, in water %b, on ground %b, screen %s; living things within 16:%s",
+					lastHealth, p.health, phase, check, p.x, p.y, p.z, mc.world.getBlockId(bx, by, bz), p.vehicle, p.air, p.fireTicks,
+					p.isSubmergedInWater(), p.onGround, mc.currentScreen, near.length() == 0 ? " none" : near));
+		}
+		lastHealth = p.health;
 	}
 
 	/**
@@ -392,6 +427,10 @@ public final class StartupCheck {
 				return;
 			case 23:
 				if (refused(mc)) return;
+				if (boatRide != null) {
+					if (boatRide.tick(mc)) finish(mc);
+					return;
+				}
 				if (fenceWalk == null) {
 					if (joinStarted == 0) joinStarted = System.currentTimeMillis();
 					if (System.currentTimeMillis() - joinStarted > JOIN_LIMIT_MS) {
@@ -407,13 +446,17 @@ public final class StartupCheck {
 					}
 					int y = MultiplayerScenes.FLOOR + 1, fence = net.minecraft.block.Block.FENCE.id;
 					if (mc.world.getBlockId(fenceX, y, fenceZ) != fence || mc.world.getBlockId(fenceX + FenceScene.CORNER, y, fenceZ + 1) != fence) return;
-					boolean thinClient = Boolean.getBoolean("oldfaithful.selftest.mp.thinClient"), thinServer = Boolean.getBoolean("oldfaithful.selftest.mp.thinServer");
-					String label = (thinClient ? "Still Faithful client" : "client without it") + ", " + (thinServer ? "Still Faithful server" : "server without it");
-					fenceWalk = new FenceWalk(results, label, thinClient && thinServer,
+					fenceWalk = new FenceWalk(results, stillLabel(), stillClient() && stillServer(),
 							(game, x, feet, z, yaw) -> game.player.sendChatMessage("!oftest tp " + x + " " + feet + " " + z + " " + yaw),
 							fenceX, MultiplayerScenes.FLOOR, fenceZ);
 				}
-				if (fenceWalk.tick(mc)) finish(mc);
+				if (fenceWalk.tick(mc)) {
+					// Then Boat Steering: it steers where the server has it and this client sends its look while riding (#83).
+					boolean ridingLook = Boolean.parseBoolean(System.getProperty("oldfaithful.selftest.mp.ridingLook", "true"));
+					int px = fenceX, pz = fenceZ + 20;
+					boatRide = new BoatRide(results, stillLabel() + (ridingLook ? "" : ", without Riding Look"), BoatRide.Kind.STEERING,
+							stillServer() && ridingLook, px + 3, pz + 8, px + 0.5, MultiplayerScenes.FLOOR + 1, pz + 0.5).measuringFloat(stillServer());
+				}
 				return;
 			case 30:
 				if (scene.tick(mc)) finish(mc);
@@ -461,6 +504,18 @@ public final class StartupCheck {
 	private static void pause(int ticks) {
 		wait = ticks;
 		pausedUntilFrame = frames + 3;
+	}
+
+	private static boolean stillClient() {
+		return Boolean.getBoolean("oldfaithful.selftest.mp.thinClient");
+	}
+
+	private static boolean stillServer() {
+		return Boolean.getBoolean("oldfaithful.selftest.mp.thinServer");
+	}
+
+	private static String stillLabel() {
+		return (stillClient() ? "Still Faithful client" : "client without it") + ", " + (stillServer() ? "Still Faithful server" : "server without it");
 	}
 
 	private static boolean pausing() {

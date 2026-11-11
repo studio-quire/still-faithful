@@ -81,7 +81,16 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			{"boats.handling", "boathandling",
 					"# #12: boats coasted on for about forty blocks after you stopped paddling and bobbed up and down at the\n"
 					+ "# surface. With this, a boat you stop paddling slows to a stop in a few blocks and rides the water\n"
-					+ "# steadily. Top speed, acceleration and turning are beta's.\n"},
+					+ "# steadily. Paddling stays beta's (top speed, acceleration, turning) unless boats.steering is on, which\n"
+					+ "# has its own paddling and slowing.\n"},
+			{"boats.steering", "boatsteering",
+					"# Boats went the way you looked as you paddled, swung round to face wherever they were moving, and turned your\n"
+					+ "# view with them. With this, they steer as in later versions: A and D turn the boat (your view turns with it),\n"
+					+ "# W paddles it forward the way it faces and S backs it slowly. Its top speed is 6.5 blocks a second, a little\n"
+					+ "# over beta's 5.8; a boat nobody paddles stops in a few blocks; and a boat you place faces the way you\n"
+					+ "# look. In multiplayer, the server's: it steers for players whose game sends where they look every tick\n"
+					+ "# while riding (Old Faithful's Riding Look fix, in Old Faithful and the editions after it), and other players'\n"
+					+ "# boats paddle as in beta.\n"},
 			{"minecarts.cartCollisions", "minecarts",
 					"# #31: on north-south and curved track, minecarts were walls to each other (a slip in the check meant to\n"
 					+ "# keep carts on parallel tracks apart): a cart running into another stopped dead, and a furnace cart\n"
@@ -154,6 +163,12 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# chicken past 21, an arrow past 32, a zombie past 64. With this, everything shows within 64 blocks at least,\n"
 					+ "# as far as a zombie, and bigger things as far as before. A server sends dropped items and arrows within 64\n"
 					+ "# blocks, so it needs nothing.\n"},
+			{"combat.heldAttack", "heldattack",
+					"# Holding the button to attack or mine went on hitting whatever came under the crosshair, four times a second:\n"
+					+ "# the animal behind a block you'd just mined, or a tame wolf the crosshair passed across. With this, holding it\n"
+					+ "# goes on hitting only what you clicked; anything else it passes over, and mining is as before. A new click\n"
+					+ "# hits whatever is under the crosshair. (Later versions hit only when you click.) Your own game's, on any\n"
+					+ "# server: a server needs nothing.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

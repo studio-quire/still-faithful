@@ -38,6 +38,7 @@
   ],
   "client": [
     "cursor.HandledScreenMixin",
+    "culling.WorldRendererMixin",
     "deathscreen.DeathScreenMixin",
     "hotbar.WorldRendererMixin",
     "lastuse.SingleplayerInteractionManagerMixin",
@@ -45,6 +46,7 @@
     "mobphysics.EntityMixin",
     "respawn.ClientNetworkHandlerMixin",
     "respawn.ClientWorldAccessor",
+    "ridinglook.MultiplayerClientPlayerEntityMixin",
     "turns.ClientNetworkHandlerMixin",
     "turns.LivingEntityMixin",
     "worldtitle.CreateWorldScreenMixin",

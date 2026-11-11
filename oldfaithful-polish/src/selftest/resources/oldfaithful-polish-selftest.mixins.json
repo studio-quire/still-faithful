@@ -19,6 +19,7 @@
     "DuskTextureManagerMixin",
     "DuskWorldRendererMixin",
     "HandledScreenFrame",
+    "HeldAttackTiming",
     "SkinDownloads",
     "SkinHttpsMixin",
     "SkinRendererMixin",

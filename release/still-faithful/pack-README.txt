@@ -16,13 +16,17 @@ Still Faithful's own, each on its own switch:
   double chest has one lid across both halves. Chests placed before keep beta's rules.
 - Shift-click works in a dispenser both ways, into a furnace (what smelts to the top, fuel to the bottom), and puts
   armour on, from your inventory. It works on any server.
+- Holding the button to attack or mine goes on hitting only what you clicked, not whatever comes under the crosshair,
+  such as the animal behind a block you've just mined (Held Attack). It works on any server.
 - Wooden tools, bows, fishing rods, bowls, signs, wooden doors, ladders, boats and wooden slabs burn in a furnace, as
   in later versions; beta burned planks, logs, sticks, saplings and most wooden blocks, but none of these.
 - Glowstone drops by hand or with any tool, as from 1.0.
 - Lava cut off from its source thins out instead of lingering for good, and water between two sources becomes a
   source over still water too.
 - Boats: only a real crash or a hit breaks them, and floating items no longer stop them. A boat you stop paddling
-  slows to a stop in a few blocks and rides the water steadily; top speed and turning are beta's.
+  slows to a stop in a few blocks and rides the water steadily. They steer as in later versions: A and D turn the
+  boat and your view with it, W paddles it the way it faces, up to 6.5 blocks a second, and a boat you place faces
+  the way you look (Boat Steering). On a server, for players whose game has Old Faithful's Riding Look.
 - Minecarts meet on every track as they did on east-west track: on north-south and curved track a cart no longer
   stops dead against another, so furnace trains, bumping and boosters work there too. Carts on parallel tracks still
   leave each other alone.

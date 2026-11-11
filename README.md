@@ -31,6 +31,9 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
 - **Shift-click** works where beta's stopped short: in a dispenser both ways, into a furnace (what smelts to the top
   slot, fuel to the bottom), and armour from your inventory onto you. It's made of clicks you could make yourself, so
   it works on any server.
+- **Holding the button** to attack or mine goes on hitting only what you clicked. Beta repeated your click four times
+  a second on whatever came under the crosshair, so holding on after mining a block hit the animal behind it (Held
+  Attack). Mining, and a new click on anything, are as before. Your own game's, on any server.
 - **Wooden things burn** in a furnace: wooden tools and swords, bows, fishing rods, bowls, signs, wooden doors,
   ladders, boats and wooden slabs, for as long as later versions burn them (a boat smelts six items). Beta burned
   planks, logs, sticks, saplings and most wooden blocks, but none of these.
@@ -39,7 +42,10 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   source over still water too, not only over solid ground.
 - **Boats** break only in a real crash: scraping along a shore or bumping a floating item no longer shatters them,
   and items no longer stop them. A boat nobody is paddling slows to a stop in a few blocks and rides the water
-  steadily; top speed and turning are beta's.
+  steadily. They steer as in later versions: A and D turn the boat and your view with it, W paddles it the way it
+  faces, up to 6.5 blocks a second (beta's reached about 5.8), and a boat you place faces the way you look; beta's went
+  the way you looked and turned your view as they swung round (Boat Steering). On a server, the server's switch, for
+  players whose game has Old Faithful's Riding Look; others paddle as in beta.
 - **Minecarts** meet on every track as they did on east-west track: on north-south and curved track a cart no longer
   stops dead against another, so bumping, furnace trains and boosters work there too. Carts on parallel tracks still
   leave each other alone.
@@ -117,8 +123,8 @@ its LWJGL.
 Old Faithful's fixes and lighting, and Still Faithful's polish mod: bring Mojang's server jar (the scripts check it's
 genuine) and run `start.bat` or `start.sh`. Players can join with vanilla beta 1.7.3 or any of the three editions; the
 server's changes (drops, leaves, water, lava, boats, carts, animals, saving, chest pairs, furnace fuel) work for everyone, though
-players without Still Faithful see the new double chests drawn oddly, and faster glowstone mining needs Still Faithful
-on both sides.
+players without Still Faithful see the new double chests drawn oddly, boats steer only for players whose game has Old
+Faithful's Riding Look (others paddle as in beta), and faster glowstone mining needs Still Faithful on both sides.
 
 ## Problems
 

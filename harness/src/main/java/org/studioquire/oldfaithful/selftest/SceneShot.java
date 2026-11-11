@@ -64,6 +64,7 @@ public final class SceneShot {
 	private SpawnWatch watch;
 	private CartRide ride;
 	private SeamCheck seams;
+	private CullingMeasure culling;
 	private static final int VIEW_TICKS = Integer.getInteger("oldfaithful.selftest.sceneViewTicks", 900);
 	private static final boolean BRIGHT = Boolean.getBoolean("oldfaithful.selftest.sceneBright");
 	private static final boolean SETTLE = Boolean.getBoolean("oldfaithful.selftest.sceneSettle");
@@ -114,6 +115,7 @@ public final class SceneShot {
 	boolean tick(Minecraft mc) {
 		if (SpawnWatch.ENABLED) return (watch == null ? watch = new SpawnWatch(OUT, results) : watch).tick(mc);
 		if (CartRide.ENABLED) return (ride == null ? ride = new CartRide(OUT, results) : ride).tick(mc);
+		if (CullingMeasure.ENABLED) return (culling == null ? culling = new CullingMeasure(OUT, results) : culling).tick(mc);
 		mc.options.hideHud = true;
 		mc.options.difficulty = 0;
 		ticks++;

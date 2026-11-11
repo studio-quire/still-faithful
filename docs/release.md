@@ -37,7 +37,7 @@ dusk violet seal; its config file and log prefix say `stillfaithful-polish`. Its
 editions' snapshots with the folder: the pack `StillFaithful-<v>.zip`, the server package `StillFaithful-server-<v>.zip`,
 the repository `studio-quire/still-faithful`, the page `studioquire.org/still-faithful/`.
 
-The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `explosive-arrows`, `wild-saplings`, `wary-creepers`, `wolf-packs`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the jars, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. Its mods' metadata links there.
+The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `explosive-arrows`, `feather-lure`, `wild-saplings`, `wary-creepers`, `wolf-packs`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the jars, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. Its mods' metadata links there.
 
 More Faithful's words, version and seal are `more_*` in the root's `gradle.properties`, its texts in `release/more-faithful/`: the pack `MoreFaithful-<v>.zip`, the server package `MoreFaithful-server-<v>.zip`, the repository `studio-quire/more-faithful`, the page `studioquire.org/more-faithful/`, the dev packs `MoreFaithful-dev*.zip`. It has no mods of its own, so no public id. Through 0.4.0 it was the library's pack `StillFaithful-Library-<v>.zip`, beside `OldFaithful-Library-<v>.zip`, on the library's releases. Its icon is its own seal, crimson with the rim and β in silver as the editions' are (`more_release_icon=morefaithful`, `prism/release/icons/final/morefaithful-*`, drawn by `tools/icon_candidates.py`; the user's pick, 2026-11-10). Inside the game it names itself while any of its mods is on (In the game, below).
 
@@ -83,7 +83,7 @@ The Faithful Library's:
 
 | File | What it is |
 |---|---|
-| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,item-repair,wild-saplings,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default; nor, from 0.6.0, is Wary Creepers, which the user took out of More Faithful for now |
+| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,feather-lure,item-repair,wild-saplings,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default; nor, from 0.6.0, is Wary Creepers, which the user took out of More Faithful for now |
 | `SHA256SUMS.txt` | For the release notes |
 
 More Faithful's:
@@ -147,12 +147,14 @@ rule for its `stillMods`. The library's release and More Faithful are added by `
   asking the display mod for them (`docs/options.md`), so standalone installs get them too.
 - **More Faithful's starting rules** (the user's values and their rule for updates, 2026-11-10; from
   0.6.0): new worlds start with Mobs Break Blocks off, Blasts Destroy Items off, Sleeping off, Monster Light Dark Only, Apple
-  Drops on, Falling Hit Bonus off and Bows Wear Out on, the rest beta's. The lines of
+  Drops on, Falling Hit Bonus off and Bows Wear Out on, the rest beta's but for Pickup Reach (from 0.7.0), on by World Rules'
+  own default. A new world's file holds only rules that differ from their default, so a pack line equal to one would never
+  show there, and `morePackTest` expects each line in it: the pack carries none for Pickup Reach. The lines of
   `release/more-faithful/starting-rules.properties` go into the pack's `pack.properties` (below, In the game), which the
   server package carries too, at its top (`gradle/library.gradle`; the dev packs as well). No config file is shipped: Faithful
   Core gives each rule the pack's value the first time an install meets it and writes that into the install's own
-  `config/faithful-rules.properties`, where only the player changes it after. So the mods' own defaults stay beta's, worlds
-  that exist don't change, an install carried to a later version (its `.minecraft/config` copied over) keeps every start it
+  `config/faithful-rules.properties`, where only the player changes it after. So the mods' own defaults stay as they are (beta's,
+  but for Pickup Reach), worlds that exist keep their rules (Pickup Reach aside, which comes on in them), an install carried to a later version (its `.minecraft/config` copied over) keeps every start it
   had even where the pack has since chosen otherwise, and a rule that's new in that version starts as the pack chose. A
   rules file with no line for a rule hasn't met it, so one from 0.5.0 or before, which has lines only for the rules a
   player pressed, takes the pack's values for the rest. A pack above it with no file of its own takes this one. Changing a

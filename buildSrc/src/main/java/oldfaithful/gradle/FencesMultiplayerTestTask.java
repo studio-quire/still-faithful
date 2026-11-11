@@ -27,7 +27,10 @@ import org.gradle.api.tasks.TaskAction;
  * once with them but the polish mod. The client walks into the fences of a scene the server builds
  * (the self-test's FenceWalk and FenceScene): thin only where both sides have the change, beta's whole blocks
  * otherwise, and never sent back by the server or kicked (flying is off, so beta's floating check runs). Any "moved
- * wrongly" in the server's log fails it too.
+ * wrongly" in the server's log fails it too. Then Boat Steering (the self-test's BoatRide): the client rides a boat the
+ * server puts in a pool, steered only where the server has the polish mod and the client sends its look while riding
+ * (the client without the polish mod has Old Faithful's Riding Look switched off, as beta's client rides), paddled as
+ * beta's otherwise.
  */
 public abstract class FencesMultiplayerTestTask extends ClientStartupTask {
 	/** The server package, as :serverPackage writes it (build/server-package/OldFaithful-server). */
@@ -57,6 +60,10 @@ public abstract class FencesMultiplayerTestTask extends ClientStartupTask {
 	@org.gradle.api.tasks.Input
 	public abstract org.gradle.api.provider.Property<String> getStillEdition();
 
+	/** {@code -Pstillmp.only=still-server-still-client,...}: only those mixes, for iterating; empty for all four. */
+	@org.gradle.api.tasks.Input
+	public abstract org.gradle.api.provider.Property<String> getOnly();
+
 	@TaskAction
 	@Override
 	public void run() throws Exception {
@@ -66,6 +73,8 @@ public abstract class FencesMultiplayerTestTask extends ClientStartupTask {
 		for (boolean thinServer : new boolean[] {true, false}) {
 			for (boolean thinClient : new boolean[] {true, false}) {
 				String label = (thinServer ? "still-server" : "plain-server") + "-" + (thinClient ? "still-client" : "plain-client");
+				String only = getOnly().getOrElse("");
+				if (!only.isEmpty() && !List.of(only.split(",")).contains(label)) continue;
 				lines.add("=== " + label);
 				getLogger().lifecycle("--- {}", label);
 				lines.addAll(serverRun(run.resolve(label), thinServer, thinClient, failures));
@@ -125,8 +134,15 @@ public abstract class FencesMultiplayerTestTask extends ClientStartupTask {
 		Iterable<File> mods = thinClient ? getMods().getFiles() : getClientModsWithoutPolish().getFiles();
 		for (File mod : mods) Files.copy(mod.toPath(), game.resolve("mods").resolve(mod.getName()));
 		prepare(game, false);
+		// The client without the polish mod also has Old Faithful's Riding Look (#83) off, so it rides as beta's client
+		// does: a Still Faithful server must paddle its boat as beta's.
+		if (!thinClient) {
+			Files.createDirectories(game.resolve("config"));
+			Files.writeString(game.resolve("config").resolve("oldfaithful-fixes.properties"), "multiplayer.ridingLook=false\n");
+		}
 		List<String> args = new ArrayList<>(List.of("-Doldfaithful.selftest.joinServer=127.0.0.1:" + port, "-Doldfaithful.selftest.fenceWalk=true",
-				"-Doldfaithful.selftest.mp.thinClient=" + thinClient, "-Doldfaithful.selftest.mp.thinServer=" + thinServer));
+				"-Doldfaithful.selftest.mp.thinClient=" + thinClient, "-Doldfaithful.selftest.mp.thinServer=" + thinServer,
+				"-Doldfaithful.selftest.mp.ridingLook=" + thinClient));
 		if (thinClient) args.add("-Doldfaithful.selftest.edition=" + getStillEdition().get());
 		List<String> client = launch(game, false, args, failures);
 		lines.add("--- client");

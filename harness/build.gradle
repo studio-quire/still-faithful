@@ -327,6 +327,10 @@ if (!fixedMods.isEmpty()) {
         runDir = rootProject.layout.projectDirectory.dir('local/run/client-startup-fixed')
         // oldfaithful-options' window defaults and first start (ClientStartupTask), where it exists.
         oldFaithful = findProject(':oldfaithful-options') != null
+        // -Pfixes.switches="render.entityCulling=false": switches written into oldfaithful-fixes.properties. A check that reads
+        // its switch then expects beta's behaviour (#84's culling scene); the rest expect their fixes on.
+        def switches = providers.gradleProperty('fixes.switches').getOrElse('')
+        if (!switches.isEmpty()) configs.put('oldfaithful-fixes.properties', switches.split(' ').join('\n') + '\n')
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
@@ -361,8 +365,13 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
                     'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'boats.steering', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface', 'combat.heldAttack'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
+        // -Pstill.switches="boats.handling=false": switches written into stillfaithful-polish.properties instead, the
+        // rest as shipped, for measuring one switch against the rest (with -Ptest.only). A check that reads its switch
+        // expects beta's behaviour; StillCheck's "every switch on or every one off" fails such a run, by design.
+        def stillSwitches = providers.gradleProperty('still.switches').getOrElse('')
+        if (!stillSwitches.isEmpty()) configs.put('stillfaithful-polish.properties', stillSwitches.split(' ').join('\n') + '\n')
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
@@ -373,7 +382,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
     def clientMods = [testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods]
     tasks.register('fencesMultiplayerTest', oldfaithful.gradle.FencesMultiplayerTestTask) {
         group = 'verification'
-        description = "Still Faithful's fences on the real server and the real client (hidden), with and without the polish mod on each side."
+        description = "Still Faithful's fences and boat steering on the real server and the real client (hidden), with and without the polish mod on each side."
         dependsOn extractLwjgl3Natives, rootProject.tasks.named('serverPackage')
         gameJar = mc.clientJar
         intermediaryMappings = mc.intermediaryMappings
@@ -389,6 +398,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
         privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
         runDir = rootProject.layout.projectDirectory.dir('local/run/fences-multiplayer-test')
+        only = providers.gradleProperty('stillmp.only').orElse('')
         windowRuns = false
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
@@ -514,6 +524,39 @@ if (!fixedMods.isEmpty() && !stillMods.isEmpty()) {
                         "-Doldfaithful.selftest.seamsFrames=${providers.gradleProperty('seams.frames').getOrElse('32')}".toString(),
                         "-Doldfaithful.selftest.seamsLabel=${providers.gradleProperty('seams.label').getOrElse(which)}".toString()]
         if (which == 'still') extraJvmArgs.add("-Doldfaithful.selftest.edition=${project(':oldfaithful-polish').property('still_release_name')}:stillfaithful-polish".toString())
+        if (gameJava.isPresent()) javaExecutable = gameJava
+    }
+}
+// Entity culling at the screen's edges measured (CullingMeasure; docs/bugs.md #84): how far each kind is drawn past its
+// box where beta's culler drops it, from the depth buffer, with Old Faithful's mods. -Pculling.fixes="switch=value ..."
+// into oldfaithful-fixes.properties (render.entityCulling=false for beta's culling), -Pculling.kinds=cow,squid,
+// -Pculling.pictures=false, -Pculling.label. Results and pictures in local/run/culling/<label>/.
+if (!fixedMods.isEmpty()) {
+    tasks.register('cullingMeasure', oldfaithful.gradle.ClientStartupTask) {
+        group = 'oldfaithful'
+        description = 'Measures how far each kind of thing is drawn past its box at the screen\'s edges, unseen.'
+        dependsOn extractLwjgl3Natives
+        gameJar = mc.clientJar
+        intermediaryMappings = mc.intermediaryMappings
+        loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods)
+        natives = lwjgl3NativesDir
+        soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
+        privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
+        def label = providers.gradleProperty('culling.label').getOrElse('run')
+        runDir = rootProject.layout.projectDirectory.dir('local/run/culling-measure')
+        oldFaithful = findProject(':oldfaithful-options') != null
+        windowRuns = false
+        timeoutSeconds = 1800
+        def fixes = providers.gradleProperty('culling.fixes').getOrElse('')
+        if (!fixes.isEmpty()) configs.put('oldfaithful-fixes.properties', fixes.split(' ').join('\n') + '\n')
+        extraJvmArgs = ['-Dorg.prismlauncher.window.dimensions=1440x900', '-Doldfaithful.selftest.expectSize=1440x900',
+                        "-Doldfaithful.selftest.stallMs=${1770 * 1000}".toString(),
+                        "-Doldfaithful.selftest.scene=${rootProject.layout.projectDirectory.dir("local/run/culling/${label}").asFile.absolutePath}".toString(),
+                        '-Doldfaithful.selftest.culling=true',
+                        "-Doldfaithful.selftest.cullingKinds=${providers.gradleProperty('culling.kinds').getOrElse('')}".toString(),
+                        "-Doldfaithful.selftest.cullingPictures=${providers.gradleProperty('culling.pictures').getOrElse('true')}".toString(),
+                        "-Doldfaithful.selftest.cullingLabel=${label}".toString()]
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }

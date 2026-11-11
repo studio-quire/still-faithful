@@ -7,6 +7,33 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.7.0 (2026-11-11)
+
+On Old Faithful 0.2.5 and Pure Faithful 0.1.5.
+
+- Boats steer as in later versions (Boat Steering, a new switch under Polish, on). A and D turn the boat, and your view
+  turns with it; W paddles it forward the way it faces, S backs it slowly, and A or D alone lets it creep forward as it
+  turns. Beta's boats went the way you looked, swung round to face wherever they were moving and turned your view with
+  them, so paddling while looking anywhere but straight ahead sent them in circles. They're a little faster too: up to
+  6.5 blocks a second, where beta's reached about 5.8. A boat nobody paddles slows to a stop in a few blocks, and a boat you place
+  faces the way you look. On a server, this is the server's switch, and it steers for players whose game tells the
+  server where they look every tick while they ride: Old Faithful's new Riding Look fix does, so Old Faithful, Still
+  Faithful and More Faithful players steer, from the moment their view first moves once they're in. Until then, and for
+  players with any other game, boats paddle as in beta.
+- Boats no longer bob up and down at the surface (Boat Handling). Beta's boat never settled on the water, it swung up
+  and down for as long as it floated; Boat Handling made the swing smaller but never stopped it. Now a boat settles
+  after a bob or two, about as high in the water as beta's, and stays there, empty or ridden, still or paddled, and
+  your view with it. On a server this is the server's switch, and players with any game see the boat still.
+- Holding the button to attack or mine no longer hits whatever comes under the crosshair (Held Attack, a new switch
+  under Polish, on). Beta repeated your click four times a second while you held the button, on whatever the crosshair
+  was on then, so holding on after mining a block hit the animal behind it, and sweeping the crosshair across your wolf
+  in a fight hit the wolf. Now a hold goes on hitting only what you clicked, and passes over anything else; mining, and
+  a new click on anything, are as before. (Later versions hit only when you click, so a hold on a mob hits it once;
+  here it goes on hitting it, as in beta.) Your own game's, on any server: the server needs nothing.
+- From Old Faithful 0.2.5, which it carries: mobs at the edges of the screen stay drawn while any part of them
+  is in view, where beta dropped them while a head, arms or tentacles still showed; and a correction to the fix that
+  sends a server's chunks nearest first. Old Faithful's changelog has the detail.
+
 ## 0.6.1 (2026-11-10)
 
 On Old Faithful 0.2.4 and Pure Faithful 0.1.5, as 0.6.0 was.

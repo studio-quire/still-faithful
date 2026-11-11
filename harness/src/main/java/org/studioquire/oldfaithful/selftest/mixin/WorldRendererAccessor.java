@@ -15,4 +15,8 @@ public interface WorldRendererAccessor {
 	/** Every render chunk in view distance. */
 	@Accessor("chunks")
 	net.minecraft.client.render.chunk.ChunkBuilder[] oldfaithful$chunks();
+
+	/** Frames left in which beta draws no entities, after the renderer reloads. */
+	@Accessor("entityRenderCooldown")
+	int oldfaithful$entityRenderCooldown();
 }

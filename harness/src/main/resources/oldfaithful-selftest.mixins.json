@@ -28,6 +28,7 @@
     "ClientNetworkHandlerTickRateMixin",
     "ClientNetworkHandlerHoldMixin",
     "ClientNetworkHandlerFenceMixin",
+    "ClientNetworkHandlerReplyMixin",
     "ConnectionWriterTickRateMixin",
     "MinecraftPickInvoker",
     "RedstoneTorchInvoker",
@@ -42,7 +43,13 @@
     "TextRendererRecordMixin",
     "LedgeHuntPlayerMixin",
     "LedgeHuntEntityMixin",
-    "LedgeHuntEntityAccessor"
+    "LedgeHuntEntityAccessor",
+    "FrustumCullerAccessor",
+    "CreeperFuseAccessor",
+    "GameRendererCullingMixin",
+    "WorldRendererCullingMixin",
+    "WorldProbeTickMixin",
+    "MinecraftCullingMixin"
   ],
   "server": [
     "PlayerManagerRideMixin",

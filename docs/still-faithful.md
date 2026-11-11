@@ -41,7 +41,8 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | - | `menu.texturePacks` | client | The title screen's Mods and Texture Packs button reads Texture Packs, as later betas renamed it (user, 2026-11-05) |
 | 34 | `render.bowPose` | client | Players' and skeletons' bows take the held-tool path, shifted and turned (`BowPose`); third person only |
 | 12 | `boats.sturdy` | world | A break needs beta's own condition (a sideways collision while still moving over 0.15 along the free axis) and a real crash: at least 0.25 blocks a tick lost into what it hit. So every break here would also be one in beta; scrapes along a shore or an item never break a boat. Items and arrows aren't solid to boats (as #31 for carts) |
-| 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). At the surface, vertical speed × 0.8 a tick (rides steadily instead of bobbing). Paddling is beta's: same top speed, acceleration, turning |
+| 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). Partly in the water, a boat comes to rest 0.1885 over the surface, where beta's bobbed about 0.1 up and down around 0.185 for good: its push up worked out from where the surface lies against it instead of beta's count of wet fifths, and its rise and fall × 0.8 a tick (below). Paddling is beta's: same top speed, acceleration, turning. A boat `boats.steering` moves has that switch's momentum instead of the coasting; the float applies to every boat |
+| | `boats.steering` | world | Later versions' controls (below): A and D turn the boat and W paddles it along its heading, at most 0.325 a tick; in water every boat a player isn't paddling as beta's keeps 0.9 of its speed a tick; a placed boat faces the placer's look (`BoatSteering`). On a server, only for a rider whose client sends its look every riding tick (#83) |
 | 31 | `minecarts.cartCollisions` | world | Whether two touching carts exchange speed is decided by the rail under the cart, not beta's broken gate: they do when the other cart lies within about 37 degrees of the line the rail runs (`Minecarts`, below). Every axis behaves as east-west track did |
 | 4 | `animals.keepTended` | world | Animals a player has looked after never despawn (`KeptAnimals`, below) |
 | 69 | `blocks.chestsFaceYou` | world (drawn on the client) | A placed chest keeps a facing toward the placer in its data, 2 to 5 as a furnace's, and is drawn from it (`Chests`); a pair shares one across its length. Data 0, every chest from before, keeps beta's rule from the blocks around. Vanilla draws every chest by beta's rule. With `blocks.chestPairs`, placing goes by its rule instead |
@@ -52,6 +53,7 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | | `render.particleDistance` | client | Particles made within 32 blocks of the camera, not beta's 16, and a puff (a blast's, a mob dying or appearing) within 64 (below) |
 | | `render.entityDistance` | client | Everything drawn within 64 blocks at least (a zombie's distance), where beta's distance went by the box: a dropped item 16, a chicken 21, an arrow 32; bigger things as beta (below) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
+| | `combat.heldAttack` | client (any server) | While the attack button is held, beta's repeat of the click every 5 ticks hits only the entity the press landed on; any other under the crosshair is passed over, and every one if the press was on a block or on air. The rest of the click is beta's, so mining and the swing are unchanged (`heldattack.MinecraftMixin`, below) |
 | | `furnace.woodenFuel` | world | The user's ask (2026-11-09): wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
 | | `mobs.skeletonArrows` | world | A skeleton's arrow starts at its eyes less 0.1, where `ArrowEntity` puts any shooter's and later versions a skeleton's, not 1.4 higher, over its head; aimed so it crosses the target's distance where beta's would, spread as widely there (`SkeletonAim`, below) |
 | | `mobs.squidSurface` | world | A squid in water rises each tick at most a fifth of the way to 0.3 under the surface (its middle's), so it slows as it nears, never comes out and swims on there; deeper, beta's swim (`Squids`, below) |
@@ -202,6 +204,108 @@ versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), w
   against 45). A client keeps the arrow's owner from its spawn packet, so one with the mod agrees; one without it may
   show the arrow glancing off the spider for a moment while the server's flies on.
 
+### Boats at rest on the water (the user's report, 2026-11-11)
+
+The user, playing More Faithful: is the boat meant to bob continuously up and down? It wasn't: Boat Handling had
+promised a boat that rides steadily since 0.1.0, and its damping only shrank beta's bob. Fixed in Boat Handling by
+Claude Opus 5.5 the same day (`mixin/boathandling`, `Boats.wetShare`).
+- **Beta.** `BoatEntity.tick` tests five slices of the boat's box, each 0.12 high, the first from 0.125 under the box,
+  and pushes it up by 0.04 × (2 × wet − 1) a tick, the wet share in fifths (fully under: downward speed halved and
+  +0.007). Near the surface that's +0.008 with three slices wet and −0.008 with two, never nothing, so there's no
+  height it rests at, only a swing across the boundary (0.185 over the surface, the boat's y being its box's middle)
+  that the 0.95 drag doesn't end. Measured in `BoatCheck`'s pool (single player, the game's own tick): 0.097 up and
+  down, a high point every 7.8 ticks, around 0.185, ridden or empty alike; paddled, 0.036 or 0.081 by what came
+  before. The rider's eye moves with the boat exactly (`updatePassengerPosition`). Boat Handling's × 0.8 made it 0.005
+  idle, a two-tick flutter, and 0.016 paddled, a high point every 3.6 ticks; a model of the tick over many starting
+  states gives 0.005 to 0.037 with the damping and 0.012 to 0.33 without, so how big the swing is depends on how the
+  boat came to the surface, and it never stops.
+- **Here.** With one to four slices wet, the push is redone from a share worked out from the surface: the highest top
+  of water among the blocks the slice tests look at (a source's or a falling column's at the top of its block, flowing
+  water's an eighth lower a step, as `isFluidInBox` reads them); a half at the resting height and a fifth more every
+  0.12 deeper, as beta's count rises on average, so beta's steps smoothed through their middles. Kept within a fifth of
+  beta's count, as it always is where the surface is level across the box, so on uneven water the push stays near
+  beta's. The push fades to nothing at one height and the damping settles the boat there with a bob or two: from where
+  a spawned boat starts (0.3 down), pushed under or dropped from a block up, within 0.001 in two or three seconds.
+  Fully under, out of the water, on the ground (the halving), flowing water's sideways push, splashes and breaking:
+  beta's.
+- **The height.** 0.1885 over the surface (6/32 and 1/1024), 0.0035 over beta's middle, so no higher or lower in the
+  water to see. On a 32nd and a hair over it: a server sends positions in 32nds, and every 20 seconds floors its own
+  entity's position to them (`EntityTrackerEntry`'s resync), which here moves the boat down 0.001 and back, and every
+  client draws it at the same 32nd.
+- **Multiplayer.** Where the world runs, so the server's. A client never floats a boat itself: its tick only moves it
+  toward the positions the server sends, in 32nds every 5 ticks (beta's tracker sends a move for every entity every 5
+  ticks, moved or not: its "moved enough" test reads the position where it meant the change), so with the server's
+  boat still, every client's is, beta's included (measured, below). Beta's client adds 1/64 to the resync's height and
+  the next move takes it off, so every 20 seconds anything the server tracks, a resting boat too, lifts about 0.01 for
+  about half a second; beta's own and on every entity, left alone.
+- **Cost.** Up to 18 block reads a tick for a boat partly in the water.
+
+### Boat steering (the user's ask, 2026-11-10)
+
+The user: boats a bit faster and easier to steer, then could we have the modern steering controls too. Built by Claude
+Opus 5.5 the same day; it waited to ship with World Rules' Pickup Reach (the user's word), and both came out in 0.7.0
+(2026-11-11). Still
+Faithful, `boats.steering`, on by default; the user hasn't said whether it belongs here or as a More Faithful world
+rule, so its physics live in `BoatSteering`, apart from the mixins (`mixin/boatsteering`), to move if they prefer.
+- **Beta.** Paddling adds a fifth of the rider's own motion each tick (`BoatEntity.tick`), which is the rider's keys
+  turned by where the rider looks, and keeps 0.99 of the speed: W goes the way you look, A and D sideways to it. The
+  boat's yaw swings toward where it moved, up to 20 degrees a tick, and a rider's view turns with the vehicle
+  (`Entity.tickRiding`, half the built-up turn a tick, at most 10), so paddling while looking off where the boat goes
+  turns the view, the paddling with it, and the boat circles. Top speed about 0.29 a tick, 5.8 blocks a second
+  (measured in single player: 0.184 after 100 ticks of W, and beta's 0.99 makes that 63% of the way).
+- **Here**, as later versions' `Boat.controlBoat` and `floatBoat` (1.9 on), from memory of their code, not read from a
+  jar here: A and D build a turn rate, 1 degree a tick each tick held, which decays with the momentum, so at most 10
+  degrees a tick; W pushes 0.0325 along the boat's heading, S backs it 0.005, and A or D alone pushes 0.005 forward.
+  In water the boat keeps 0.9 of its speed and turn rate each tick, applied before the keys and then the move (beta's
+  0.99 after the move steps aside), so a push settles at push / (1 - 0.9), 200 times the push in blocks a second: W at 0.325 a tick, 6.5
+  blocks a second, the same in every direction (beta's 0.4 limit on each axis lifted, so diagonals are no faster); S
+  and a turn key alone near 0.05. The user's call (2026-11-11): about 6.5 to 6.6, a little faster than beta (about 5.8
+  blocks a second measured); later versions push 0.04 (8 blocks a second), and the first build had 0.05 (10). One
+  constant, `FORWARD_PUSH`. The momentum carries a boat on
+  through a turn, so it drifts: at full turn its motion trails its heading by about 50 degrees, as in later versions.
+- **Out of the water** beta's friction stands (halved each tick on the ground, 0.99 after the move) with the same
+  pushes, so a beached boat crawls about a block a second where beta's barely moved; its turn decays by half a tick
+  there (at most 2 degrees a tick). Ours, from what later versions do on land (a boat moves slowly there), not from
+  their numbers.
+- **Every boat in water** a player isn't paddling as beta's (nobody in it, or a steering rider) has the 0.9 momentum,
+  so an empty one from 0.4 a tick (held to the top speed, 0.325) stops in about 3.25 blocks (Boat Handling's coasting
+  gave 8), and keeps its heading:
+  it no longer swings round to face where it drifts. A boat out of the water with nobody in it is beta's.
+- **Placing.** A boat placed from the hand faces where the placer looks (`BoatItemMixin`), as in later versions; beta
+  started every boat with yaw 0, which mattered to nobody while boats went where you looked. Turned just after it's
+  spawned: a server starts tracking a boat from its yaw then, and a client spawns any boat with yaw 0, so the turn
+  reaches clients as a change (within 11.25 degrees; the tracker's step).
+- **The view** needs nothing new: beta's `tickRiding` already turns a rider's view with the vehicle, on every client,
+  and keeps up with 10 degrees a tick. No 105-degree clamp: the player looks round freely.
+- **Beside the other boat switches.** `boats.sturdy` is as before, so a steered boat breaks only in a real crash:
+  at least 0.25 into what it hits while still going over 0.15 along it. Held to 0.325, that takes 90% of top speed and
+  a hit between about 50 and 62 degrees off the wall, so a steered boat rarely breaks (at the first build's 0.5 a crash
+  was a little easier than in beta; worked out 2026-11-11, when `StillCheck`'s 45-degree crash stopped breaking one). `boats.handling`'s coasting steps aside for a steered boat (a
+  `BoatSteering.Boat` that says so this tick) and stays for a boat a rider paddles as beta's; its float applies to
+  every boat. Each makes sense alone: steering without handling bobs as beta's; handling without steering is as it was.
+- **Multiplayer.** Where the world runs, so the server's. On a server a ridden boat is ticked only by its rider's move
+  packets (`ServerWorld.updateEntity` skips a boat a player rides; `onPlayerMove` ticks it), with that packet's motion
+  as the rider's. A riding client sends the motion its keys gave it (`moveNonSolid`: the keys turned by its yaw, times
+  its speed and friction), so with the look from the same packet the server turns it back into keys:
+  forward = -vx sin(yaw) + vz cos(yaw), strafe = vx cos(yaw) + vz sin(yaw), A positive (`BoatSteering.decode`, with
+  beta's own sine table, as the client turned them). Beta's client sends its look while riding only when the look
+  didn't change (#83), so that needs a client that sends it every riding tick, and the server goes by evidence: two
+  riding moves in a row (the motion packet beta marks with -999 for both heights) whose looks differ, which beta's
+  client never sends (each full one carries the look it last sent, and any change sends the motion alone). From then on
+  that connection steers; a riding move without its look puts it back. Until then, and always for beta's client and
+  any other that doesn't send its look each riding tick, that rider's boat paddles as beta's, with handling's
+  coasting. A client with #83 shows it at once when its view moves; one whose player gets in and presses a key without
+  moving the mouse paddles as beta's until the view moves, then steers. So boats steer for players whose game has Old
+  Faithful's Riding Look (Old Faithful, Still Faithful, More Faithful, with it on) on a server with Boat Steering; the
+  client's own Boat Steering switch isn't needed there, since the server moves the boat. Keys alone lie on an axis or
+  a diagonal of the rider's frame to float rounding; a motion that doesn't (something pushed the rider: another boat,
+  a mob, a squid beside them; a block stopping one axis) isn't read as keys but keeps the last clear ones for half a
+  second, then none, so a push never reads as a turn. What a client sees is the server's boat: its heading arrives in
+  the tracker's 11.25-degree steps every 5 ticks, so after a turn a drawn boat can face up to that far off its course,
+  and the view follows the drawn boat; a round trip and the tracker's period of latency, as beta's boats on a server
+  had.
+- **Cost.** A few multiplications a tick a boat, and on a server a sine and cosine per riding move.
+
 ### Squid at the surface (the user's ask, 2026-11-10)
 
 The user, playing: squid jitter at the surface; it's their own motion and bob, but could it look more natural, with
@@ -263,6 +367,32 @@ follow Faithful Core's rule where it's installed (stack data). Only vanilla's ow
 Later versions' other handling (dragging to spread a stack, double-click to gather, the drop key over a slot, crafting
 many batches at once, the crafting table's grid taking shift-clicks, keeping what's held when a screen closes) stays
 beta's: built the same day and undone at the user's word, for only beta's gaps and no new capabilities.
+
+### Held attack (the user's ask, 2026-11-11)
+
+The user: no attacking something by accident after breaking a block, or after moving the crosshair off something,
+while holding the button down; a Still Faithful change. Built by Claude Opus 5.5 the same day; the rule below was Claude
+Opus 5.5's pick, told to the user, who may still choose later versions' (below).
+- **Beta.** A press of the attack button calls `handleMouseClick(0)` on whatever the crosshair is on: an entity is hit,
+  a block's mining starts, nothing gets a swing and a 10-tick wait. While the button is held,
+  `Minecraft.tick` calls it again every `tps / 4` ticks (four times a second) on whatever the crosshair is on then;
+  the mining itself goes on in `handleMouseDown`, every tick. So holding on after a block breaks hits the animal behind
+  it, and dragging the crosshair across a tame wolf in a fight hits the wolf (it takes the hit and stands up).
+- **Here** (`heldattack.MinecraftMixin`, wraps of the press's call and the repeat's, and of `attackEntity` inside the
+  click): the repeat hits only the entity the press landed on; another under the crosshair is passed over, and so is
+  every entity when the press was on a block or on air. Only the hit is withheld: the rest of the repeated click is
+  beta's, so the arm still swings over a passed-over entity (without a miss's wait), a block under the crosshair is
+  attacked and mined as before, and a hold begun on a mob goes on hitting it as beta's does. A press hits whatever
+  is under the crosshair, as ever. The press's entity is forgotten when `handleMouseDown` sees the button not held (let
+  go, a screen open, the window left), so a hold whose press the game never saw (another mod took it) hits no entity.
+  Held weakly, so a hold through leaving a world doesn't keep the world.
+- **Later versions' rule**, the alternative: a hit only on a press, never on holding (from memory of their code, not
+  read here: 1.8's `runTick` calls `clickMouse` once per press and `sendClickBlockToController` while held, which mines
+  and never hits; modern versions' `startAttack` and `continueAttack` the same). The difference from ours is a hold
+  begun on a mob: there it hits once, here it goes on hitting, as in beta. Switching would be a change to the repeat's
+  wrap alone.
+- **Multiplayer.** Client input only: a server is sent a hit only when the client makes one, so it works on any server
+  and a server needs nothing; with the switch it's just sent fewer.
 
 ### Particle and entity distance (the user's ask, 2026-11-09)
 
@@ -430,7 +560,7 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 ## Tests
 
 - While iterating on one change, its own check alone: `./gw :harness:clientStartupTestStill -Ptest.only=still` (or
-  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `distance`, `skeleton`, `squid`, `fixes`, `options`, `settings`, `window`, several with commas), about
+  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `distance`, `skeleton`, `squid`, `boat`, `held`, `fixes`, `options`, `settings`, `window`, several with commas), about
   half a minute where the whole test takes 1 to 2 minutes; the whole test, and `-Pstill.beta` where a switch changed,
   once before the change is done (`docs/building.md` > What game runs cost).
 - `ShiftClickCheck` (in the same run, 2026-11-09): mouse and key events put into our LWJGL component's queues, read by
@@ -449,8 +579,9 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   switches on: stairs drop themselves, placed leaves get data 6 and stay (also when a broken log marks them), a tree's
   leaves still decay, glowstone by hand in 10 ticks drops dust, the lava thins to 6, the water becomes a source, a
   sheep sheared, a pig saddled and a chicken read back with the mark stay while a hit cow and an untouched one despawn,
-  a boat sliding along a wall at 0.35 holds while one driven in at 45 degrees breaks, an unpaddled boat stops in 7.7
-  blocks, and a full save after changing a block writes it (read back with the game's reader) through the writer
+  a boat sliding along a wall at 0.35 holds while one driven steeply into it (0.32 into the wall, 0.2 along: at 45
+  degrees, 0.3 each way, a boat held to Boat Steering's top speed met it at only 0.23, 2026-11-11) breaks, an unpaddled
+  boat stops in 7.7 blocks (3.25 with Boat Steering: 0.4 held to its top speed of 0.325, then its momentum), and a full save after changing a block writes it (read back with the game's reader) through the writer
   thread. #31 (2026-11-02): `CartScenes` (shared with the server test) on an east-west and a north-south axis, both
   more than 40 blocks from x = 0: a cart into a standing one, a furnace cart behind a cart, two overlapping carts
   rolling together, carts head-on, a cart past a standing one on the next track, a cart into one standing on a curve.
@@ -532,7 +663,8 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   player's box and aiming point, 20 volleys: level ground 6 across, a player 4 up a cliff and 4 down one 5 across,
   a tunnel one wide and two high 5 across, and spider jockeys 4 above a player 5 across (a still spider seated by the
   game, counting its rider's hits); each share of hits against the re-run's (`tools/skeleton_arrows.py scenes`) within
-  four standard deviations and a point, and no jockey's arrow in its own spider. 2026-11-10: with the switch, the arrow
+  four standard deviations and a point, and at most a stray jockey's arrow in its own spider (one with the switch, three
+  without: the re-run has 0.002% and beta's own 0.045%, about 1 in 2,200, which a run of 300 met once, 2026-11-11). 2026-11-10: with the switch, the arrow
   0.10 below the eyes, 73.3% (the re-run 71.8), 71.0 (73.5), 70.7 (67.1), 55.0 (57.3); with `-Pstill.beta`, 1.30 over
   them, 67.7 (72.1), 71.7 (73.6), 66.7 (65.9) and none of 300 in the tunnel. The start alone would give about 58% up
   the cliff. The jockeys, the same day: 64.7% (65.7) with the switch and 64.7 (64.5) as beta, none in the spider; with
@@ -548,6 +680,49 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   `SquidClipFrame`), into `local/run/squid-surface/<side>-shore/` and `<side>-low/`; the camera stands on a block and
   is checked not to move. `squid-surface.mp4` there is both sides' frames put side by side with ffmpeg (the low view
   cropped to 800x480 from the top, 100 in, to leave out the wall's top).
+- `BoatCheck` (Boat Steering, the same run, last; `-Ptest.only=boat`, about 20 s with the start): a boat placed from
+  the hand with the player looking along yaw 37 and straight down at open water, then the player in a boat in a roofed
+  pool 120 long, its keys put in as the game's input (`ScriptInput`): heading west and looking south, W for 20 ticks;
+  from the start again looking west, W for 100; W and A for 20; nothing for 40. 2026-11-10, with the switch: the placed
+  boat's yaw -53 (the look's less 90); 5.18 west and 0.00 south; 0.5000 a tick after the 100 ticks, 45.0 blocks (at the first build's 0.05 push; 2026-11-11 at 0.04, 0.4000 and 36.0, and at 0.0325, 0.3250 and 29.3, 3.36 west in the first 20); turned
+  103.51 left, exactly what 18 ticks of the rate add up to (the keys reach the boat a tick or two late), the view 95.2
+  with it, its motion trailing its heading by 51.9 degrees; let go, 3.85 blocks more at 0.0071 a tick, turning 0.16
+  a tick. With `-Pstill.beta`: the placed boat's yaw 0; 0.50 south and 0.03 east, along the look; 0.184 a tick after
+  the 100 ticks, 5.7 blocks, so a top speed of 0.29 (beta's 0.99 makes 100 ticks 63% of the way). `StillCheck`'s
+  coasting boat: 3.25 blocks with Boat Steering on, as its top speed and momentum give (8 with Boat Handling alone,
+  18 as beta).
+  One of three whole runs that day failed it with the boat and its rider not moving at all, in the same run as six
+  of `DuskCheck`'s pictures and the FOV check. Found 2026-11-11, when it came every time: the player was dead (a death
+  screen open, the view narrowed). `FixesCheck` left the player standing on its #27 boat, at a height chosen for
+  beta's rounding to drop a player through, and every later check starts from and returns to the player's spot; a
+  move and return dropped the player into the water under it, and through `SkeletonCheck`'s long run it drowned. The
+  bob had made that a matter of chance; a boat holding its height made it certain. `FixesCheck` now takes the boat
+  away and turns its water to stone under the player. When the boat hasn't moved, the check still prints the boat, the
+  rider, whether its region is loaded, the screen and whether the input is the test's.
+  Boat Handling's float (2026-11-11), in the same pool: an empty boat spawned beside the ridden one, both left 60
+  ticks, then the heights of both and the rider's eye over 100 ticks; the empty one pushed under (its box's bottom
+  0.05 over the pool's floor) and then dropped from a block up, each left 100 ticks, its height over the last 20; the
+  ridden boat's over the last 60 of the 100 ticks of W. With the switch: 0.00007 idle (the last of the settling), at
+  0.1885 over the surface; back at rest at the same height after the push and the drop (0.00004 and 0.00006); paddled
+  0.00000. With `-Pstill.beta` (the bob checked to be there): 0.097 idle, a high point every 7.8 ticks, around 0.185;
+  still swinging 0.135 and 0.117 after the push and the drop; paddled 0.081. Before the fix, with the switch: 0.0046
+  idle, a two-tick flutter, and 0.016 paddled. `-Pstill.switches="boats.handling=false"` (the rest as shipped) gives
+  beta's numbers, as Boat Steering doesn't touch the height.
+- `BoatSteeringTest` (`./gw :oldfaithful-polish:test`, seconds): a riding client's motion worked out as beta's client
+  does (the keys, sneaking, the 0.98 decay, `travel` and `moveNonSolid` in floats with the game's sine table, three
+  frictions) reads back as its keys at every tenth of a degree of yaw and 400 random ones, every combination of keys;
+  and of 200,000 random pushes of 0.002 to 0.052 added to it, under 1 in 1000 reads as other keys.
+- `HeldAttackCheck` (Held Attack, the same run, last; `-Ptest.only=held`, about 20 s with the start): the attack button
+  held as a player holds it, its press and release put into our LWJGL component's queue and held state (as
+  `ShiftClickCheck`'s clicks), so beta's own press, repeat and mining run, and the real wraps decide. In single player,
+  the hand empty, on a floor high up: glass mined at eye height with a pig behind it; a hold begun on that pig, turned
+  onto a pig beside and back; a click on the second. The pigs stand still and count the player's hits without taking
+  them. Holds are four of beta's repeats long, counted from the game's tick rate (a repeat is 20 ticks at the tests'
+  faster game time). 2026-11-11, both ways: the glass broke 11 ticks after the press; the pig a hold began on was hit
+  4 times in 80 ticks (the press and three repeats), none while the crosshair was off it and 4 more once back on it; a
+  click hit once. With the switch the pig behind the glass and the one turned onto were hit 0 times; with
+  `-Pstill.beta`, 2 and 4. Not covered: a press another mod took (reasoned), multiplayer (the same client code; a
+  server only receives the hits).
 - `./gw :harness:fencesMultiplayerTest` (#30, about 3.5 minutes): the server package with and without the polish mod,
   each joined by the hidden client with Still Faithful's mods with and without it; the server builds the scene on
   "!oftest fences" and puts the player at each walk's start on "!oftest tp" (`MultiplayerScenes`), flying off so beta's
@@ -556,6 +731,20 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   "moved wrongly" or floating line in a server's log. Not tested: a vanilla client by itself (the client without the
   polish mod has Old Faithful's, none of which touch collision) and mobs or boats seen across mixed sides (the server
   moves them; a client without the change only sees them pass closer to a post than its own fences would let it).
+  Then Boat Steering (2026-11-10; the task now takes about 3 minutes, `-Pstillmp.only=still-server-still-client` for
+  one mix): the client is put at its scene and the server builds a roofed pool 20 blocks south with a boat facing west
+  ("!oftest boat", within the test server's 32-block entity range) and seats it ("!oftest ride"); `BoatRide` sets the
+  look south and nudges it a degree and back, holds W for 40 ticks, and where it should steer, A for 30. The client
+  without the polish mod has Old Faithful's Riding Look switched off, so it rides as beta's client does. 2026-11-10:
+  steered only with the polish mod on the server and Riding Look on the client: 10.73 blocks west and 0.00 south, then
+  A turned the boat 212 degrees left (as the client saw the server's boat) and the view 204; in the other three mixes
+  1.25 south and 0.15 east, beta's paddling along the look, curving as the boat turned the view. Not tested on a
+  server: S, the turn-only push, pushes from other entities on the rider (the held keys) and a client with Riding Look
+  but without the polish mod (reasoned: the server moves the boat, and the client only sends its look). 2026-11-11, at
+  the push of 0.0325: 6.96 to 6.98 west in the 40 ticks (the check asks for 4, its point the direction). Boat Handling's float
+  (2026-11-11), before the keys: the boat left 60 ticks, then its height in the client's world over 40. With the polish
+  mod on the server, still on both clients, with and without it: 0.00000, at 0.1875 over the surface (the server's
+  0.1885 in its 32nds); on the server without it, beta's bob as the client draws it, 0.045 and 0.038.
 - `StillCheck`'s chest and mob scenes (2026-11-08), in the same run: #69's double chest placed looking along
   the first stays two singles under `blocks.chestPairs`; four chests in a row placed facing north make two doubles
   side by side (data 6, 7, 6, 7), each showing the end of its own front where they meet; one placed sneaking stays
@@ -576,8 +765,8 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   Passed 2026-11-02.
 - `serverTest`, `clientAudit` and `clientAuditSdl` carry the mod, so every mixin is applied and audited.
 - Not checked by a test: how modern skins look on real players and between a real client and server (reasoned:
-  nothing goes over the network, each client draws what it fetched); the bow pose and dropped item sizes (what's seen: the user's), boat handling's feel and the
-  bobbing (the user's), glowstone between a real client and server (the marker and gating mirror #9/#10's, audited and
+  nothing goes over the network, each client draws what it fetched); the bow pose and dropped item sizes (what's seen: the user's), boat handling's and Boat Steering's feel
+  (the user's), glowstone between a real client and server (the marker and gating mirror #9/#10's, audited and
   reasoned), animals kept by riding a minecart or hatched from an egg (the same keep call, reasoned).
 
 ## Kept as beta

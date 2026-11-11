@@ -4,7 +4,7 @@ Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves al
 says it may be the user's call to take into Purist. Old Faithful (Fixed) is narrow (user, 2026-11-02): beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
-not to Fixed. Fixed so far: forty-nine entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-two switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
+not to Fixed. Fixed so far: fifty-one entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-four switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
 
 Sources:
 - The decompiled game (`local/decomp/b1.7.3-named`, Babric's names), read for causes.
@@ -121,6 +121,8 @@ Key:
 | 80 | A dark hairline down the seam between two blocks side by side, seen with the camera almost in line with the seam (half a block off it, 4 away, looking down a little): chests and planks alike | ? | ? | low | seen in pictures, not looked into |
 | 81 | A mob that has died stays solid while it falls over: it pushes you and other mobs and is pushed, and arrows bounce off it though nothing can hurt it | bug | OF | low | fixed (OF) |
 | 82 | An arrow that starts a tick exactly on the face it's about to strike is put at NaN: beta divides by how far it moved, which is none | bug | ? | ? | seen in Explosive Arrows, not looked into for plain arrows |
+| 83 | Multiplayer: a rider's look goes to the server only while it holds still, so other players never see a riding player's head turn and the server's yaw for them drifts | bug | OF | low-mid (MP) | fixed (OF) |
+| 84 | Mobs at the edges of the screen vanish while part of them is still in view (a head, arms, a squid's tentacles, half a ghast): beta culls by the bare box where they are this tick, though most models reach past it and are drawn up to a tick behind | bug | OF | mid | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -402,7 +404,9 @@ still over chunks it hasn't received (ask: the server's flying check, `floatingT
 player).
 **Order fixed (OF)**, `multiplayer.chunkOrder` (server): what's waiting is sorted by distance whenever the view
 re-centres. After a /tp the first chunk sent is the one underfoot (beta's: the west edge). Holding still: Still
-Faithful's.
+Faithful's. Since 2026-11-10 the order goes by the chunk underfoot from the position rounded down; it went by beta's
+view square's centre, the position cut toward zero, a chunk off when the player stood in the eastmost block of a chunk
+west of 0 (or the southmost north of 0), where the chunk underfoot came second (`fixesMultiplayerTest` failed so once).
 
 ### 17. Advanced OpenGL flicker (L)
 With Advanced OpenGL on, chunks blink out at the edges of view when turning: occlusion query results lag the camera.
@@ -1127,6 +1131,53 @@ the face, so its position becomes NaN. An explosive arrow's burst there disconne
 bursts where the tick began and a client ignores a burst it can't draw. Plain arrows still do it: what a NaN arrow does
 afterwards (on a client, on a server, in a save) isn't looked into. ? (low, by how
 exact the start must be).
+
+### 83. A rider's look goes to the server only while it holds still (T)
+Found 2026-11-10 by Claude Opus 5.5, building Still Faithful's Boat Steering. `MultiplayerClientPlayerEntity.method_1922`
+(lines 86-91): while riding, each tick's move packet carries the rider's motion, marked with -999 for both heights, and
+is meant to carry the look when it changed, as on foot the same function does; the test is the wrong way round: when
+the look changed since the last tick it sends the motion alone (`PlayerMovePositionAndOnGroundPacket`), and only when it
+didn't, the full packet with yaw and pitch. So a rider turning their view, or turned by the boat or cart they
+ride (`Entity.tickRiding` turns the view with the vehicle), tells the server nothing of where they look until they hold
+still: other players see their head stay put, and the server's own yaw for them drifts, since it turns a rider with
+the vehicle twice a packet (`ServerPlayNetworkHandler.onPlayerMove`: `tickVehicle` at line 131 ticks the vehicle and
+then its rider, and `updateEntity(player)` at 142 the rider again, with the vehicle's last turn counted both times).
+bug, OF. **Fixed in Old Faithful** (2026-11-10, `multiplayer.ridingLook`, client): while riding, the motion-only packet
+becomes beta's own full one, every tick, which any server reads as beta's sends it when the look holds still.
+The server's double turn is left as beta: with the look in every packet the server takes the client's yaw from each
+before the vehicle ticks, and between packets the turn only puts the look it shows others up to one tick's turn of the
+vehicle ahead. The cost is 8 bytes more a riding tick at most (the full packet is 42 bytes, the motion one 34), which
+beta already sent whenever the view held still. Still Faithful's Boat Steering reads a rider's keys through this look on
+a server (`docs/still-faithful.md`).
+
+### 84. Mobs at the edges of the screen vanish while part of them is still in view (T, measured)
+The user's sense while playing (2026-11-11): mobs at the edge of the view sometimes seemed to be culled.
+`WorldRenderer.renderEntities` draws an entity only while `culler.isVisible(entity.boundingBox)`: its bare box, where it
+is this tick. But it's drawn where it's interpolated to between ticks (`EntityRenderDispatcher.render`), up to a tick's
+move behind, and most models reach past their boxes. Measured in the real game, unseen, by `:harness:cullingMeasure`
+(Claude Opus 5.5, 2026-11-11; `docs/fixes.md` > Tests): every common kind slid out of view past each edge, in each of
+its poses and facing every way, drawn regardless of culling with its pixels counted from the depth buffer. Beta dropped
+something still on screen in 3,161 of 4,760 slides (1440x900), and the game's own frames dropped every one of them. How
+far each is drawn past its box, as the box's distance outside the edge's plane at the furthest point any of it shows:
+- cow 0.80 mid-stride (0.45 standing), sheep 0.78 (0.44), a player with a sword 0.75 (a 16-letter name tag the same),
+  creeper 0.65 swelling mid-stride (0.32), zombie pigman 0.61 (its sword), chicken 0.57, wolf 0.55, arrow 0.53, zombie
+  0.50, big slime 0.49, spider 0.47, skeleton 0.47, pig 0.45, dropped apple 0.41, minecart 0.31, small slime 0.24, boat
+  0.22;
+- squid 1.34 (its tentacles; 1.33 lying as out of water), ghast 2.94 (its body stands 2.3 above its box and swells wider
+  as it charges);
+- fallen over dying, where the roll lays the body's height out sideways: zombie 1.72, cow 1.31, spider 0.82, ghast 4.85.
+
+As beta drops one, up to 13,700 pixels of a cow are on screen (1% of it), 29,300 of a squid, 64,000 of a ghast and
+146,000 of a dying ghast (11%). Later versions grow the box they cull by half a block (`inflate(0.5)`, as remembered,
+not checked here), which by these numbers still drops cows, sheep, players, creepers, pigmen, chickens, wolves, squid and
+ghasts. Our own mods don't change entity culling: the speed mod skips only a frustum beta computes and drops, the FOV
+slider changes the projection the frustum is read from, and Still Faithful's Entity Distance changes only the distance
+test. OF, mid (a head or tentacles blinking out at the edge as you turn; a squid or ghast loses much of itself).
+**Fixed in Old Faithful** (2026-11-11, `render.entityCulling`): the box tested is where the entity is drawn in that
+frame, grown on every side by a block, a squid's by 1.5 and a ghast's by 3, a dying mob's by its height besides, and a
+sleeping player's to 2 (its box shrinks to a fifth of a block under a body 1.8 long; reasoned from the code, not
+measured). Measured again with it: every kind drawn at the furthest point any of it shows, in all 3,301 slides that beta
+drops (with the dying poses). Checked in `FixesCheck` both ways (`docs/fixes.md`).
 
 ### 74. A step-up under a low roof sinks into the floor (T, seen)
 Asked about by the user (2026-11-06), who remembered being moved slightly into a block and pushed out on a simple

@@ -43,13 +43,15 @@ back (after a restart).
   the death screen's score are drawn right. Option sliders reach every percentage. Footsteps aren't saved up on the
   way down stairs and played in a burst. No dots of sky flicker along block edges, where the world's chunks meet or
   at the edges of grass, stone and other blocks' textures. In a big window, the Create New World and Rename World
-  titles stay at the top.
+  titles stay at the top. Mobs at the edges of the screen stay drawn while any part of them is in view, where a head
+  or tentacles blinked out.
 - **Multiplayer.** A break the server refuses is put back at once, not 4 seconds later. Mobs don't jitter. Players
   who teleport or come through a portal are seen by those already there. Chunks arrive nearest first after a fast
   move. The pause after breaking a block clears when you let go. Signs edited beside other changes show their text.
   Nothing near where you died stays frozen after you respawn. Other players no longer stay turned a few degrees
-  off where they face. Spawners show the mob they spawn, not always a pig. Explosions push a player who was just
-  hurt. A /tp in mid-fall doesn't land the fall. The server and your screen agree on when you're drowning.
+  off where they face. While you ride, they see your head turn. Spawners show the mob they spawn, not always
+  a pig. Explosions push a player who was just hurt. A /tp in mid-fall doesn't land the fall. The server and your screen
+  agree on when you're drowning.
 
 And a few options: a field-of-view slider (Options, beside Difficulty), the GUI at Normal size on a first start,
 Quit Game on the title screen, and a window that opens maximised the first time and where you left it after

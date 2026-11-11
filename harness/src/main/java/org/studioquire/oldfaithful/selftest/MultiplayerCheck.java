@@ -34,6 +34,8 @@ import org.studioquire.oldfaithful.selftest.mixin.LivingEntityLerpAccessor;
  * this client has them facing once the turn is done (beta: often a third short);</li>
  * <li>#79: a chest closed and a block placed from what it gave just after, then a slot sent as it closes
  * ({@link ClosedScreenCheck});</li>
+ * <li>#83: riding a boat, the view turned and the server asked partway through where it has the player looking
+ * ({@link BoatRide});</li>
  * <li>#49: this player dies, a pig is removed while they're dead, they respawn: the pig must be gone from this
  * client's world (beta: frozen there), the other one sent again;</li>
  * <li>#62, on joining: a cow spawner 20 blocks west shows a cow where both sides have the fix (beta: a pig);</li>
@@ -79,6 +81,8 @@ public final class MultiplayerCheck {
 	private final Map<Integer, Boolean> squidWet = new HashMap<>();
 	// #79
 	private ClosedScreenCheck closedScreens;
+	// #83
+	private BoatRide ride;
 
 	MultiplayerCheck(SelfTest results) {
 		this.results = results;
@@ -146,7 +150,11 @@ public final class MultiplayerCheck {
 				if (closedScreens == null) closedScreens = new ClosedScreenCheck(results, fixedServer, label, px, Y, pz);
 				if (closedScreens.tick(mc)) next();
 				return false;
-			case 5: { // #49: die
+			case 5: // #83, in a pool south of the scene
+				if (ride == null) ride = new BoatRide(results, label, BoatRide.Kind.LOOK, fixedClient, px + 3, pz + 8, px + 0.5, Y, pz + 0.5);
+				if (ride.tick(mc)) next();
+				return false;
+			case 6: { // #49: die
 				if (ticks == 1) {
 					List<PigEntity> pigs = pigs(mc);
 					stalePig = pigs.get(0).id;
@@ -163,7 +171,7 @@ public final class MultiplayerCheck {
 				next();
 				return false;
 			}
-			case 6: // respawned
+			case 7: // respawned
 				if (mc.player.health <= 0 || mc.currentScreen != null) return timeout(mc, 400, "respawning");
 				if (ticks < 80) return false;
 				respawnResults(mc);

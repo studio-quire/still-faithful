@@ -7,7 +7,9 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.entity.player.ServerPlayerEntity;
+import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.play.ChatMessagePacket;
 import net.minecraft.network.packet.play.UpdateSignPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.MathHelper;
@@ -84,6 +86,31 @@ public final class MultiplayerScenes {
 			world.spawnEntity(squid);
 		}
 		System.out.println("[oldfaithful-selftest] scene built for " + player.name + " at " + px + " " + (FLOOR + 1) + " " + pz);
+	}
+
+	/**
+	 * A pool for a boat (BoatRide): still water at the scenes' floor, {@link BoatRide#POOL_LENGTH} long west of x and
+	 * {@link BoatRide#POOL_WIDTH} wide south of z (x z its north-east inside corner), three of air over it and a stone roof
+	 * (open water freezes in a cold biome), and a boat in it 3 from the east end, halfway across, facing west (yaw 0, as a
+	 * client spawns any boat).
+	 */
+	private static BoatEntity pool(ServerWorld world, int x, int z) {
+		int west = x - BoatRide.POOL_LENGTH, south = z + BoatRide.POOL_WIDTH;
+		for (int cx = (west - 1) >> 4; cx <= (x + 1) >> 4; cx++) {
+			for (int cz = (z - 1) >> 4; cz <= south >> 4; cz++) world.chunkCache.loadChunk(cx, cz);
+		}
+		for (int bx = west; bx <= x + 1; bx++) {
+			for (int bz = z - 1; bz <= south; bz++) {
+				boolean wall = bx == west || bx == x + 1 || bz == z - 1 || bz == south;
+				world.setBlockWithoutNotifyingNeighbors(bx, FLOOR - 1, bz, Block.STONE.id, 0);
+				world.setBlockWithoutNotifyingNeighbors(bx, FLOOR, bz, wall ? Block.STONE.id : Block.WATER.id, 0);
+				for (int y = FLOOR + 1; y <= FLOOR + 3; y++) world.setBlockWithoutNotifyingNeighbors(bx, y, bz, wall ? Block.STONE.id : 0, 0);
+				world.setBlockWithoutNotifyingNeighbors(bx, FLOOR + 4, bz, Block.STONE.id, 0);
+			}
+		}
+		BoatEntity boat = new BoatEntity(world, x - 2.5, FLOOR + 0.7, z + BoatRide.POOL_WIDTH / 2.0);
+		world.spawnEntity(boat);
+		return boat;
 	}
 
 	/** Returns true if the chat message was a test command (and so isn't broadcast). */
@@ -183,6 +210,39 @@ public final class MultiplayerScenes {
 				// The player put at x feet z, facing yaw, as a teleport is sent (FenceWalk's starting places).
 				player.networkHandler.teleport(Double.parseDouble(a[1]), Double.parseDouble(a[2]), Double.parseDouble(a[3]), Float.parseFloat(a[4]), 0);
 				break;
+			case "boat": {
+				// #83 and Still Faithful's Boat Steering: a boat in a pool (BoatRide).
+				int x = Integer.parseInt(a[1]), z = Integer.parseInt(a[2]);
+				BoatEntity boat = pool(world, x, z);
+				System.out.println("[oldfaithful-selftest] boat " + boat.id + " in a pool, north-east inside corner " + x + " " + z);
+				break;
+			}
+			case "ride": {
+				// Into the nearest boat, by its own right-click (the client asks once it has the boat, or the seat it's
+				// sent would name an entity it doesn't know).
+				BoatEntity nearest = null;
+				for (Object o : world.entities) {
+					if (o instanceof BoatEntity && !((BoatEntity) o).dead
+							&& (nearest == null || player.getSquaredDistance((Entity) o) < player.getSquaredDistance(nearest))) nearest = (BoatEntity) o;
+				}
+				if (nearest != null) nearest.interact(player);
+				System.out.println("[oldfaithful-selftest] " + player.name + " rides " + (nearest == null ? "nothing" : "boat " + nearest.id));
+				break;
+			}
+			case "look":
+				// #83: where the server has the player looking, as a chat line the client's test reads (BoatRide.reply).
+				player.networkHandler.sendPacket(new ChatMessagePacket("oftest look " + player.yaw + " " + player.pitch));
+				break;
+			case "unride": {
+				// Out of the boat (it goes) and to x feet z.
+				Entity vehicle = player.vehicle;
+				if (vehicle != null) {
+					player.setVehicle(vehicle);
+					vehicle.markDead();
+				}
+				player.networkHandler.teleport(Double.parseDouble(a[1]), Double.parseDouble(a[2]), Double.parseDouble(a[3]), player.yaw, 0);
+				break;
+			}
 			case "unpig": {
 				int id = Integer.parseInt(a[1]);
 				for (Object o : world.entities) {

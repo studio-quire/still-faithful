@@ -13,6 +13,7 @@ import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.mob.SlimeEntity;
 import net.minecraft.entity.passive.PigEntity;
 import net.minecraft.entity.passive.SquidEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.FishingBobberEntity;
@@ -37,7 +38,9 @@ import org.studioquire.oldfaithful.selftest.mixin.RedstoneTorchInvoker;
  * footsteps, undersides) and the bed check (it needs a sleeping player and a monster's path) are the user's or
  * reasoned (docs/fixes.md). Pending ticks saved with their chunk (#42) are checked on the real server
  * (`:oldfaithful-fixes:serverTicksTest`), as are the world fixes from the piston hunt. The player's own sneak step off
- * an inside corner (#57) is made first, synchronously; the last scene puts the player in a boat and out again.
+ * an inside corner (#57) is made first, synchronously; the last scene puts the player in a boat and out again (then
+ * on stone where its water was), and then {@link CullingCheck} holds the camera high above the world for mobs at the
+ * edges of the view (#84).
  */
 final class FixesCheck {
 	private static final int SETTLE_TICKS = 40;
@@ -56,6 +59,7 @@ final class FixesCheck {
 	private boolean wouldDrop;
 	private double boatTop;
 	private double lowest = Double.MAX_VALUE;
+	private CullingCheck culling;
 
 	FixesCheck(SelfTest results) {
 		this.results = results;
@@ -446,6 +450,7 @@ final class FixesCheck {
 
 	/** True once the scenes have settled and been checked. */
 	boolean tick(Minecraft mc) {
+		if (culling != null) return culling.tick(mc);
 		++ticks;
 		if (ticks == MOUNT_TICK) mc.player.setVehicle(boat);
 		if (ticks == DISMOUNT_TICK) {
@@ -465,7 +470,25 @@ final class FixesCheck {
 			results.check("fixes #27: out of a boat (its top at " + String.format("%.3f", boatTop) + ", where beta's rounding "
 					+ (wouldDrop ? "drops" : "wouldn't drop") + " the feet), the player stands on it (lowest " + String.format("%.4f", lowest)
 					+ " from its top)", wouldDrop && lowest > -0.01);
-			return true;
+			// The player stays here for the checks after (Still Faithful's lay their scenes out around this spot), so
+			// not on the boat: it's at a height chosen for beta's rounding to drop a player through it, and a later
+			// check's move and return dropped the player into the water under it, to drown there through Still
+			// Faithful's longer checks (2026-11-11, once boats held their height at the surface). The boat goes, its
+			// water turns to stone, and the player stands on it where the boat was (feet at 63 come back exactly from
+			// the eye's height, so the box lies on the stone, not a rounding step into it).
+			boat.markDead();
+			int wx = bx - 24, wz = bz - 24;
+			for (int x = -2; x <= 2; x++) {
+				for (int z = -2; z <= 2; z++) {
+					for (int y = 60; y <= 62; y++) mc.world.setBlockWithoutNotifyingNeighbors(wx + x, y, wz + z, Block.STONE.id, 0);
+				}
+			}
+			// Its downward motion from standing on the boat carries over, so it stays on the ground (mining needs it).
+			PlayerEntity p = mc.player;
+			p.setPositionAndAnglesKeepPrevAngles(boat.x, 63.0, boat.z, p.yaw, p.pitch);
+			// #84, last: it holds the camera high above the world for a few frames.
+			culling = new CullingCheck(results);
+			return false;
 		}
 		if (ticks != SETTLE_TICKS) return false;
 		World world = mc.world;

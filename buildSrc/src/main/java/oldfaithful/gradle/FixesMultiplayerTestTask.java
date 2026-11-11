@@ -175,7 +175,12 @@ public abstract class FixesMultiplayerTestTask extends ClientStartupTask {
 		}
 	}
 
-	/** #16a and #16b: SkyB flies 130 blocks east, out of SkyA's sight; then the console teleports SkyA to SkyB. */
+	/**
+	 * #16a and #16b: SkyB flies 130 to 146 blocks east or west (west where only that ends west of 0), out of SkyA's
+	 * sight, to the middle of a chunk's south-east corner block; then the console teleports SkyA to SkyB. West or north
+	 * of 0 that's where beta's view square (by the position cut toward zero) is centred a chunk east or south of the one
+	 * underfoot, which the order must still send first.
+	 */
 	private boolean[] teleport(GameProcess server, int port) throws Exception {
 		try (RawClient a = new RawClient(port, "SkyA"); RawClient b = new RawClient(port, "SkyB")) {
 			login(a);
@@ -183,12 +188,15 @@ public abstract class FixesMultiplayerTestTask extends ClientStartupTask {
 			a.stand(80, 50); // its first chunks, so none from before is still waiting at the teleport
 			int bId = a.await(r -> r.id() == 20 && "SkyB".equals(r.text()), 5) != null ? a.playerEntity("SkyB") : -1;
 			double[] p = b.position();
-			for (int i = 1; i <= 130; i++) {
-				b.move(p[0] + i, p[1], p[2], p[3], 0, 0, false);
+			double east = Math.floor((p[0] + 130) / 16) * 16 + 15.5, west = Math.floor((p[0] - 146) / 16) * 16 + 15.5;
+			double tx = east < 0 || west >= 0 ? east : west, tz = Math.floor(p[3] / 16) * 16 + 15.5;
+			int steps = (int) Math.ceil(Math.abs(tx - p[0]));
+			for (int i = 1; i <= steps; i++) {
+				b.move(p[0] + (tx - p[0]) * i / steps, p[1], p[2], p[3] + (tz - p[3]) * i / steps, 0, 0, false);
 				Thread.sleep(50);
 			}
-			if (a.await(r -> r.id() == 29 && r.a() == bId, 5) == null) throw new IOException("SkyA still sees SkyB 130 blocks away");
-			int cx = (int) Math.floor(p[0] + 130) >> 4, cz = (int) Math.floor(p[3]) >> 4;
+			if (a.await(r -> r.id() == 29 && r.a() == bId, 5) == null) throw new IOException("SkyA still sees SkyB 130 or more blocks away");
+			int cx = (int) Math.floor(tx) >> 4, cz = (int) Math.floor(tz) >> 4;
 			long t0 = System.nanoTime();
 			server.send("tp SkyA SkyB");
 			boolean seen = b.await(r -> r.id() == 20 && "SkyA".equals(r.text()) && r.at() > t0, 3) != null;

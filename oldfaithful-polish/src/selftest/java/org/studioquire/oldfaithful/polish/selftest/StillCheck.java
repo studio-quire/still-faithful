@@ -3,6 +3,7 @@ package org.studioquire.oldfaithful.polish.selftest;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 import net.minecraft.block.Block;
@@ -22,6 +23,7 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import org.studioquire.oldfaithful.polish.BackgroundSaves;
+import org.studioquire.oldfaithful.polish.BoatSteering;
 import org.studioquire.oldfaithful.polish.ChestLids;
 import org.studioquire.oldfaithful.polish.Chests;
 import org.studioquire.oldfaithful.polish.KeptAnimals;
@@ -102,9 +104,11 @@ public final class StillCheck implements WorldCheck {
 			// Sliding along a wall: fast along it, barely into it. Beta breaks the boat; sturdy boats don't.
 			slider.velocityX = 0.35;
 			slider.velocityZ = 0.05;
-			// Into a wall at 45 degrees, fast: a real crash, which breaks it either way.
-			crasher.velocityX = 0.3;
-			crasher.velocityZ = 0.3;
+			// Steeply into a wall, fast: a real crash, which breaks it either way. Steeply enough that a boat Boat Steering
+			// holds to its top speed (0.325) still hits it at over 0.25 and slides on at over 0.15 (at 45 degrees it
+			// couldn't: 0.23 into the wall).
+			crasher.velocityX = 0.2;
+			crasher.velocityZ = 0.32;
 			coaster.velocityX = 0.4;
 			coaster.velocityZ = 0;
 			coastStart = coaster.x;
@@ -113,16 +117,19 @@ public final class StillCheck implements WorldCheck {
 			boolean sturdy = PolishConfig.applied("boats.sturdy");
 			results.check("still #12: a boat sliding along a wall at 0.35 a tick " + (slider.dead ? "broke" : "held") + " ("
 					+ (sturdy ? "sturdy: holds" : "beta: breaks") + ")", slider.dead != sturdy);
-			results.check("still #12: a boat driven into a wall at 45 degrees, 0.42 a tick, broke, as in beta", crasher.dead);
+			results.check("still #12: a boat driven steeply into a wall, 0.32 a tick into it and 0.2 along, broke, as in beta", crasher.dead);
 		}
 		if (ticks == COAST_LOOK - 1) savedInBackground(mc);
 		if (ticks == COAST_LOOK) {
-			boolean handling = PolishConfig.applied("boats.handling");
+			// Boat Steering's momentum, where it's on, moves every boat in water that a player isn't paddling as beta's,
+			// in place of handling's coasting, held to its top speed: from 0.4, min(0.4 * 0.9, 0.325) / (1 - 0.9) = 3.25.
+			boolean handling = PolishConfig.applied("boats.handling"), steering = PolishConfig.applied("boats.steering");
 			double went = coaster.x - coastStart;
 			double speed = Math.hypot(coaster.velocityX, coaster.velocityZ);
-			results.check(String.format("still #12: an unpaddled boat from top speed went %.1f blocks in 60 ticks, now %.3f a tick (%s)", went,
-					speed, handling ? "handling: stops within about 8" : "beta: still gliding, about 18"),
-					handling ? went < 10 && speed < 0.03 : went > 14 && speed > 0.15);
+			double steered = Math.min(0.4 * BoatSteering.MOMENTUM, BoatSteering.TOP_SPEED) / (1 - BoatSteering.MOMENTUM);
+			results.check(String.format(Locale.ROOT, "still #12: an unpaddled boat from top speed went %.1f blocks in 60 ticks, now %.3f a tick (%s)", went,
+					speed, steering ? String.format(Locale.ROOT, "steering: stops within about %.2f", steered) : handling ? "handling: stops within about 8" : "beta: still gliding, about 18"),
+					steering ? Math.abs(went - steered) < 0.25 && speed < 0.01 : handling ? went < 10 && speed < 0.03 : went > 14 && speed > 0.15);
 			results.check("still #12: the coasting boat didn't break", !coaster.dead);
 			return true;
 		}

@@ -184,6 +184,14 @@ public final class FixesConfig implements IMixinConfigPlugin {
 					"# #81: a mob that had died stayed solid while it fell over: it pushed you and other mobs, they pushed it, and\n"
 					+ "# arrows bounced off it, though nothing could hurt it any more. With this, a dying mob pushes nothing, nothing\n"
 					+ "# pushes it, and arrows, snowballs, eggs and fishing lines fly through it.\n"},
+			{"multiplayer.ridingLook", "ridinglook",
+					"# #83 (client): on a server, while you rode a boat, minecart or pig, your game told the server where you looked\n"
+					+ "# only while you held your view still, so other players never saw your head turn and the server lost track of\n"
+					+ "# which way you faced. With this, it says where you look every tick while you ride, in the same message beta\n"
+					+ "# sends when you hold still, which any server reads.\n"},
+			{"render.entityCulling", "culling",
+					"# #84: mobs at the edge of the screen vanished while part of them was still in view (a head, arms, legs, a\n"
+					+ "# squid's tentacles): the game skipped anything whose box was out of view, and most mobs reach past theirs.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

@@ -5,6 +5,25 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.5 (2026-11-11)
+
+Released with Still Faithful 0.7.0, which carries it; on Pure Faithful 0.1.5, as 0.2.4 was. Two new fixes, each on its
+own switch:
+
+- On a server, while you ride a boat, minecart or pig, other players see your head turn, and the server knows which
+  way you face (Riding Look, under Multiplayer). Beta's game told the server where you looked while riding only when
+  you held your view still, so to others you stared ahead until you stopped turning. Now it says so every tick you
+  ride, in the same message beta sent when you held still, which any server reads. It's your game's switch.
+- Mobs at the edges of the screen no longer vanish while part of them is still in view. Beta stopped drawing a mob as
+  soon as its hitbox left the view, but most mobs reach past their hitbox: a cow's head, a zombie's arms, a squid's
+  tentacles, the top of a ghast's body, and any mob falling over as it dies. So as you turned, a head or a tentacle at the
+  edge of the screen blinked out, and something moving fast could vanish a moment before it left. Now a mob stays drawn
+  while any part of it is in view (Mobs at Edges, under Looks and Sounds). It changes only what your own game draws,
+  so it works on any server.
+
+And a correction to an earlier fix: on a server, after a teleport or a fast move, the chunk you stand in now always
+arrives first. Standing at an x or z of -1, -17, -33 and so on, it came second. It's the server's switch, `multiplayer.chunkOrder` in its `config/oldfaithful-fixes.properties`.
+
 ## 0.2.4 (2026-11-09)
 
 Released with Still Faithful 0.5.1, which carries it; on Pure Faithful 0.1.5, as 0.2.3 was.

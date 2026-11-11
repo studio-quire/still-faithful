@@ -81,6 +81,8 @@ public final class FixesSettings implements SettingsProvider {
 			{"render.undersides", "looks", CLIENT, "Fence Undersides", "The undersides of fence bars drew black."},
 			{"render.seams", "looks", CLIENT, "Chunk Seams", "Dots of sky flickered along block edges where the chunks meet."},
 			{"render.textureEdges", "looks", CLIENT, "Texture Edges", "Dots of sky flickered along the edges of grass, stone, dirt and others."},
+			{"render.entityCulling", "looks", CLIENT, "Mobs at Edges",
+					"Mobs vanished at the edge of the screen while part of them was still in view."},
 			{"render.hotbarAfterCracks", "looks", CLIENT, "White Hotbar",
 					"With Fast graphics in the Nether, aiming at a mob turned the hotbar white."},
 			{"render.ridingPoses", "looks", CLIENT, "Riding Poses",
@@ -101,6 +103,8 @@ public final class FixesSettings implements SettingsProvider {
 					"Mobs and items gone while you were dead could stay frozen on screen. Fixed if either side has this fix."},
 			{"multiplayer.spawnerMobs", "multiplayer", CLIENT, "Spawner Mobs",
 					"Every spawner on a server showed a pig. Fixed where the server has this fix too."},
+			{"multiplayer.ridingLook", "multiplayer", CLIENT, "Riding Look",
+					"On a server, while you rode, others never saw your head turn: your game sent your look only while you held still."},
 	};
 
 	/** Fixes that run only on a server: a client's switch would change nothing, so they're left to the server's file. */
