@@ -149,7 +149,7 @@ public class SettingsGroupScreen extends SettingsScreen {
 		SettingsRegistry.Group group = current().group;
 		if (pointed != null && pointed.id == PAGE_BUTTON) {
 			String locked = group.pageButton.lockedReason();
-			hint(locked != null ? locked : group.pageButton.hint);
+			hint(locked != null ? locked : group.pageButton.hint());
 		} else if (pointed != null && pointed.id < shown.size()) {
 			Setting s = shown.get(pointed.id);
 			String locked = s.lockedReason();

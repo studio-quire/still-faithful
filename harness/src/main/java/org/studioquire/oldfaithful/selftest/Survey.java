@@ -23,11 +23,15 @@ import net.minecraft.world.chunk.LegacyChunkCache;
  * only serves chunks within 15 of its centre). Writes {@code survey.bin}: four little-endian ints (x0, z0, width,
  * depth), then per column, z-major, five bytes: the top block's height and id, the ground's height and id (the top
  * ignoring leaves, logs and plants), and the biome's index in {@code survey.txt}'s list. Any block of a mod's is id 255.
+ * Beside it, {@code survey-climate.bin}: no header, per column in the same order three bytes, the temperature and downfall
+ * beta's biomes and colours come from (0 to 1 as 0 to 255) and the top block's meta (a leaf's kind: 0 oak, 1 spruce, 2 birch).
  */
 final class Survey {
 	private static final int TILE = 8;
 	private final int x0, z0, w, d;
 	private final byte[] cells;
+	/** survey-climate.bin's: per column as cells has them, three bytes: beta's temperature and downfall (0 to 1, as 0 to 255), and the top block's meta. */
+	private final byte[] climate;
 	private final File out;
 	private final List<String> biomes = new ArrayList<>();
 	private int tile;
@@ -39,6 +43,7 @@ final class Survey {
 		w = ((Integer.parseInt(a[2]) - x0) | 15) + 1;
 		d = ((Integer.parseInt(a[3]) - z0) | 15) + 1;
 		cells = new byte[w * d * 5];
+		climate = new byte[w * d * 3];
 		this.out = new File(out);
 	}
 
@@ -77,6 +82,10 @@ final class Survey {
 		int ground = top;
 		while (ground > 0 && !isGround(c.getBlockId(lx, ground, lz))) ground--;
 		Biome biome = world.method_1781().getBiome(x, z);
+		int k = ((z - z0) * w + (x - x0)) * 3;
+		climate[k] = (byte) Math.round(world.method_1781().temperatureMap[0] * 255);
+		climate[k + 1] = (byte) Math.round(world.method_1781().downfallMap[0] * 255);
+		climate[k + 2] = (byte) c.getBlockMeta(lx, top, lz);
 		int b = biomes.indexOf(biome.name);
 		if (b < 0) {
 			b = biomes.size();
@@ -108,6 +117,7 @@ final class Survey {
 				for (int v : new int[] {x0, z0, w, d}) o.writeInt(Integer.reverseBytes(v));
 				o.write(cells);
 			}
+			Files.write(new File(out, "survey-climate.bin").toPath(), climate);
 			Files.write(new File(out, "survey.txt").toPath(), String.join("\n", biomes).concat("\n").getBytes(StandardCharsets.UTF_8));
 		} catch (IOException e) {
 			throw new UncheckedIOException(e);

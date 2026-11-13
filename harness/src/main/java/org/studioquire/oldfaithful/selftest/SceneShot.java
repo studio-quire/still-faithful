@@ -42,7 +42,8 @@ import org.studioquire.oldfaithful.selftest.mixin.WorldRendererAccessor;
  * player's click would (a lever, a door) and shoots nothing, so the views after it show what it did; {@code dig x y z} takes
  * the block out, {@code put x y z id} puts one in, both telling its neighbours, {@code mob x y z Name [yaw [tame|sit]]} stands one of
  * beta's mobs in a cell where the world is loaded (a wolf the player's own, standing or sitting, with the last word), and {@code probe x y z r} writes the
- * blocks within r of a place into {@code probe-<n>.txt}. Scheduled block ticks don't run here, so sand left over air
+ * blocks within r of a place into {@code probe-<n>.txt}, and {@code setting file key value} sets a switch on the settings screen as
+ * clicks there would (a mod's look one way, then the same views another). Scheduled block ticks don't run here, so sand left over air
  * stays. With {@code -Doldfaithful.selftest.sceneSettle=true} a view is
  * shot as soon as it's built near the camera ({@link #unbuilt}), after at least {@link #SETTLE_MIN} ticks, with
  * {@code sceneViewTicks} as the cap: for near views like a tower's rooms, where the far view filling in doesn't matter, or with
@@ -202,6 +203,18 @@ public final class SceneShot {
 			view++;
 			return false;
 		}
+		if (v[0].equals("setting")) {
+			// A switch on the settings screen (its file, key and value) set as clicks there would set it: so one run can shoot the same views
+			// with a mod's look one way and then another, the land, its trees and the clouds the same in both.
+			try {
+				setting(v[1], v[2], v[3]);
+			} catch (ReflectiveOperationException e) {
+				throw new IllegalStateException(e);
+			}
+			results.pass("scene: view-" + view + " set " + v[1] + " " + v[2] + " to " + v[3]);
+			view++;
+			return false;
+		}
 		if (v[0].equals("mob")) {
 			// A mob by beta's name (Wolf, Sheep) standing in a cell, facing a yaw if given; it goes about its business from there.
 			int mx = Integer.parseInt(v[1]), my = Integer.parseInt(v[2]), mz = Integer.parseInt(v[3]);
@@ -279,6 +292,28 @@ public final class SceneShot {
 
 	private int shotAt, steady;
 	private String waiting;
+
+	/** Steps the setting in {@code file} under {@code key} until it reads {@code value}, through the settings screen's own registry (package-private there). */
+	private static void setting(String file, String key, String value) throws ReflectiveOperationException {
+		String pkg = "org.studioquire.oldfaithful.options.settings.";
+		Class<?> registryType = Class.forName(pkg + "SettingsRegistry"), settingType = Class.forName(pkg + "Setting");
+		Object registry = registryType.getMethod("get").invoke(null);
+		java.lang.reflect.Method everything = registryType.getDeclaredMethod("everything"), read = registryType.getDeclaredMethod("value", settingType),
+				step = registryType.getDeclaredMethod("step", settingType);
+		java.lang.reflect.Field fileField = settingType.getDeclaredField("file"), keyField = settingType.getDeclaredField("key");
+		for (java.lang.reflect.AccessibleObject a : new java.lang.reflect.AccessibleObject[] {everything, read, step, fileField, keyField}) a.setAccessible(true);
+		for (Object group : (List<?>) everything.invoke(registry)) {
+			java.lang.reflect.Method all = group.getClass().getDeclaredMethod("all");
+			all.setAccessible(true);
+			for (Object s : (List<?>) all.invoke(group)) {
+				if (!file.equals(fileField.get(s)) || !key.equals(keyField.get(s))) continue;
+				for (int i = 0; i < 16 && !value.equals(read.invoke(registry, s)); i++) step.invoke(registry, s);
+				if (!value.equals(read.invoke(registry, s))) throw new IllegalStateException(file + " " + key + " never reads " + value);
+				return;
+			}
+		}
+		throw new IllegalStateException("No setting " + key + " in " + file + " on the settings screen");
+	}
 
 	/**
 	 * What near the camera and in view isn't drawn as it is yet, or null once nothing is: a render chunk not built since the

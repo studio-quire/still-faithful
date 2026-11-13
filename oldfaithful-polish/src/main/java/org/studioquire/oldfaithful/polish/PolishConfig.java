@@ -31,6 +31,8 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	private static final String SAVES_KEY = "saves.backgroundAutosave", SAVES_PACKAGE = "autosave";
 	/** #6 is a choice rather than a switch: stepped or smooth (the dusk mixins in; DuskLight), or beta (off). */
 	public static final String DUSK_KEY = "sky.dusk";
+	/** Obsidian is a choice too: true (1.0's), diamond (1.0's with a diamond pickaxe only), or false (beta). */
+	public static final String OBSIDIAN_KEY = "blocks.obsidian";
 	/** Pairs go by which way chests face, so they need #69's facings. */
 	private static final String PAIRS_KEY = "blocks.chestPairs", FACING_KEY = "blocks.chestsFaceYou";
 	private static final String HEADER = "# stillfaithful-polish: Still Faithful's changes, what later versions improved while beta stayed beta.\n"
@@ -52,6 +54,13 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					"# #10: glowstone dropped nothing unless mined with a pickaxe. With this, it drops by hand or with any tool,\n"
 					+ "# as from 1.0 (and mines at the speed 1.0 had). In multiplayer, mining is faster only on a server that\n"
 					+ "# has this change too; drops are the server's.\n"},
+			{OBSIDIAN_KEY, "obsidian",
+					"# #10: obsidian wasn't among the blocks a pickaxe mines fast, so even a diamond pickaxe took 15 seconds. true:\n"
+					+ "# it mines as in 1.0, which put it among them and made it five times harder: 9.4 seconds with a diamond\n"
+					+ "# pickaxe, and 250 seconds instead of 50 with anything that can't harvest it. diamond: 9.4 seconds with a\n"
+					+ "# diamond pickaxe, and beta's 50 seconds without one, as a player without this change times it (with true,\n"
+					+ "# such a player on your server sees obsidian they mine that way come back until the server breaks it at\n"
+					+ "# 250). false: beta's. In multiplayer the server's choice decides, for players with this change.\n"},
 			{"liquids.lavaThins", "lava",
 					"# #20: flowing lava cut off from its source could stay forever (three times in four it refused to thin\n"
 					+ "# out, and then never looked again). With this, it thins out, waiting four times longer each of those times.\n"
@@ -174,6 +183,7 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	private static final List<String> off = new ArrayList<>();
 	private static volatile boolean read;
 	private static String dusk = "smooth";
+	private static String obsidian = "true";
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -206,6 +216,9 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			if (DUSK_KEY.equals(c[0])) {
 				dusk = duskMode(v);
 				if (dusk.equals("beta")) off.add(c[0]);
+			} else if (OBSIDIAN_KEY.equals(c[0])) {
+				obsidian = obsidianMode(v);
+				if (obsidian.equals("false")) off.add(c[0]);
 			} else if (!Boolean.parseBoolean(v)) {
 				off.add(c[0]);
 			}
@@ -235,6 +248,17 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	/** The dusk choice the game started with: stepped, smooth or beta. */
 	public static String duskAtStart() {
 		return dusk;
+	}
+
+	/** The obsidian choice as read: diamond, false, or true for anything else (a switch reads true unless it says false). */
+	static String obsidianMode(String value) {
+		String v = value.trim().toLowerCase(java.util.Locale.ROOT);
+		return v.equals("diamond") || v.equals("false") ? v : "true";
+	}
+
+	/** The obsidian choice the game started with: true, diamond or false. */
+	public static String obsidianAtStart() {
+		return obsidian;
 	}
 
 	/** Whether the change was on when the game started, so its mixins are in. */

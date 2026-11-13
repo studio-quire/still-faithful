@@ -61,7 +61,10 @@ public class SettingsScreen extends Screen {
 		List<Entry> menus = new ArrayList<>();
 		if (!registry.fixes().isEmpty()) menus.add(menu("Fixes", registry.fixes()));
 		if (!registry.changes().isEmpty()) menus.add(menu("Changes", registry.changes()));
-		if (!registry.mods().isEmpty()) menus.add(new Entry("Mods...", "Turn mods on or off, and change their settings.", null, SettingsModsScreen::new));
+		if (!registry.mods().isEmpty()) {
+			String hint = registry.modsMenuHint() != null ? registry.modsMenuHint() : "Turn mods on or off, and change their settings.";
+			menus.add(new Entry("Mods...", hint, null, SettingsModsScreen::new));
+		}
 		return menus;
 	}
 
@@ -81,12 +84,22 @@ public class SettingsScreen extends Screen {
 		return SettingsRegistry.get().anyWaitingForRestart() ? "Some changes take effect after a restart" : null;
 	}
 
-	private int entryPages() {
-		return Math.max(1, (entries.size() + ROWS - 1) / ROWS);
+	/** Wide buttons to a page. */
+	int rows() {
+		return ROWS;
 	}
 
-	private List<Entry> shownEntries() {
-		return entries.subList(page * ROWS, Math.min(entries.size(), (page + 1) * ROWS));
+	/** The row the wide buttons start on: below a row of the menu's own, where it has one. */
+	int firstRow() {
+		return 0;
+	}
+
+	int entryPages() {
+		return Math.max(1, (entries.size() + rows() - 1) / rows());
+	}
+
+	List<Entry> shownEntries() {
+		return entries.subList(page * rows(), Math.min(entries.size(), (page + 1) * rows()));
 	}
 
 	@Override
@@ -97,7 +110,7 @@ public class SettingsScreen extends Screen {
 		addArrows(entryPages());
 		List<Entry> shown = shownEntries();
 		for (int i = 0; i < shown.size(); i++) {
-			buttons.add(new ButtonWidget(i, width / 2 - WIDE / 2, rowY(i), WIDE, 20, shown.get(i).label));
+			buttons.add(new ButtonWidget(i, width / 2 - WIDE / 2, rowY(firstRow() + i), WIDE, 20, shown.get(i).label));
 		}
 		addDone();
 	}
@@ -150,7 +163,7 @@ public class SettingsScreen extends Screen {
 		super.render(mouseX, mouseY, delta);
 		List<Entry> shown = shownEntries();
 		for (int i = 0; i < shown.size(); i++) {
-			if (shown.get(i).state != null) drawTextWithShadow(textRenderer, shown.get(i).state, width / 2 + WIDE / 2 + 5, rowY(i) + 6, HINT_COLOUR);
+			if (shown.get(i).state != null) drawTextWithShadow(textRenderer, shown.get(i).state, width / 2 + WIDE / 2 + 5, rowY(firstRow() + i) + 6, HINT_COLOUR);
 		}
 		ButtonWidget pointed = pointedAt(mouseX, mouseY, WIDE);
 		if (pointed != null && pointed.id < shown.size() && shown.get(pointed.id).hint != null) hint(shown.get(pointed.id).hint);

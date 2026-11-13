@@ -62,6 +62,11 @@ public final class SettingsRegistry {
 	private final Map<Setting, String> firstSeen = new HashMap<>();
 	/** By mod id: why it has to stay as it is just now, or null when it needn't. */
 	private final Map<String, Supplier<String>> holds = new HashMap<>();
+	/** Run as the files are read again, for values a provider keeps itself (More Faithful's list of mods). */
+	private final List<Runnable> reloads = new ArrayList<>();
+	private PageButton modsButton;
+	/** What the top page says of the Mods menu while {@link #modsButton} is there. */
+	private String modsMenuHint;
 	/** The mod whose provider is running, and so whose page {@link #add(Setting)} means. */
 	private String owner, ownerName;
 	private boolean sealed;
@@ -144,12 +149,43 @@ public final class SettingsRegistry {
 	}
 
 	/**
+	 * A button alone at the top of every page of the Mods menu, above the mods (More Faithful's preset), with what the top page says of the menu then. One,
+	 * and the first stands.
+	 */
+	public void addButtonToModsMenu(PageButton button, String menuHint) {
+		if (sealed) throw new IllegalStateException("registered after the screen was built");
+		if (modsButton == null) {
+			modsButton = button;
+			modsMenuHint = menuHint;
+		} else {
+			System.out.println("[oldfaithful-options] WARN a second button for the Mods menu; keeping the first");
+		}
+	}
+
+	PageButton modsButton() {
+		return modsButton;
+	}
+
+	String modsMenuHint() {
+		return modsMenuHint;
+	}
+
+	/**
 	 * While {@code reason} gives one, nothing on the screen may switch this mod: not its own Enabled, nor another's whose going off would take it too.
 	 * For whoever knows why, which needn't be whoever registers the switch: the core, for a world's locked rules.
 	 */
 	public void holdMod(String id, Supplier<String> reason) {
 		if (sealed) throw new IllegalStateException("registered after the screen was built");
 		holds.put(id, reason);
+	}
+
+	/**
+	 * For a provider whose values are kept outside the config files and asked for every frame: told whenever the screen reads the files again (each time a
+	 * page is built), so it can do the same, and edits by hand show as they do for the files.
+	 */
+	public void onReload(Runnable reload) {
+		if (sealed) throw new IllegalStateException("registered after the screen was built");
+		reloads.add(reload);
 	}
 
 	/** Why this mod is held just now; null if it isn't. */
@@ -232,6 +268,7 @@ public final class SettingsRegistry {
 	void reload() {
 		texts.clear();
 		parsed.clear();
+		for (Runnable r : reloads) r.run();
 		for (Group g : everything()) {
 			for (Setting s : g.all()) {
 				if (s.store != null || texts.containsKey(s.file)) continue;

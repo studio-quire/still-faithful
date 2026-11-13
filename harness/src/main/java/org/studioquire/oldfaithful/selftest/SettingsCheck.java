@@ -189,6 +189,10 @@ final class SettingsCheck {
 		startWidth = Display.getWidth();
 		startHeight = Display.getHeight();
 		startScale = mc.options.guiScale;
+		if (PRESETS != null) {
+			presetSteps();
+			return;
+		}
 		steps.add(this::optionsScreen);
 		steps.add(this::menusAndWords);
 		steps.add(this::menuPages);
@@ -631,18 +635,20 @@ final class SettingsCheck {
 
 	/**
 	 * A library pack from a release, by what a player finds: with nothing on, none of the library's code is here and the Mods menu still offers all of it; ticking a mod
-	 * brings the core onto the list and unticking the last takes it off, and the run leaves everything ticked for the next launch to find. With everything on, it all loaded.
+	 * brings the core onto the list and unticking the last takes it off, and the run leaves everything ticked for the next launch to find. As shipped, what its
+	 * list has on (its default preset's mods: every one, as the pack has it) loaded and nothing else.
 	 */
 	private boolean packMods(Minecraft mc) throws Exception {
 		boolean on = PACK.equals("on");
 		boolean anyLoaded = FabricLoader.getInstance().isModLoaded("faithful-core");
 		boolean allLoaded = anyLoaded;
+		java.util.Set<String> listedIds = Files.exists(list) ? onList() : new java.util.TreeSet<>();
 		for (String id : PACK_IDS) {
 			anyLoaded |= FabricLoader.getInstance().isModLoaded(id);
-			allLoaded &= FabricLoader.getInstance().isModLoaded(id);
+			allLoaded &= FabricLoader.getInstance().isModLoaded(id) == listedIds.contains(id);
 		}
 		if (on) {
-			results.check("everything on: the core and all the mods are loaded", allLoaded);
+			results.check("as shipped: the core and the mods on the list are loaded, and no other (" + listedIds.size() + " of " + PACK_IDS.size() + ")", allLoaded);
 		} else {
 			boolean coreClass = true;
 			try {
@@ -670,11 +676,13 @@ final class SettingsCheck {
 		results.check("Mods: a wide button for each mod, over its pages: " + offered, offered.equals(wanted));
 		// With nothing on, a page is its on and off; with everything, its mod's rules and settings too, and Lock Rules where there are any rules (in a world: this check runs in one).
 		java.util.Map<String, List<String>> rules = on ? rulesByMod() : java.util.Collections.emptyMap();
-		for (String name : PACK_NAMES) {
+		for (String id : PACK_IDS) {
+			String name = PACK_MODS.get(id);
+			boolean shipped = on && listedIds.contains(id);
 			Screen page = openMod(mc, name);
 			String enabled = button(page, "Enabled:").text;
 			List<String> own = rules.getOrDefault(name, java.util.Collections.emptyList()), shown = new ArrayList<>(), stray = new ArrayList<>();
-			List<String> settings = on ? PACK_SETTINGS.getOrDefault(name, java.util.Collections.emptyList()) : java.util.Collections.emptyList(), settingsShown = new ArrayList<>();
+			List<String> settings = shipped ? PACK_SETTINGS.getOrDefault(name, java.util.Collections.emptyList()) : java.util.Collections.emptyList(), settingsShown = new ArrayList<>();
 			boolean lock = false;
 			for (String text : allTexts(page)) {
 				String rule = own.stream().filter(text::startsWith).findFirst().orElse(null);
@@ -684,7 +692,11 @@ final class SettingsCheck {
 				else if (!text.startsWith("Enabled:") && !text.equals("Done") && !text.equals("<") && !text.equals(">")) stray.add(text);
 			}
 			results.check(name + "'s page: " + texts(page) + (own.isEmpty() ? "" : ", its rules " + own) + (settings.isEmpty() ? "" : ", its settings " + settings),
-					enabled.equals(on ? "Enabled: ON" : "Enabled: OFF") && shown.equals(own) && settingsShown.equals(settings) && lock == !own.isEmpty() && stray.isEmpty());
+					enabled.equals(shipped ? "Enabled: ON" : "Enabled: OFF") && shown.equals(own) && settingsShown.equals(settings) && lock == !own.isEmpty() && stray.isEmpty());
+		}
+		if (on && !listedIds.containsAll(java.util.Arrays.asList("water-bottles", "alchemy"))) {
+			mc.setScreen(null);
+			return true;
 		}
 		if (on) {
 			java.util.Set<String> before = listed();
@@ -720,6 +732,198 @@ final class SettingsCheck {
 		results.check("every mod ticked, for the next launch: " + listed(), listed().size() == PACK_NAMES.size() + 1);
 		mc.setScreen(null);
 		return true;
+	}
+
+	// ---- a pack's presets (morePackTest) --------------------------------------------------------------------------
+
+	/**
+	 * Which launch of the pack test's presets this is, the only settings checked in it: {@code choose}, from the pack as shipped, the next preset chosen
+	 * and a mod turned on beyond it; {@code custom}, relaunched, what that loaded, then back to the preset as it comes and on to the next; {@code loaded},
+	 * relaunched, that one loaded; {@code updated}, a fresh copy of the pack with the first launch's record carried in, put back to it for the next launch.
+	 */
+	private static final String PRESETS = System.getProperty("oldfaithful.selftest.presets");
+	private static final String PRESET_RECORD = "faithful-preset.properties";
+
+	private static java.util.Properties properties(Path file) throws Exception {
+		java.util.Properties p = new java.util.Properties();
+		if (Files.isRegularFile(file)) try (java.io.Reader in = Files.newBufferedReader(file, StandardCharsets.UTF_8)) { p.load(in); }
+		return p;
+	}
+
+	private static java.util.Set<String> ids(String line) {
+		java.util.Set<String> ids = new java.util.TreeSet<>();
+		for (String id : (line == null ? "" : line).split(",")) {
+			if (!id.trim().isEmpty()) ids.add(id.trim());
+		}
+		return ids;
+	}
+
+	/** The pack's own file, which the build wrote: its presets' order, default, names and mods. */
+	private java.util.Properties pack() throws Exception {
+		return properties(list.getParent().resolve("pack.properties"));
+	}
+
+	private java.util.Set<String> presetMods(String id) throws Exception {
+		return ids(pack().getProperty("preset." + id + ".mods"));
+	}
+
+	private String presetName(String id) throws Exception {
+		return pack().getProperty("preset." + id + ".name");
+	}
+
+	/** The mods on the list, by id, the core aside. */
+	private java.util.Set<String> onList() throws Exception {
+		java.util.Set<String> on = new java.util.TreeSet<>();
+		for (String line : listed()) on.add(line.substring(line.lastIndexOf('/') + 1, line.length() - ".jar".length()));
+		on.remove("faithful-core");
+		return on;
+	}
+
+	/** The pack's mods this launch loaded. */
+	private static java.util.Set<String> loadedMods() {
+		java.util.Set<String> loaded = new java.util.TreeSet<>();
+		for (String id : PACK_IDS) {
+			if (FabricLoader.getInstance().isModLoaded(id)) loaded.add(id);
+		}
+		return loaded;
+	}
+
+	private java.util.Properties record() throws Exception {
+		return properties(config.resolve(PRESET_RECORD));
+	}
+
+	private String recordText() throws Exception {
+		java.util.Properties r = record();
+		return "preset=" + r.getProperty("preset") + " on=" + r.getProperty("on") + " off=" + r.getProperty("off");
+	}
+
+	/** What the record says should be on: its preset's mods, with those it turned on and without those it turned off. */
+	private java.util.Set<String> recordWants() throws Exception {
+		java.util.Properties r = record();
+		java.util.Set<String> wanted = presetMods(r.getProperty("preset", ""));
+		wanted.addAll(ids(r.getProperty("on")));
+		wanted.removeAll(ids(r.getProperty("off")));
+		return wanted;
+	}
+
+	private static String notice() throws Exception {
+		return (String) Class.forName("org.studioquire.oldfaithful.presets.LibrarySelection").getMethod("notice").invoke(null);
+	}
+
+	private Screen modsMenu(Minecraft mc) {
+		return openMenu(mc, "Mods");
+	}
+
+	private ButtonWidget presetButton(Screen mods) {
+		return button(mods, "Preset: ");
+	}
+
+	private void presetSteps() {
+		List<String> order = new ArrayList<>();
+		String first;
+		try {
+			java.util.Properties pack = pack();
+			for (String id : pack.getProperty("presets", "").split(",")) if (!id.trim().isEmpty()) order.add(id.trim());
+			first = pack.getProperty("preset.default", "").trim();
+		} catch (Exception e) {
+			throw new IllegalStateException(e);
+		}
+		results.check("presets: the pack's file has them, and its default among them: " + order + ", " + first, order.contains(first));
+		if (!order.contains(first)) return;
+		String next = order.get((order.indexOf(first) + 1) % order.size()), after = order.get((order.indexOf(next) + 1) % order.size());
+		switch (PRESETS) {
+			case "choose":
+				steps.add(m -> {
+					Screen mods = modsMenu(m);
+					String label = presetButton(mods).text;
+					// Every page: the preset alone at the top, four mods under it.
+					List<String> pages = new ArrayList<>();
+					boolean everyPage = true;
+					while (true) {
+						int wide = 0;
+						for (String t : texts(mods)) if (t.endsWith("...")) wide++;
+						pages.add(String.valueOf(wide));
+						everyPage &= has(mods, "Preset: ") && wide <= 4;
+						if (!has(mods, ">") || !button(mods, ">").active) break;
+						click(mods, button(mods, ">"));
+					}
+					results.check("presets: as shipped, the Mods menu says \"" + label + "\", alone at the top of every page with the mods four to a page under it (" + pages + ")",
+							label.equals("Preset: " + presetName(first)) && everyPage && pages.size() == (PACK_IDS.size() + 3) / 4);
+					modsMenu(m);
+					return true;
+				});
+				steps.add(capture("presets/1-as-shipped", "Preset: "));
+				steps.add(m -> {
+					Screen mods = modsMenu(m);
+					press(mods, presetButton(mods));
+					String label = presetButton(m.currentScreen).text;
+					results.check("presets: a click chooses the next, \"" + label + "\": the list is its mods and the core (" + onList() + "), recorded with nothing beyond it (" + recordText() + ")",
+							label.equals("Preset: " + presetName(next) + "*") && onList().equals(presetMods(next)) && listed().contains("mods-library/faithful-core.jar")
+									&& record().getProperty("preset", "").equals(next) && ids(record().getProperty("on")).isEmpty() && ids(record().getProperty("off")).isEmpty());
+					return true;
+				});
+				steps.add(capture("presets/2-chosen", "Preset: "));
+				steps.add(m -> {
+					// A mod the chosen preset hasn't, with what it needs: Alchemy brings Water Bottles.
+					String extra = presetMods(next).contains("alchemy") ? "hearty-food" : "alchemy";
+					Screen page = openMod(m, PACK_MODS.get(extra));
+					press(page, button(page, "Enabled:"));
+					java.util.Set<String> beyond = new java.util.TreeSet<>(onList());
+					beyond.removeAll(presetMods(next));
+					Screen mods = modsMenu(m);
+					String label = presetButton(mods).text;
+					results.check("presets: " + PACK_MODS.get(extra) + " turned on beyond it makes it \"" + label + "\", recorded as a change to it (" + recordText() + ")",
+							label.equals("Preset: Custom*") && !beyond.isEmpty() && record().getProperty("preset", "").equals(next) && ids(record().getProperty("on")).equals(beyond)
+									&& ids(record().getProperty("off")).isEmpty());
+					return true;
+				});
+				steps.add(capture("presets/3-custom", "Preset: "));
+				break;
+			case "custom":
+				steps.add(m -> {
+					java.util.Set<String> wanted = recordWants();
+					results.check("presets, relaunched: it loaded what the record says, " + wanted + " (loaded " + loadedMods() + "), with nothing to say on the title screen (" + notice() + ")",
+							loadedMods().equals(wanted) && notice() == null);
+					Screen mods = modsMenu(m);
+					String custom = presetButton(mods).text;
+					press(mods, presetButton(mods));
+					String back = presetButton(m.currentScreen).text;
+					boolean asItComes = onList().equals(presetMods(next)) && ids(record().getProperty("on")).isEmpty() && ids(record().getProperty("off")).isEmpty();
+					press(m.currentScreen, presetButton(m.currentScreen));
+					String then = presetButton(m.currentScreen).text;
+					results.check("presets: \"" + custom + "\" clicked goes back to \"" + back + "\" as it comes (" + asItComes + "), and again on to \"" + then + "\", its mods on the list (" + onList() + ")",
+							custom.equals("Preset: Custom") && back.equals("Preset: " + presetName(next) + "*") && asItComes
+									&& then.equals("Preset: " + presetName(after) + "*") && onList().equals(presetMods(after)) && record().getProperty("preset", "").equals(after));
+					return true;
+				});
+				break;
+			case "loaded":
+				steps.add(m -> {
+					String label = presetButton(modsMenu(m)).text;
+					results.check("presets, relaunched: it loaded " + presetName(after) + "'s mods, " + presetMods(after) + " (loaded " + loadedMods() + "), and says \"" + label + "\"",
+							loadedMods().equals(presetMods(after)) && label.equals("Preset: " + presetName(after)));
+					return true;
+				});
+				break;
+			case "updated":
+				steps.add(m -> {
+					String said = notice();
+					java.util.Set<String> wanted = recordWants();
+					results.check("presets, a new copy of the pack with config/ carried in: it loaded the pack's default, " + presetName(first) + " (" + loadedMods().equals(presetMods(first))
+									+ "), and put the list back to the record (" + recordText() + ") for the next launch: " + onList() + "; the title screen says \"" + said + "\"",
+							loadedMods().equals(presetMods(first)) && onList().equals(wanted) && listed().contains("mods-library/faithful-core.jar") && said != null && said.contains("Restart"));
+					String label = presetButton(modsMenu(m)).text;
+					results.check("presets: and the Mods menu says \"" + label + "\"", label.equals(wanted.equals(presetMods(record().getProperty("preset"))) ? "Preset: " + presetName(record().getProperty("preset")) + "*" : "Preset: Custom*"));
+					return true;
+				});
+				break;
+			default:
+				results.check("presets: a step this check knows (choose, custom, loaded, updated), not " + PRESETS, false);
+		}
+		steps.add(m -> {
+			m.setScreen(null);
+			return true;
+		});
 	}
 
 	/** A fix: written to its file and nothing else changed there, marked as waiting for a restart, and back. */

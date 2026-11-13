@@ -24,6 +24,8 @@ public final class PolishSettings implements SettingsProvider {
 			{"leaves.placedStay", WORLD, "Placed Leaves", "Leaves you placed decayed unless a log was near."},
 			{"glowstone.anyTool", CLIENT, "Glowstone",
 					"Glowstone dropped nothing unless mined with a pickaxe. On a server, only where it has this change too."},
+			{PolishConfig.OBSIDIAN_KEY, WORLD, "Obsidian",
+					"Obsidian took 15 s with a diamond pickaxe, not 1.0's 9.4. Diamond Only leaves anything else at beta's 50 s."},
 			{"liquids.lavaThins", WORLD, "Lingering Lava", "Flowing lava cut off from its source could stay forever."},
 			{"liquids.waterSources", WORLD, "Water Sources", "Water between two sources became a source only over solid ground."},
 			{"boats.sturdy", WORLD, "Sturdy Boats", "Boats broke on brushing a shore or a floating item at speed."},
@@ -69,6 +71,12 @@ public final class PolishSettings implements SettingsProvider {
 			if (!keys.contains(row[0])) continue;
 			if (row[0].equals(PolishConfig.DUSK_KEY)) {
 				r.add(GROUP, dusk(row));
+				continue;
+			}
+			if (row[0].equals(PolishConfig.OBSIDIAN_KEY)) {
+				// Polished (1.0's), Diamond Only, Beta; after a restart, and the server's in multiplayer (Obsidian).
+				r.add(GROUP, Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], "true", "false", "Beta", "true", "Polished", "diamond", "Diamond Only")
+						.running(() -> PolishConfig.applied(row[0]) ? PolishConfig.obsidianAtStart() : "false").serverDecides());
 				continue;
 			}
 			Setting s = Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], PolishConfig.defaultValue(row[0]), "false", "Beta", "true", "Polished")

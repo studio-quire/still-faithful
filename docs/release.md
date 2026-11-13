@@ -37,9 +37,9 @@ dusk violet seal; its config file and log prefix say `stillfaithful-polish`. Its
 editions' snapshots with the folder: the pack `StillFaithful-<v>.zip`, the server package `StillFaithful-server-<v>.zip`,
 the repository `studio-quire/still-faithful`, the page `studioquire.org/still-faithful/`.
 
-The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `explosive-arrows`, `feather-lure`, `wild-saplings`, `wary-creepers`, `wolf-packs`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the jars, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. Its mods' metadata links there.
+The Faithful Library's names are permanent: each mod's folder is its id and jar name (`world-rules`, `plain-f3`, `no-toasts`, `water-bottles`, `hearty-food`, `alchemy`, `blue-flowers`, `buried-towers`, `item-repair`, `explosive-arrows`, `feather-lure`, `wild-saplings`, `pumpkins`, `snipping`, `golems`, `wary-creepers`, `wolf-packs`, `stagehand`; `better-dungeons` was public until the user removed it, 2026-11-06, and its id stays retired), `faithful-core`, and `oldfaithful-settings`, which stays Old Faithful's. Its words and version are `library_*` in the root's `gradle.properties`: the jars, the repository `studio-quire/faithful-library`, the page `studioquire.org/faithful-library/`. Its mods' metadata links there.
 
-More Faithful's words, version and seal are `more_*` in the root's `gradle.properties`, its texts in `release/more-faithful/`: the pack `MoreFaithful-<v>.zip`, the server package `MoreFaithful-server-<v>.zip`, the repository `studio-quire/more-faithful`, the page `studioquire.org/more-faithful/`, the dev packs `MoreFaithful-dev*.zip`. It has no mods of its own, so no public id. Through 0.4.0 it was the library's pack `StillFaithful-Library-<v>.zip`, beside `OldFaithful-Library-<v>.zip`, on the library's releases. Its icon is its own seal, crimson with the rim and β in silver as the editions' are (`more_release_icon=morefaithful`, `prism/release/icons/final/morefaithful-*`, drawn by `tools/icon_candidates.py`; the user's pick, 2026-11-10). Inside the game it names itself while any of its mods is on (In the game, below).
+More Faithful's words, version and seal are `more_*` in the root's `gradle.properties`, its texts in `release/more-faithful/`: the pack `MoreFaithful-<v>.zip`, the server package `MoreFaithful-server-<v>.zip`, the repository `studio-quire/more-faithful`, the page `studioquire.org/more-faithful/`, the dev packs `MoreFaithful-dev*.zip`. Its one jar of its own, `oldfaithful-presets` (`oldfaithful_edition=more`, from 2026-11-13), is `morefaithful-presets` publicly, with More Faithful's seal, version and links. Through 0.4.0 it was the library's pack `StillFaithful-Library-<v>.zip`, beside `OldFaithful-Library-<v>.zip`, on the library's releases. Its icon is its own seal, crimson with the rim and β in silver as the editions' are (`more_release_icon=morefaithful`, `prism/release/icons/final/morefaithful-*`, drawn by `tools/icon_candidates.py`; the user's pick, 2026-11-10). Inside the game it names itself while any of its mods is on (In the game, below).
 
 ## Building one
 
@@ -83,14 +83,14 @@ The Faithful Library's:
 
 | File | What it is |
 |---|---|
-| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,feather-lure,item-repair,wild-saplings,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default; nor, from 0.6.0, is Wary Creepers, which the user took out of More Faithful for now |
+| `faithful-core-<v>.jar`, `oldfaithful-settings-<fixed v>.jar`, `{world-rules,buried-towers,water-bottles,hearty-food,alchemy,blue-flowers,explosive-arrows,feather-lure,item-repair,wild-saplings,pumpkins,snipping,golems,wary-creepers,wolf-packs,plain-f3,no-toasts,stagehand}-<v>.jar` | On their own, for people's own setups; Settings is the same jar as on Old Faithful's release. Stagehand is in no pack or server package (`library_jar_only=true` in its `gradle.properties`), as something taking outside commands shouldn't be on by default; nor, from 0.6.0, is Wary Creepers, which the user took out of More Faithful for now |
 | `SHA256SUMS.txt` | For the release notes |
 
 More Faithful's:
 
 | File | What it is |
 |---|---|
-| `MoreFaithful-<v>.zip` | The pack: Still Faithful's pack with Faithful Core and every mod of its list in `.minecraft/mods-library/` under version-less names, a `selection.txt` with all of them on, and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
+| `MoreFaithful-<v>.zip` | The pack: Still Faithful's pack with its own `morefaithful-presets-<v>.jar` in `.minecraft/mods/`, Faithful Core and every mod of its list in `.minecraft/mods-library/` under version-less names, a `selection.txt` with its default preset's on, its presets in `pack.properties` (The pack, below), and `-Dfabric.addMods=@mods-library/selection.txt` in its `net.minecraft` component's `+jvmArgs`; its own name, notes, README and notices |
 | `MoreFaithful-server-<v>.zip` | Still Faithful's server package with the core, settings and the server-side mods on in `mods/` under versioned names, as in the pack; Plain F3 and No Toasts are client-only, so not there |
 | `SHA256SUMS.txt` | For the release notes |
 
@@ -118,7 +118,7 @@ README and notices header) and builds both from the same templates; Old Faithful
 `release/old-faithful/`. A project marked `oldfaithful_edition=fixed` that the script's `fixedMods` doesn't list stops
 the build, so a new Old Faithful mod is placed in the pack and server package on purpose. Still Faithful's edition is
 added to `releaseEditions` by `gradle/still-faithful.gradle` (its texts in `release/still-faithful/`), with the same
-rule for its `stillMods`. The library's release and More Faithful are added by `gradle/library.gradle` (`release/library/`, `release/more-faithful/`): its `packMods` gives each content pack, up the ladder, its own mods, and every mod in `library/` must be in one unless it says `library_test=true` or `library_jar_only=true` (the second is a jar in the library's release and nothing more). A pack's words, version, release task, parts check, dev packs and pack test all come from that one entry, and the pack test reads which mods are client-only or have content from their `fabric.mod.json`, so a new mod needs only its place in the list.
+rule for its `stillMods`. The library's release and More Faithful are added by `gradle/library.gradle` (`release/library/`, `release/more-faithful/`): its `packMods` gives each content pack, up the ladder, its own mods (More Faithful alone since 2026-11-13, when High Faithful, the pack that was to be above it, became its presets), and every mod in `library/` must be in one unless it says `library_test=true`, `library_jar_only=true` (a jar in the library's release and nothing more) or `library_internal=true` (kept in the repository, in no pack, release or snapshot; `-Plibrary.with=<mods>` puts it in the dev packs, named apart, and the harness's pictures). One in a pack's list that says `library_unreleased=true` is in that pack's dev packs and no release until the line goes. A pack's words, version, release task, parts check, dev packs and pack test all come from that one entry, and the pack test reads which mods are client-only or have content from their `fabric.mod.json`, so a new mod needs only its place in the list.
 
 ## The pack
 
@@ -162,6 +162,32 @@ rule for its `stillMods`. The library's release and More Faithful are added by `
   player pressed, takes the pack's values for the rest. A pack above it with no file of its own takes this one. Changing a
   value is a line there and the READMEs' lists (`README.md`, `pack-README.txt`, `server-README.txt`), and reaches fresh
   installs only; `morePackTest` checks the pack, the server package, a new world in each and an install carried over.
+- **More Faithful's presets** (the user's decision, 2026-11-13: one pack with every mod, in presets, one for the whole
+  install; Simple named by the user, Grounded and High ours with their OK for now; a fresh install starts on High, the
+  user's call the same day). `release/more-faithful/presets.properties` holds them: the order a click steps through them, the
+  default, and for each its name, its hint and its mods (a list, `all`, or `all but ...`, so a mod new to the pack is in
+  every preset that says `all` unless named). `gradle/library.gradle` expands and checks them (only the pack's mods,
+  closed under what they depend on) and writes them into the pack's `pack.properties` under its name, `preset.<id>.*`
+  (room for a preset's own lines later, rules perhaps), with the default's list as the shipped `selection.txt`; the dev
+  packs' presets have Stagehand, and anything only they carry, in each. A preset's id never changes: it's what players'
+  records keep, so a name can. The hints say what each preset has, so they're read again whenever a mod joins the pack
+  or a preset's list changes (the user, 2026-11-13; the current ones are fine by them). In the game More Faithful's own jar, `morefaithful-presets` in the pack's `.minecraft/mods/` (also its dev
+  packs'; client-only, so not in the server package, and in no other release, as outside the pack there's no list for it;
+  in Faithful Settings until the user asked the same day for packs without presets not to carry it),
+  puts **Preset** alone at the top of every page of the Mods menu through Faithful Settings' slot for one button there,
+  four mods to a page under it, and gives each mod's page its Enabled switch; a click writes the next preset's list for the next launch, and a mod switched on or
+  off beyond it makes it **Custom**, whose click goes back to its preset as it comes. Locked rules hold it as they hold
+  a mod's switch (it passes over a preset that would switch off a held mod). The install's preset and its changes to it
+  are in `config/faithful-preset.properties`, rewritten by every change to the list (switches and Match This Server's
+  Mods too), so they come with `config/` into a new version; at each start the list is put back to what that file says,
+  for the next launch, and where it had to be the title screen says to restart, on the path a stale line in the list
+  uses. The first start with presets records the list as it came (a fresh install: the default; an old list copied
+  in: its differences as changes). A change to a mod whose jar isn't in the folder stays in the record, so a jar added
+  by hand after an update comes back on. So editing `selection.txt` by hand is undone at the next start: the Mods menu
+  is the way (a hand-added jar shows there). Without a pack file there are no presets and none of this happens.
+  The server package stays every server-side mod in `mods/`, an owner taking out what they don't want, its README
+  listing each preset's jars. `morePackTest` checks the presets as shipped, the next two after the default chosen in turn and
+  loaded, a change beyond one, and an update carrying a record in.
 - **Tested unseen**: `./gw :harness:clientStartupTestPack` and `clientStartupTestPackFixed` unpack each release pack
   and run the start-up test on what's inside it (its libraries, natives and mods, with the self-test mod beside
   them); Old Faithful's runs its fix checks in the world and its first-start checks too. Prism itself and the
@@ -257,7 +283,7 @@ server package contain the same third-party software as Pure Faithful's, so the 
 | `OpenAL.dll`, OpenAL Soft 1.25.2 (+ pffft, {fmt}, BSD parts) | LGPL-2.0-or-later (its COPYING is the Library GPL 2) | §6: prominent notice and licence; the Library's complete source (with the scripts used to build it) accompanying it, or from the same place; replaceable by the user | Notice; COPYING; the source archive and `natives/build.py` (as `build-natives.py`) in the pack's `sources/`, and on the release page beside the separate natives jar; the DLL is a separate file the game loads at run time, unmodified |
 | MSVC's static runtime in our DLLs | Microsoft's | Nothing for statically linked runtime code | |
 
-Mojang's game, assets and server are never shipped, apart from small transformative uses like the Golden Rose's recoloured sprite (user, 2026-11-06). Every player-facing text carries "Not an official Minecraft
+Mojang's game, assets and server are never shipped, apart from small transformative uses like the Golden Rose's recoloured sprite (user, 2026-11-06) and Golems' clank, the latch cut from the end of the door sound launchers give beta, a later recording under beta's name (`library/golems/tools/cut_clank.py`; user, 2026-11-10). Every player-facing text carries "Not an official Minecraft
 product. Not approved by or associated with Mojang or Microsoft."
 
 Doubts, judged rather than asked of a lawyer: whether tiny-remapper's sources plus the loader's (with the loader's
@@ -288,5 +314,5 @@ We don't publish there. GitHub releases and studioquire.org are where players ge
   set): the first launch downloaded the game and sounds, `+jvmArgs` reached the java line, and the mods on the list loaded.
 - The standalone component in a real Babric instance: replacing `patches/org.lwjgl.json` and the display mod
   working there. (Its download URLs resolve on the 0.1.2 release, each library's SHA-1 and size as the file says,
-  checked 2026-11-02.)
+  checked 2026-11-02, and on 0.1.6's, 2026-11-11.)
 - The server packages from the release zips on a machine other than this one.

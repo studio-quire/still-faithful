@@ -21,6 +21,8 @@ Still Faithful's own, each on its own switch:
 - Wooden tools, bows, fishing rods, bowls, signs, wooden doors, ladders, boats and wooden slabs burn in a furnace, as
   in later versions; beta burned planks, logs, sticks, saplings and most wooden blocks, but none of these.
 - Glowstone drops by hand or with any tool, as from 1.0.
+- Obsidian mines as in 1.0: 9.4 seconds with a diamond pickaxe instead of 15, and 250 without one instead of 50
+  (Diamond Only, in the settings, keeps beta's 50).
 - Lava cut off from its source thins out instead of lingering for good, and water between two sources becomes a
   source over still water too.
 - Boats: only a real crash or a hit breaks them, and floating items no longer stop them. A boat you stop paddling

@@ -37,7 +37,8 @@ another mod has put something there). Beta's own look throughout: its buttons, f
   pointed at (what beta did, in a sentence), or the section's note.
 - **Mods**: a wide button per mod with a page, by name, five to a page with the same arrows, whether the mod is on said
   beside it ("OFF*" when a change on its page waits for a restart). Its page has **Enabled: ON** alone in the top row where
-  the mod sits in `mods-library/` (More Faithful's switch: its README), then the mod's own
+  the mod sits in `mods-library/` (More Faithful's switch, and the **Preset** button alone above the mods, both from its own jar `morefaithful-presets`
+  through Settings' slots: `docs/release.md` > More Faithful's presets), then the mod's own
   settings and world rules below, eight to a page. With no line of its own the page shows the mod's description. A mod
   that's off isn't running, so its page has only Enabled until it is; a mod in `mods/` with settings has its page without Enabled.
   A page can have one button of its own beside Enabled (`PageButton`): the core's **Lock Rules**, on every page with world rules while
@@ -55,7 +56,9 @@ another mod has put something there). Beta's own look throughout: its buttons, f
 - **Saving**: a click writes the file at once, changing that one value in place and keeping every other byte (the
   explanations, other keys, order, line ends: `ConfigFile`), whole or not at all (a temporary file moved over it).
   Values are read as the owning mod reads them (`Boolean.parseBoolean`, "raw" or not), and the files are read again
-  each time a screen opens, so hand edits show.
+  each time a screen opens, so hand edits show. A provider keeping values elsewhere is told then too
+  (`SettingsRegistry.onReload`): the library's list and preset record are read once a page and after its own writes,
+  not on every frame the screen asks for them (that cost ~2.5 ms a frame with the Preset button pointed at, 2026-11-13).
 - **When it takes effect**: a fix is in the game only if its switch was on at start (its mixins are skipped
   otherwise), so every fix waits for a restart: its button gets an asterisk ("Repeaters: Beta*") while the file
   differs from what's running, with "* Takes effect after a restart" under the buttons (the top page says "Some

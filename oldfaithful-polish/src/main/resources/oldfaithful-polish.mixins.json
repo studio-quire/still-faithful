@@ -25,6 +25,8 @@
     "leaves.LeavesBlockItemMixin",
     "leaves.LeavesBlockMixin",
     "minecarts.MinecartEntityMixin",
+    "obsidian.BlockMixin",
+    "obsidian.ToolItemMixin",
     "skeletons.ArrowEntityMixin",
     "skeletons.SkeletonEntityMixin",
     "squids.SquidEntityMixin",
@@ -56,6 +58,7 @@
     "glowstone.ClientNetworkHandlerMixin",
     "heldattack.MinecraftMixin",
     "itemsize.ItemRendererMixin",
+    "obsidian.ClientNetworkHandlerMixin",
     "particledistance.WorldRendererMixin",
     "shiftclick.FurnaceBlockEntityInvoker",
     "shiftclick.FurnaceScreenHandlerAccessor",
@@ -73,7 +76,8 @@
     "boatsteering.ServerPlayerEntityMixin",
     "boatsteering.ServerPlayNetworkHandlerMixin",
     "fences.ServerLoginNetworkHandlerMixin",
-    "glowstone.ServerLoginNetworkHandlerMixin"
+    "glowstone.ServerLoginNetworkHandlerMixin",
+    "obsidian.ServerLoginNetworkHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

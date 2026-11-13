@@ -40,6 +40,8 @@ import org.gradle.api.tasks.TaskAction;
  * then goes on when told). Which mods are which comes from the build, so the pack's own list is the one tested. With any of its mods on, the title screen and Options
  * name the pack, and with none, the edition below. Where the pack starts its new worlds with rules of its own, the pack and the server package carry them, the
  * new world made in each has them, and an older version's rules file carried over keeps its lines and gains the pack's only for a rule it lacked.
+ * Where it has presets, the pack ships its default's mods on, and three launches choose another, turn a mod on beyond it, load that, go back and on, and
+ * load that; the first one's record, carried into a fresh copy with the older rules file, puts that copy's list back to it for the next launch.
  * Prism itself isn't run here.
  */
 public abstract class LibraryPackTestTask extends ClientStartupTask {
@@ -95,7 +97,18 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	@PathSensitive(PathSensitivity.NONE)
 	public abstract RegularFileProperty getStartingRules();
 
+	/** The pack's presets as the build has them, in order, each {@code id=mod,mod,...}; empty for a pack without. */
+	@Input
+	public abstract ListProperty<String> getPresets();
+
+	/** The preset a fresh install starts on; unset without presets. */
+	@Input
+	@Optional
+	public abstract Property<String> getFirstPreset();
+
 	private static final String LIST = "mods-library/selection.txt";
+	/** The install's preset and its changes to it, written by More Faithful's own jar (morefaithful-presets). */
+	private static final String RECORD = "config/faithful-preset.properties";
 	/** The install's own: what its new worlds start with, a line for each rule it has met, written by the core. */
 	private static final String OWN_RULES = "config/faithful-rules.properties";
 	private static final String WORLD_FILE = "saves/oldfaithful-startup/faithful-world.properties";
@@ -131,8 +144,21 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			expect("and ships no " + OWN_RULES + ", which is the player's", !Files.exists(instance.resolve(".minecraft").resolve(OWN_RULES)));
 		}
 
+		if (!getPresets().get().isEmpty()) {
+			List<String> unlike = new ArrayList<>();
+			StringBuilder order = new StringBuilder();
+			for (String preset : getPresets().get()) {
+				String[] p = preset.split("=", 2);
+				order.append(order.length() == 0 ? "" : ",").append(p[0]);
+				if (!p[1].equals(named.getProperty("preset." + p[0] + ".mods"))) unlike.add(p[0] + " (" + named.getProperty("preset." + p[0] + ".mods") + ")");
+			}
+			expect("the pack's presets are the build's, " + order + ", " + getFirstPreset().get() + " first" + (unlike.isEmpty() ? "" : "; not " + unlike),
+					unlike.isEmpty() && order.toString().equals(named.getProperty("presets")) && getFirstPreset().get().equals(named.getProperty("preset.default")));
+			expect("and ships no " + RECORD + ", which is the player's", !Files.exists(instance.resolve(".minecraft").resolve(RECORD)));
+		}
+
 		Path shipped = game(run, "as-shipped", instance);
-		expect("the pack ships every mod on", Files.readString(shipped.resolve(LIST)).equals(allOn()));
+		expect("the pack ships its default preset's mods on (" + getFirstPreset().getOrElse("no presets: every mod") + ")", Files.readString(shipped.resolve(LIST)).equals(asShipped()));
 		lines.add("--- as shipped, everything on, a new world: the edition's whole start-up test");
 		List<String> played = launch(shipped, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
@@ -145,9 +171,15 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		if (!starting.isEmpty()) {
 			List<String> unmet = missing(starting, properties(shipped.resolve(OWN_RULES)));
 			expect("and the install has met them: each has its line in " + OWN_RULES + (unmet.isEmpty() ? "" : "; not " + unmet), unmet.isEmpty());
-			carriedOver(run, instance, starting);
 		}
-		expect("a client with the core says so in its login", loginSeed(run, "login-all", instance, allOn()) == RawClient.CORE_MAGIC);
+		if (!getPresets().get().isEmpty()) {
+			java.util.Properties first = properties(shipped.resolve(RECORD));
+			expect("its first start recorded the default preset with nothing beyond it: " + first, first.getProperty("preset", "").equals(getFirstPreset().get())
+					&& first.getProperty("on", "x").isEmpty() && first.getProperty("off", "x").isEmpty());
+		}
+		Path record = presets(run, instance);
+		if (!starting.isEmpty() || record != null) carriedOver(run, instance, starting, record);
+		expect("a client with the core says so in its login", loginSeed(run, "login-all", instance, asShipped()) == RawClient.CORE_MAGIC);
 
 		Path plain = game(run, "nothing-ticked", instance);
 		Files.writeString(plain.resolve(LIST), "");
@@ -155,7 +187,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		played = launch(plain, false, args("-Doldfaithful.selftest.libraryPack=off", "-Doldfaithful.selftest.expectSize=1000x600", "-Dorg.prismlauncher.window.dimensions=1000x600", "-Doldfaithful.selftest.expectMaximized=false"), failures);
 		lines.addAll(played);
 		expect("nothing ticked: the loader lists no library mod", loadedNothing(played));
-		expect("the ticks were written for the next launch: every mod and the core", java.util.Set.copyOf(Files.readAllLines(plain.resolve(LIST))).equals(java.util.Set.copyOf(allOn().lines().toList())));
+		expect("the ticks were written for the next launch: every mod and the core", java.util.Set.copyOf(Files.readAllLines(plain.resolve(LIST))).equals(java.util.Set.copyOf(everyMod().lines().toList())));
 		expect("a plain client's login is a vanilla client's", loginSeed(run, "login-plain", instance, "") == 0L);
 
 		Path absent = game(run, "no-list", instance);
@@ -205,7 +237,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 				expect("and is sent no 250 packet", vanilla.await(r -> r.id() == 250, 1) == null);
 			}
 			expect("the plain pack plays there", tryServer(run, "plain-on-plain", instance, "", port).startsWith("admitted"));
-			expect("the pack as shipped plays there", tryServer(run, "shipped-on-plain", instance, allOn(), port).startsWith("admitted"));
+			expect("the pack as shipped plays there", tryServer(run, "shipped-on-plain", instance, asShipped(), port).startsWith("admitted"));
 		} finally {
 			stop("every library jar out");
 		}
@@ -219,7 +251,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 				expect("the mods without content on (" + String.join(", ", withoutContent) + "): a vanilla client logs in", vanilla.login(60) == null);
 			}
 			expect("the plain pack plays there", tryServer(run, "plain-on-others", instance, "", port).startsWith("admitted"));
-			expect("a pack with everything on plays there", tryServer(run, "all-on-others", instance, allOn(), port).startsWith("admitted"));
+			expect("a pack with everything on plays there", tryServer(run, "all-on-others", instance, everyMod(), port).startsWith("admitted"));
 		} finally {
 			stop("all but the mods with content");
 		}
@@ -244,7 +276,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			String list = Files.readString(partial.resolve(LIST));
 			expect("Match This Server's Mods says to restart (" + set + ") and turns it on, keeping Plain F3: " + list.replace('\n', ' '),
 					set.contains("restart") && list.contains("water-bottles") && list.contains("plain-f3") && list.contains("faithful-core"));
-			expect("the pack as shipped plays there", tryServer(run, "all-on-all", instance, allOn(), port).startsWith("admitted"));
+			expect("the pack as shipped plays there", tryServer(run, "all-on-all", instance, asShipped(), port).startsWith("admitted"));
 		} finally {
 			stop("as it comes");
 		}
@@ -321,7 +353,7 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 	 * they are and the pack's choice for the new rule alone, and the file should gain that one line and change no other. The old lines are the on and
 	 * off rules turned round (a rule of named values has no opposite to make up here, so those go without a line too, new with the first).
 	 */
-	private void carriedOver(Path run, Path instance, java.util.Properties starting) throws Exception {
+	private void carriedOver(Path run, Path instance, java.util.Properties starting, Path record) throws Exception {
 		java.util.Properties kept = new java.util.Properties(), fresh = new java.util.Properties();
 		StringBuilder old = new StringBuilder("# An older version's, carried over\nformat=1\n");
 		for (String key : new java.util.TreeSet<>(starting.stringPropertyNames())) {
@@ -337,8 +369,17 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Path game = game(run, "carried-over", instance);
 		Files.createDirectories(game.resolve("config"));
 		Files.writeString(game.resolve(OWN_RULES), old.toString(), StandardCharsets.ISO_8859_1);
-		lines.add("--- an older version's rules file carried over: " + kept + ", with no line for " + fresh.stringPropertyNames());
-		lines.addAll(launch(game, false, args("-Doldfaithful.selftest.libraryPack=on", "-Doldfaithful.selftest.settingsOnly=true", "-Doldfaithful.selftest.stallMs=280000"), failures));
+		if (record != null) Files.copy(record, game.resolve(RECORD));
+		lines.add("--- an older version's config carried over: its rules file, " + kept + ", with no line for " + fresh.stringPropertyNames()
+				+ (record != null ? ", and its preset: " + properties(record) : ""));
+		List<String> played = launch(game, false, args("-Doldfaithful.selftest.settingsOnly=true", "-Doldfaithful.selftest.stallMs=280000",
+				record != null ? "-Doldfaithful.selftest.presets=updated" : "-Doldfaithful.selftest.libraryPack=on"), failures);
+		lines.addAll(played);
+		if (record != null) {
+			expect("carried over: the record is as it was, and the list put back to it said so in the log", properties(game.resolve(RECORD)).equals(properties(record))
+					&& played.stream().anyMatch(l -> l.contains("The library's list wasn't what config/faithful-preset.properties says")));
+		}
+		if (starting.isEmpty()) return;
 		java.util.Properties world = properties(game.resolve(WORLD_FILE)), own = properties(game.resolve(OWN_RULES));
 		List<String> changed = missing(kept, own), unmet = missing(fresh, own), notStarted = missing(fresh, world), followedPack = new ArrayList<>();
 		// A kept line that's the rule's own default leaves no line in the world, so what's checked is that the world hasn't the pack's value.
@@ -388,6 +429,12 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		return all;
 	}
 
+	private List<String> args(List<String> some, String... more) {
+		List<String> all = args(more);
+		all.addAll(some);
+		return all;
+	}
+
 	private static List<String> jvmArgs(Path instance) throws IOException {
 		Matcher m = JVM_ARGS.matcher(Files.readString(instance.resolve("patches/net.minecraft.json"), StandardCharsets.UTF_8));
 		if (!m.find()) throw new IOException("no +jvmArgs in the pack's net.minecraft component");
@@ -410,11 +457,52 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		return output.stream().noneMatch(l -> ids.stream().anyMatch(id -> l.contains("- " + id + " ")));
 	}
 
-	/** The list as the pack ships it: every mod on, the core too. */
-	private String allOn() {
+	/** A list with these mods on, and the core, as the build writes one. */
+	private static String listOf(List<String> mods) {
+		List<String> ids = new ArrayList<>(mods);
+		ids.add("faithful-core");
+		ids.sort(null);
 		StringBuilder list = new StringBuilder();
-		for (String id : withCore()) list.append("mods-library/").append(id).append(".jar\n");
+		for (String id : ids) list.append("mods-library/").append(id).append(".jar\n");
 		return list.toString();
+	}
+
+	/** Every mod of the pack on, the core too. */
+	private String everyMod() {
+		return listOf(getPackMods().get());
+	}
+
+	/** The list as the pack ships it: its default preset's mods, or with no presets every mod. */
+	private String asShipped() {
+		for (String preset : getPresets().get()) {
+			String[] p = preset.split("=", 2);
+			if (p[0].equals(getFirstPreset().getOrNull())) return listOf(p[1].isEmpty() ? List.of() : List.of(p[1].split(",")));
+		}
+		return everyMod();
+	}
+
+	/**
+	 * Three launches of one copy of the pack, each checked in the game (the settings check's presets): as shipped, the next preset chosen and a mod turned on
+	 * beyond it; relaunched, that loaded, then back to the preset as it comes and on to the next; relaunched, that loaded. The record the first left, for an
+	 * update to carry in; null for a pack without presets.
+	 */
+	private Path presets(Path run, Path instance) throws Exception {
+		if (getPresets().get().isEmpty()) return null;
+		Path game = game(run, "presets", instance);
+		List<String> settingsOnly = List.of("-Doldfaithful.selftest.settingsOnly=true", "-Doldfaithful.selftest.stallMs=280000");
+		lines.add("--- presets: as shipped, the next one chosen, and a mod turned on beyond it");
+		lines.addAll(launch(game, false, args(settingsOnly, "-Doldfaithful.selftest.presets=choose"), failures));
+		Path record = run.resolve("preset-record.properties");
+		if (Files.isRegularFile(game.resolve(RECORD))) Files.copy(game.resolve(RECORD), record);
+		// Each launch in a new world: one that has seen a mod with content the next launch hasn't on would stop at the core's warning.
+		deleteTree(game.resolve("saves"));
+		lines.add("--- presets: relaunched, back to the preset as it comes, and on to the next");
+		lines.addAll(launch(game, false, args(settingsOnly, "-Doldfaithful.selftest.presets=custom"), failures));
+		deleteTree(game.resolve("saves"));
+		lines.add("--- presets: relaunched on that one");
+		lines.addAll(launch(game, false, args(settingsOnly, "-Doldfaithful.selftest.presets=loaded"), failures));
+		expect("presets: the first launch left a record for an update to carry over", Files.isRegularFile(record));
+		return Files.isRegularFile(record) ? record : null;
 	}
 
 	/** Joins from a game folder of its own with this list; what the client ended up looking at. */
@@ -507,6 +595,13 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 			return jars.map(p -> p.getFileName().toString()).filter(n -> n.matches(Pattern.quote(id) + "-\\d.*\\.jar")).findFirst().orElse(null);
 		} catch (IOException e) {
 			return null;
+		}
+	}
+
+	private static void deleteTree(Path dir) throws IOException {
+		if (!Files.exists(dir)) return;
+		try (Stream<Path> walk = Files.walk(dir)) {
+			for (Path p : walk.sorted(java.util.Comparator.reverseOrder()).toList()) Files.delete(p);
 		}
 	}
 

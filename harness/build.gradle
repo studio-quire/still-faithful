@@ -364,7 +364,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
         // (StillCheck fails a run whose switches came up mixed).
         if (providers.gradleProperty('still.beta').isPresent()) {
             configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
-                    'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
+                    'blocks.obsidian', 'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
                     'boats.handling', 'boats.steering', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface', 'combat.heldAttack'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         // -Pstill.switches="boats.handling=false": switches written into stillfaithful-polish.properties instead, the
@@ -635,6 +635,9 @@ if (findProject(':library:world-rules') != null) {
     evaluationDependsOn(':oldfaithful-core')
     def libraryJars = [project(':oldfaithful-settings').tasks.named('remapJar'), project(':oldfaithful-core').tasks.named('remapJar'),
                        project(':library:world-rules').tasks.named('remapJar')]
+    // The clients' Enabled switches, which the lock holds, come from More Faithful's own jar, as in the pack.
+    evaluationDependsOn(':oldfaithful-presets')
+    def presetsJar = project(':oldfaithful-presets').tasks.named('remapJar')
     def rulesSelftest = project(':library:world-rules').tasks.named('selftestRemapJar')
     tasks.register('libraryRulesTest', oldfaithful.gradle.LibraryRulesTestTask) {
         group = 'verification'
@@ -643,7 +646,7 @@ if (findProject(':library:world-rules') != null) {
         gameJar = mc.clientJar
         intermediaryMappings = mc.intermediaryMappings
         loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
-        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, libraryJars, rulesSelftest.flatMap { it.output })
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, libraryJars, presetsJar, rulesSelftest.flatMap { it.output })
         serverMods.from(libraryJars, rulesSelftest.flatMap { it.output })
         serverPackage = rootProject.serverPackageDir
         serverJar = mc.serverJar
@@ -694,7 +697,7 @@ if (findProject(':oldfaithful-core') != null) {
         it.path.startsWith(':library:') && it.file('build.gradle').isFile() && (libraryNames != null ? libraryNames.contains(it.name) : !it.file('gradle.properties').text.contains('library_test=true')) }
     libraryProjects.each { evaluationDependsOn(it.path) }
     def editionProjects = [':oldfaithful-hardening', ':oldfaithful-saves', ':oldfaithful-display', ':oldfaithful-speed', ':oldfaithful-settings', ':oldfaithful-fixes',
-                           ':oldfaithful-lighting', ':oldfaithful-options', ':oldfaithful-polish'].findAll { findProject(it) != null }.collect { project(it) }
+                           ':oldfaithful-lighting', ':oldfaithful-options', ':oldfaithful-polish', ':oldfaithful-presets'].findAll { findProject(it) != null }.collect { project(it) }
     def staticSettings = { task ->
         task.group = 'verification'
         task.gameJar = mc.namedJar
@@ -768,9 +771,11 @@ if (findProject(':library:content-check') != null && !stillMods.isEmpty() && !fi
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// Still Faithful with a library folder: the settings screen's whole shape, Fixes, Changes and Mods with mods' pages, and pictures of every level.
+// Still Faithful with a library folder and More Faithful's own jar, which gives the mods their switches: the settings screen's whole shape,
+// Fixes, Changes and Mods with mods' pages, and pictures of every level.
 if (!stillMods.isEmpty() && !fixedMods.isEmpty() && findProject(':library:world-rules') != null) {
     evaluationDependsOn(':oldfaithful-core')
+    evaluationDependsOn(':oldfaithful-presets')
     def shipped = ['world-rules', 'plain-f3', 'no-toasts'].collect { evaluationDependsOn(":library:${it}"); project(":library:${it}").tasks.named('remapJar') }
     tasks.register('clientStartupTestLibrary', oldfaithful.gradle.ClientStartupTask) {
         group = 'verification'
@@ -779,7 +784,7 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty() && findProject(':library:world-
         gameJar = mc.clientJar
         intermediaryMappings = mc.intermediaryMappings
         loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
-        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods)
+        mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods, project(':oldfaithful-presets').tasks.named('remapJar'))
         libraryMods.from(project(':oldfaithful-core').tasks.named('remapJar'), shipped)
         natives = lwjgl3NativesDir
         soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
@@ -841,6 +846,10 @@ if (findProject(':library:harness-probe') != null) {
         // The monkey's budget at 20 ticks a second, and time to start and stop.
         def monkeyTicks = providers.gradleProperty('library.monkeyTicks').map { it as int }.getOrElse(6000)
         task.extraJvmArgs.add("-Dfaithful.harness.monkeyTicks=${monkeyTicks}".toString())
+        // A client of 2 GB (the last -Xmx wins): beta's single player unloads no chunk while a world is open, and one client walks every mod's plot, 96
+        // blocks apart, with Stagehand's trips 3,000 blocks out and api-check's marker in every chunk (64 KB more in each); with every mod (20 at 0.8.0) it held 4,600
+        // chunks and ran out of 1 GB at Stagehand, which beta catches silently, closing the world (Claude Opus 5.5, 2026-11-12).
+        task.extraJvmArgs.add('-Xmx2g')
         task.timeoutSeconds = Math.max(420, (int) (monkeyTicks / 20) + 120)
         if (gameJava.isPresent()) task.javaExecutable = gameJava
         task.stages = providers.gradleProperty('library.stages').map { it.split(',') as List }.orElse([])
@@ -981,7 +990,7 @@ if (findProject(':library:tower-check') != null) {
             intermediaryMappings = mc.intermediaryMappings
             loaderClasspath.from(configurations.loaderRuntime, bakedLwjgl.flatMap { it.output })
             mods.from(testedMods, project(':oldfaithful-display').tasks.named('remapJar'), speedMod, fixedMods, stillMods,
-                    project(':oldfaithful-core').tasks.named('remapJar'), morePack.mods.collect { project(":library:${it}").tasks.named('remapJar') })
+                    project(':oldfaithful-core').tasks.named('remapJar'), (morePack.devMods ?: morePack.mods).collect { project(":library:${it}").tasks.named('remapJar') })
             natives = lwjgl3NativesDir
             soundsGameDir = rootProject.layout.projectDirectory.dir('local/cache/selftest-sounds')
             privateDesktop = rootProject.layout.projectDirectory.file('tools/private_desktop.py')
@@ -1083,7 +1092,7 @@ if (findProject(':library:tower-check') != null) {
         if (gameJava.isPresent()) javaExecutable = gameJava
     }
 }
-// The content packs and their server packages as they ship (LibraryPackTestTask): as shipped with everything on, nothing ticked, no list, and
+// The content packs and their server packages as they ship (LibraryPackTestTask): as shipped, its presets, nothing ticked, no list, and
 // each stage of a server's mods, as it comes among them. One per pack (gradle/library.gradle's contentPacks): `morePackTest`. The pack's mods
 // and what each is (client-only, content) come from their fabric.mod.json, so the test is of the pack's own list.
 (rootProject.findProperty('contentPacks') ?: [:]).each { String key, Map p ->
@@ -1126,6 +1135,9 @@ if (findProject(':library:tower-check') != null) {
         serverPackage = layout.dir(unpackedServer.map { it.destinationDir })
         // What the pack starts its new worlds with, from the build's own file: checked in the pack, the server package, a new world in each and an install carried over.
         if (p.startingRules) startingRules = rootProject.file(p.startingRules)
+        // Its presets as the build has them (release/<pack>/presets.properties): checked in the pack's file, its list as shipped, and chosen in the game.
+        presets = p.presets ? p.presets.order.collect { "${it}=${p.presets.presets[it].mods.join(',')}".toString() } : []
+        if (p.presets) firstPreset = p.presets.first
         serverJar = mc.serverJar
         gameJar = mc.clientJar
         intermediaryMappings = layout.file(unpacked.map { fileTree(it.destinationDir) { include 'libraries/intermediary-*.jar' }.singleFile })

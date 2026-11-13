@@ -37,6 +37,15 @@ we can't bundle, we write ourselves; spending long on the lower layers is fine.
 Release order (user, 2026-11-02): Purist first, on Windows, once 4 and 6's hardening are done (5 isn't part of it);
 then Fixed, once 5's catalogue is in good shape; macOS and Linux after, with volunteers.
 
+## Open after Pure Faithful 0.1.6 (beta's own sounds, 2026-11-11)
+Small things the release's readings found in the hardening, left out so the jars shipped as tested; for the next Pure
+release:
+- A `config/purefaithful-hardening.properties` kept from before 0.1.6 still says nothing is downloaded but Mojang's
+  (the changelog says so); `Config.java`'s comment says the same, and the mod description has a dangling "checked".
+- A UTF-8 BOM at the top of that file would make `resources.download=false` silently not apply.
+- A player's own replacements for those four sounds in `resources/` are always replaced by beta's; no switch keeps them.
+- Every install asks Modification Station's host for three small files (user agent `purefaithful-hardening`).
+
 ## Follow-ups from the first client check (2026-11-01)
 The user's check passed: Java 21, our OpenAL (sound and music), skin, online-mode join to the test server. What the
 log showed, and what became of it (done the same day, checked headlessly by `clientAudit`):

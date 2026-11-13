@@ -50,5 +50,7 @@ if (file('oldfaithful-polish').isDirectory()) include 'oldfaithful-polish'
 if (file('hunt').isDirectory()) include 'hunt'
 // The Faithful Library (docs/library-authoring.md): the core, and each mod in library/. Not in the editions' snapshots.
 if (file('oldfaithful-core').isDirectory()) include 'oldfaithful-core'
+// More Faithful's own jar, the choice of its library mods (presets and switches): where the library is.
+if (file('oldfaithful-presets').isDirectory()) include 'oldfaithful-presets'
 if (file('library').isDirectory()) file('library').eachDir { if (it.name != 'build' && new File(it, 'build.gradle').isFile()) include ":library:${it.name}" }
 include 'harness'

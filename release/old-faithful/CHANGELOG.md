@@ -5,6 +5,20 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.7 (2026-11-13)
+
+Released with Still Faithful 0.8.0, which carries it; on Pure Faithful 0.1.6, as 0.2.6 was.
+
+- Pickaxes mine redstone ore fast, as they mine stone and the other ores (Tool Speeds, under Blocks and Items). Beta's
+  pickaxes, though you need one to get redstone from the ore, were slow on it: 4.5 seconds with an iron pickaxe,
+  where iron ore takes 0.75. Obsidian keeps beta's speed. On a server, redstone ore needs 0.2.7 or later on both
+  sides, and players on 0.2.6 or earlier mine the blocks Tool Speeds speeds up at beta's speed on a server with this
+  version.
+- `oldfaithful-settings` no longer holds the Faithful Library's on/off switches (they're More Faithful's own now), which
+  matters only if you've added the library's mods: take Faithful Core from the library's 0.9.0 with this version, as an
+  older one stops the game when a server refuses you over mods; in an instance from the library's old pack for Old
+  Faithful, keep its own `oldfaithful-settings` (the library's README says why).
+
 ## 0.2.6 (2026-11-11)
 
 Released with Still Faithful 0.7.1, which carries it; on Pure Faithful 0.1.6. Old Faithful's own mods are unchanged.

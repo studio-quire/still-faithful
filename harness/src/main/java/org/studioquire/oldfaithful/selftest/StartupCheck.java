@@ -448,6 +448,11 @@ public final class StartupCheck {
 					}
 					int y = MultiplayerScenes.FLOOR + 1, fence = net.minecraft.block.Block.FENCE.id;
 					if (mc.world.getBlockId(fenceX, y, fenceZ) != fence || mc.world.getBlockId(fenceX + FenceScene.CORNER, y, fenceZ + 1) != fence) return;
+					// Still Faithful's obsidian change, marked in a sign packet after the login packet (its marker field
+					// is full): read only where both sides have the polish mod.
+					boolean obsidianMark = stillObsidianMarkRead(), obsidianWanted = stillClient() && stillServer();
+					results.check("obsidian (" + stillLabel() + "): the server's sign mark " + (obsidianMark ? "read" : "not read")
+							+ " (" + (obsidianWanted ? "read" : "not read") + ")", obsidianMark == obsidianWanted);
 					fenceWalk = new FenceWalk(results, stillLabel(), stillClient() && stillServer(),
 							(game, x, feet, z, yaw) -> game.player.sendChatMessage("!oftest tp " + x + " " + feet + " " + z + " " + yaw),
 							fenceX, MultiplayerScenes.FLOOR, fenceZ);
@@ -510,6 +515,15 @@ public final class StartupCheck {
 
 	private static boolean stillClient() {
 		return Boolean.getBoolean("oldfaithful.selftest.mp.thinClient");
+	}
+
+	/** Whether the polish mod's Obsidian.serverMode is 1.0's (2), as the server's default; false without the mod. */
+	private static boolean stillObsidianMarkRead() {
+		try {
+			return Class.forName("org.studioquire.oldfaithful.polish.Obsidian").getField("serverMode").getInt(null) == 2;
+		} catch (ReflectiveOperationException | LinkageError e) {
+			return false;
+		}
 	}
 
 	private static boolean stillServer() {

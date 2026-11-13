@@ -29,7 +29,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 27 | `vehicles.dismountOnTop` | both | Getting off a vehicle, the height asked for is nudged up by the least amount that puts the rider's box on top |
 | 8 | `tools.lastUse` | server; single player | The used-up tool stays in the hand until the block has dropped, then goes |
 | 9 | `slabs.wooden` | both | Where mining speed and harvest are decided with the position known: a wooden slab harvests as planks and mines at least as fast |
-| 10 | `tools.speedByMaterial` | both | Pickaxes, axes and shovels mine fast every block of their material (`ToolSpeeds`, the table in `docs/bugs.md`); obsidian and redstone ore keep beta's speed (the user's call) |
+| 10 | `tools.speedByMaterial` | both | Pickaxes, axes and shovels mine fast every block of their material (`ToolSpeeds`, the table in `docs/bugs.md`); obsidian keeps beta's speed (the user's call); redstone ore did too until 2026-11-12 |
 | 11 | `furnace.lavaBucket` | world | Fuel that names a crafting remainder (only the lava bucket) leaves it in the slot |
 | 19 | `liquids.dropsBelow` | world | The downward flow drops (water) or fizzes (lava) what it replaces, as the sideways flow does |
 | 25 | `slimes.splitOnOverkill` | world | Health below zero counts as killed for splitting |
@@ -87,8 +87,10 @@ integrated server). In multiplayer a server without the mod keeps beta's behavio
 vanilla server refuses a break reported much sooner than its own timing, finishes it later itself, and meanwhile drops
 any second early report (the block vanishes, then comes back 4 s later). So a server with the fix says so in its login packet (`ServerMarker`: the
 name field, which beta's server sends empty and its client ignores), and a client mines faster only on such a server;
-elsewhere, and on a server whose switch is off, it keeps beta's speed. A vanilla client on a fixed server mines at
-beta's speed, which the server accepts. #38 runs for every entity on both sides (it only changes when steps play).
+elsewhere, and on a server whose switch is off, it keeps beta's speed. #10's letter changed from `m` to `M` when
+redstone ore joined it (2026-11-12): a client reads either, and mines redstone ore fast only for `M`; a server sends
+only `M`, as the field (16 characters) is full on a Still Faithful server, so a client from Old Faithful 0.2.6 or
+before mines at beta's speeds there. A vanilla client on a fixed server mines at beta's speed, which the server accepts. #38 runs for every entity on both sides (it only changes when steps play).
 #27 runs where each side places the rider; the client's own placement is what the player feels, so a fixed client on a
 vanilla server stays on the boat, and the server accepts the slightly higher position. #45 is decided by the server in
 multiplayer; a client with the fix only predicts it, and the server's answer corrects the inventory either way.

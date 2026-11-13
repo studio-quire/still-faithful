@@ -81,6 +81,7 @@ public final class StillCheck implements WorldCheck {
 		chestPairs(mc);
 		chestLids(mc);
 		glowstone(mc);
+		obsidian(mc);
 		lava();
 		water();
 		animals(mc);
@@ -454,6 +455,35 @@ public final class StillCheck implements WorldCheck {
 		results.check("still: glowstone mined by hand in " + calls + " ticks, dropped " + dropped(x, y, z) + " ("
 				+ (on ? "dust, in about 10 ticks as in 1.0" : "beta: nothing, in about 31") + ")",
 				on ? dust && calls <= 17 : items(x, y, z).isEmpty() && calls >= 28);
+	}
+
+	/**
+	 * Obsidian mined with a diamond pickaxe, tick by tick: 1.0's 188 ticks (9.4 s) or beta's 300 (15 s); by hand, the
+	 * break's progress a tick: 1.0's 1/5000, or beta's 1/1000 (Beta and Diamond Only).
+	 */
+	private void obsidian(Minecraft mc) {
+		boolean on = PolishConfig.applied(PolishConfig.OBSIDIAN_KEY), full = on && PolishConfig.obsidianAtStart().equals("true");
+		PlayerInventory inventory = mc.player.inventory;
+		inventory.main[inventory.selectedSlot] = null;
+		float byHand = Block.OBSIDIAN.getHardness(mc.player);
+		inventory.main[inventory.selectedSlot] = new ItemStack(Item.DIAMOND_PICKAXE);
+		int x = bx + 30, y = Y, z = bz + 3;
+		world.setBlock(x, y - 1, z, Block.STONE.id);
+		world.setBlock(x, y, z, Block.OBSIDIAN.id);
+		InteractionManager im = mc.interactionManager;
+		im.cancelBlockBreaking();
+		int calls = 0;
+		while (world.getBlockId(x, y, z) != 0 && calls < 400) {
+			im.processBlockBreakingAction(x, y, z, 1);
+			calls++;
+		}
+		inventory.main[inventory.selectedSlot] = null;
+		float handWanted = full ? 1.0F / 5000.0F : 1.0F / 1000.0F;
+		results.check("still: obsidian (" + PolishConfig.obsidianAtStart() + ") mined with a diamond pickaxe in " + calls + " ticks, dropped "
+				+ dropped(x, y, z) + ", and by hand " + Math.round(1.0F / byHand) + " (" + (on ? "1.0: about 189" : "beta: about 301")
+				+ ", and " + (full ? "1.0's 5000" : "beta's 1000") + ")",
+				droppedOnly(x, y, z, Block.OBSIDIAN.id) && (on ? calls >= 186 && calls <= 195 : calls >= 298 && calls <= 307)
+						&& Math.abs(byHand - handWanted) < handWanted * 0.01F);
 	}
 
 	/** A Random whose every nextInt answers 1: the lava check's "refuse to thin" draw, every time. */

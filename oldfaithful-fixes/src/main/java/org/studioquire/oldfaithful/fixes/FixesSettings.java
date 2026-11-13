@@ -30,7 +30,7 @@ public final class FixesSettings implements SettingsProvider {
 			{"slabs.wooden", "blocks", CLIENT, "Wooden Slabs",
 					"Wooden slabs dropped only when mined with a pickaxe. On a server, fixed only where it has this fix too."},
 			{"tools.speedByMaterial", "blocks", CLIENT, "Tool Speeds",
-					"Axes were slow on tables and doors, pickaxes on furnaces and rails. On a server, only where it has this fix too."},
+					"Axes were slow on tables, pickaxes on furnaces and redstone ore. On a server, only where it has this fix too."},
 			{"furnace.lavaBucket", "blocks", WORLD, "Lava Bucket Fuel", "A furnace burning a lava bucket used up the bucket too."},
 			{"liquids.dropsBelow", "blocks", WORLD, "Falling Water",
 					"Water falling onto torches, rails, redstone or flowers destroyed them without dropping them."},

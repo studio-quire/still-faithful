@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 /**
  * Leaves the settings button out when oldfaithful-options' {@code options.screen} says so: the switch lived there before
- * the screen moved here, and players' files still have it. The library's notice isn't part of that.
+ * the screen moved here, and players' files still have it.
  */
 public final class SettingsMixins implements IMixinConfigPlugin {
 	private boolean screen = true;

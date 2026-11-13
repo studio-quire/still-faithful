@@ -5,8 +5,7 @@
   "plugin": "org.studioquire.oldfaithful.settings.SettingsMixins",
   "compatibilityLevel": "JAVA_8",
   "client": [
-    "OptionsScreenMixin",
-    "TitleScreenMixin"
+    "OptionsScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

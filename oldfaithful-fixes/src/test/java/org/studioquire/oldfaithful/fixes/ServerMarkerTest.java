@@ -21,6 +21,18 @@ class ServerMarkerTest {
 		assertFalse(ServerMarker.has(null, ServerMarker.TOOL_SPEEDS));
 		assertFalse(ServerMarker.has(ServerMarker.add("", ServerMarker.WOODEN_SLABS), ServerMarker.TOOL_SPEEDS));
 		// A name before the prefix's letters can't be mistaken for a mark.
-		assertFalse(ServerMarker.has("ms", ServerMarker.TOOL_SPEEDS));
+		assertFalse(ServerMarker.has("Ms", ServerMarker.TOOL_SPEEDS));
+	}
+
+	@Test
+	void toolSpeedsBeforeRedstoneOreIsAnotherLetter() {
+		String old = "oldfaithful:ms";
+		assertFalse(ServerMarker.has(old, ServerMarker.TOOL_SPEEDS));
+		assertTrue(ServerMarker.has(old, ServerMarker.TOOL_SPEEDS_WITHOUT_REDSTONE_ORE));
+		String now = ServerMarker.add("", ServerMarker.TOOL_SPEEDS);
+		assertFalse(ServerMarker.has(now, ServerMarker.TOOL_SPEEDS_WITHOUT_REDSTONE_ORE));
+		// Still Faithful's two letters with Old Faithful's two fill the field exactly.
+		String full = ServerMarker.add(ServerMarker.add(now, ServerMarker.WOODEN_SLABS) + "gf", ServerMarker.TOOL_SPEEDS);
+		assertEquals(16, full.length());
 	}
 }

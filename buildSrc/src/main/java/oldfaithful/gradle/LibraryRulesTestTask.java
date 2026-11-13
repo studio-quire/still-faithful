@@ -287,7 +287,9 @@ public abstract class LibraryRulesTestTask extends ClientStartupTask {
 		Files.createDirectories(game.resolve("mods"));
 		List<String> serverJars = getServerMods().getFiles().stream().map(File::getName).toList();
 		for (File mod : getMods().getFiles()) {
-			if (!serverJars.contains(mod.getName())) Files.copy(mod.toPath(), game.resolve("mods").resolve(mod.getName()));
+			// More Faithful's own jar is a client's only, and needs Faithful Settings.
+			boolean library = serverJars.contains(mod.getName()) || mod.getName().startsWith("morefaithful-presets");
+			if (!library) Files.copy(mod.toPath(), game.resolve("mods").resolve(mod.getName()));
 		}
 		prepare(game, false);
 		lines.add("--- plain client on the server");

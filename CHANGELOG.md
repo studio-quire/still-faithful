@@ -7,6 +7,22 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.8.0 (2026-11-13)
+
+On Old Faithful 0.2.7 and Pure Faithful 0.1.6.
+
+- Obsidian mines as in 1.0 (Obsidian, a new setting under Polish, Polished as it comes): 9.4 seconds with a diamond
+  pickaxe instead of 15, and 250 seconds instead of 50 with anything that can't harvest it. Beta 1.9 put obsidian among
+  the blocks a pickaxe mines fast, and 1.0 made it five times harder to keep it slow. The setting's other choices are
+  Diamond Only, which keeps beta's 50 seconds without a diamond pickaxe, and Beta. On a server, the server's setting
+  decides for players with Still Faithful 0.8.0 or later, unless their own is Beta. Players set to Beta, or with any
+  other game, mine obsidian at beta's speed, which the server accepts with a diamond pickaxe; without one, on a server
+  left at Polished, the obsidian they break at 50 seconds comes back, and goes for good at 250 (Diamond Only keeps them
+  in step).
+- From Old Faithful 0.2.7, which it carries: pickaxes mine redstone ore fast, and if you've added the Faithful Library's
+  mods to your instance, take Faithful Core from the library's 0.9.0 with this version. Old Faithful's changelog has the
+  detail.
+
 ## 0.7.1 (2026-11-11)
 
 On Old Faithful 0.2.6 and Pure Faithful 0.1.6. Still Faithful's own mod is unchanged.

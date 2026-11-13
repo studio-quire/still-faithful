@@ -38,6 +38,8 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   ladders, boats and wooden slabs, for as long as later versions burn them (a boat smelts six items). Beta burned
   planks, logs, sticks, saplings and most wooden blocks, but none of these.
 - **Glowstone** drops its dust when broken by hand or with any tool, and breaks at the speed it had from 1.0.
+- **Obsidian** mines as in 1.0: 9.4 seconds with a diamond pickaxe instead of 15, and 250 without one instead of 50
+  (Diamond Only, in the settings, keeps beta's 50).
 - **Lava** cut off from its source thins out instead of lingering for good. **Water** between two sources becomes a
   source over still water too, not only over solid ground.
 - **Boats** break only in a real crash: scraping along a shore or bumping a floating item no longer shatters them,
@@ -126,9 +128,12 @@ its LWJGL.
 `StillFaithful-server-<version>.zip` is beta 1.7.3's own server with Pure Faithful's hardening, saves and speed mods,
 Old Faithful's fixes and lighting, and Still Faithful's polish mod: bring Mojang's server jar (the scripts check it's
 genuine) and run `start.bat` or `start.sh`. Players can join with vanilla beta 1.7.3 or any of the three editions; the
-server's changes (drops, leaves, water, lava, boats, carts, animals, saving, chest pairs, furnace fuel) work for everyone, though
-players without Still Faithful see the new double chests drawn oddly, boats steer only for players whose game has Old
-Faithful's Riding Look (others paddle as in beta), and faster glowstone mining needs Still Faithful on both sides.
+server's changes (drops, leaves, water, lava, boats, carts, animals, saving, chest pairs, furnace fuel) work for
+everyone, though players without Still Faithful see the new double chests drawn oddly, boats steer only for players
+whose game has Old Faithful's Riding Look (others paddle as in beta), and faster glowstone mining needs Still Faithful
+on both sides. Players without Still Faithful 0.8.0 or later, or with its Obsidian set to Beta, mine obsidian at beta's
+speed: with a diamond pickaxe the server accepts it, but without one the obsidian they break at 50 seconds comes back,
+and goes for good at 250, unless the server's Obsidian setting is Diamond Only or Beta.
 
 ## Problems
 

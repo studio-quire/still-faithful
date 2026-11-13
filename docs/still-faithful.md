@@ -35,6 +35,7 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 13 | `blocks.stairsDropStairs` | world | `StairsBlock.dropStacks` drops one of the stairs (same chance, same one random draw as beta's single drop) instead of handing it to the base block |
 | 24 | `leaves.placedStay` | world | Placed leaves get data `kind | 4` (`PlacedLeaves`) instead of beta's `kind | 8` (marked to decay at once); leaves with bit 4 never decay. Bit 4 is unused in beta (every reader masks with 3 or tests 1, 2, 8), later versions use it the same way; a vanilla game reading the world sees ordinary leaves |
 | 10 note | `glowstone.anyTool` | both | `PlayerInventory.isUsingEffectiveTool` is true for glowstone: 1.0's drop and 1.0's speed by hand (about 10 ticks; beta 31 and nothing). Multiplayer: the server marks its login packet ('g', `ServerMarker`, the fixes' format, so both marks share the field); a client mines faster only there |
+| 10 note | `blocks.obsidian` | world | A choice (the user's calls, 2026-11-12). `true`, the default, Polished: as 1.0, pickaxes mine it at their speed (Beta 1.9 put it on the list) and its hardness is 50 (1.0.0-RC1), so a diamond pickaxe takes 189 ticks, 9.4 s (beta 301, 15 s), and anything that can't harvest it 250 s (beta 50). `diamond`, Diamond Only: the same with a pickaxe that harvests it, beta's 50 s without one, as a game without the change times it: on a Polished server, a vanilla player mining obsidian that way sees it gone at 50 s, back 4 s later (the server refused the early break) and gone at 250, and the user would rather have 1.0's numbers by default for the sake of next to no such players. `false`: beta. `Obsidian`: the mining time and `Block.getHardness()` answer 50, the field stays 10. Multiplayer: the login packet's field being full, the server says which in a sign packet straight after it (`ServerMarker.sign`, below: 'o' or 'd'), and a client with the mod times obsidian by that, whatever its own choice but Beta (which loads none of the change, so it times obsidian as beta anywhere); by beta's where none comes |
 | 20 | `liquids.lavaThins` | world | Where beta draws its 3-in-4 refusal to thin flowing lava (and then schedules nothing, so cut-off lava lingers), the lava thins and its next tick comes 4 times later, as later versions do; the same draw is made, so the world's random runs as before. Lava already stuck in a world goes once something beside it changes |
 | 20 | `liquids.waterSources` | world | The "still water below" test reads the block below's data, not the flowing block's own |
 | 34 | `render.droppedItemSize` | client | Dropped non-cube blocks (stairs, fences, cactus, plates, buttons, trapdoors) at a quarter scale like every dropped block, not a half |
@@ -112,8 +113,10 @@ joins only fences beside it in beta (`renderFence`), so the arms follow that, an
   whole box, so placing a fence where a mob stands, arrows stuck in one and pistons moving one are beta's.
 - **Multiplayer.** Both sides work out collision: the client moves its player, the server replays the move and sends
   the player back where its result is more than a quarter block off or the place is inside something. So a client is
-  thin only on a server whose login packet carries 'f' (`ServerMarker`, after the fixes' 'm' and 's' and glowstone's
-  'g': the field's 16 characters are now full). The other way round needs nothing: a client with whole fences never
+  thin only on a server whose login packet carries 'f' (`ServerMarker`, after the fixes' 'M' and 's' and glowstone's
+  'g': the field's 16 characters are now full, so later marks go in sign packets, `ServerMarker.sign`: one each,
+  straight after the login packet, at height -1, where no client applies a sign packet, with `#oldfaithful:mk` and the
+  change's letter on its first two lines; obsidian's is 'o', or 'd' for Diamond Only). The other way round needs nothing: a client with whole fences never
   goes where a thin server's are, the server's replay of its moves comes out the same (only fewer boxes to stop at), and
   beta's floating kick counts blocks near the feet, not shapes, so a vanilla player on the edge of a post's top just
   looks to others as if floating. A server applies the thin shape to everything it moves: mobs, items, boats, carts.
@@ -728,7 +731,8 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   "!oftest fences" and puts the player at each walk's start on "!oftest tp" (`MultiplayerScenes`), flying off so beta's
   floating kick runs. 2026-11-07: thin only with both, whole in the other three mixes, the same numbers as single
   player; in all four no position from the server during any walk, still connected after 6 s on a post's edge, and no
-  "moved wrongly" or floating line in a server's log. Not tested: a vanilla client by itself (the client without the
+  "moved wrongly" or floating line in a server's log. Since 2026-11-12 the client also reports whether it read the
+  server's obsidian sign ('o', the default): read only with both, in all four mixes. Not tested: a vanilla client by itself (the client without the
   polish mod has Old Faithful's, none of which touch collision) and mobs or boats seen across mixed sides (the server
   moves them; a client without the change only sees them pass closer to a post than its own fences would let it).
   Then Boat Steering (2026-11-10; the task now takes about 3 minutes, `-Pstillmp.only=still-server-still-client` for

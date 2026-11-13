@@ -4,7 +4,7 @@ bottles draining in the inventory.
     python tools/alchemy_art.py [--sheet DIR]
 
 Writes the PNGs into library/alchemy's assets. The four gilded things are held here pixel by pixel, over the outlines
-of beta's rose, dandelion and feather and Blue Flowers' bluebell (GILDED); the bottle is library/water-bottles'. Beta's
+of beta's rose, dandelion and feather and Blue Flowers' lupin (GILDED); the bottle is library/water-bottles'. Beta's
 own sprites are read from the game jar in local/cache only for the sheet. --sheet DIR writes an enlarged contact sheet
 there, with the HUD's pieces, the draining bottles and the gilded things in beta's hotbar, for looking at.
 Claude Opus 5.5, 2026-11-09; the gilded things and haste's colours by Claude Fable 5.2 the same day.
@@ -26,7 +26,7 @@ GLASS = os.path.join(LIBRARY, "water-bottles", "src", "main", "resources", "asse
 INVENTORY_GREY = (0x8b, 0x8b, 0x8b, 255)
 
 # The gilded things, pixel by pixel, each over its own outline (beta's rose, dandelion and feather, Blue Flowers'
-# bluebell), all gold and one metal (Claude Fable 5.2, 2026-11-09): pale and bright gold in the light, the stems' gold
+# lupin), all gold and one metal (Claude Fable 5.2, 2026-11-09): pale and bright gold in the light, the stems' gold
 # in the middle, and for the dark the orange of beta's gold ingot, with the ingot's white glint on the feather only.
 # The user's "let's try" after two rounds that kept a trace of each flower's colour: nothing here is made to tell the
 # four apart or from their plain flowers, since their outlines and the gold do that (their word: we overrate how much
@@ -49,8 +49,9 @@ GILDED = {
                             ".......u", "......us", ".......ts", "........su", ".......ut", "........t"),
     "golden_dandelion": from_row(8, ".....yh.Psh", "......yyhd", ".....hysdds", ".......ss",
                                  ".......stst", ".....tsstt", "......tst", ".......st"),
-    "golden_bluebell": from_row(5, ".......yh", ".....yhyyhs", ".....yyPhysy", "......dsyyd", "........tsd",
-                                ".......ts", ".......s.s", "......st", ".......ts", ".......st", "........t"),
+    # Blue Flowers' flower is a lupin since 2026-11-12 (tools/lupin_art.py); the file and id keep the bluebell's name.
+    "golden_bluebell": from_row(3, ".......P", ".......y", "......hys", "......ydh", ".....hyydy", "......ydhd", ".....yhydy", "......yds",
+                                ".......s", "....s..s..t", ".....sssst", ".......t", ".......t"),
     "golden_feather": from_row(2, "............y", "...........hs", "..........hsy", ".........Wsys", ".......sshsys", "......hWysyyd",
                                ".....ssysysd", "....yhysyys", "......dysyd", ".....dtysd", "...ddt.yd", "...tt..d"),
 }

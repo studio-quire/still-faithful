@@ -107,10 +107,13 @@ public abstract class GameTestTask extends DefaultTask {
 	 * injections are require 0 and report one that didn't apply this way), Mixin errors
 	 * and stack frames in our code.
 	 */
-	/** A skin or sound a server didn't send because the network didn't answer, not the game. Any other failure still counts. */
+	/**
+	 * A skin or sound a server didn't send because the network didn't answer, or Mojang's profile lookup turned the test's player away for asking too
+	 * often (HTTP 429: a run of many launches in a few minutes, as morePackTest's, all as one name), not the game. Any other failure still counts.
+	 */
 	protected static boolean offline(String line) {
 		return (line.contains("Skin or cape not loaded") || line.contains("Sounds not checked or downloaded") || line.matches(".*Beta's \\S+ not fetched from .*"))
-				&& (line.contains("SocketTimeoutException") || line.contains("ConnectException") || line.contains("UnknownHostException"));
+				&& (line.contains("SocketTimeoutException") || line.contains("ConnectException") || line.contains("UnknownHostException") || line.contains("answered HTTP 429"));
 	}
 
 	protected static List<String> problems(List<String> lines) {

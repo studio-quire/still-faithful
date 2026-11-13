@@ -14,6 +14,8 @@ import org.studioquire.oldfaithful.fixes.ToolSpeeds;
 abstract class ClientNetworkHandlerMixin {
 	@Inject(method = "onHello", at = @At("HEAD"))
 	private void oldfaithful$readToolSpeedsMarker(LoginHelloPacket packet, CallbackInfo ci) {
-		ToolSpeeds.serverAgrees = ServerMarker.has(packet.username, ServerMarker.TOOL_SPEEDS);
+		boolean now = ServerMarker.has(packet.username, ServerMarker.TOOL_SPEEDS);
+		ToolSpeeds.serverAgrees = now || ServerMarker.has(packet.username, ServerMarker.TOOL_SPEEDS_WITHOUT_REDSTONE_ORE);
+		ToolSpeeds.serverAgreesOnRedstoneOre = now;
 	}
 }

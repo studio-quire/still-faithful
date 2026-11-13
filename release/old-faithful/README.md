@@ -18,7 +18,7 @@ back (after a restart).
 
 - **Mining and tools.** A tool's last use drops the block it breaks. Wooden slabs drop without a pickaxe. Axes,
   pickaxes and shovels are fast on every block of their material (crafting tables, fences and doors for axes;
-  furnaces, rails and the like for pickaxes); obsidian and redstone ore keep beta's speed.
+  furnaces, rails and redstone ore for pickaxes); obsidian keeps beta's speed.
 - **Items and crafting.** The furnace gives back the bucket when it burns lava. Shift-clicking a crafting result
   takes it only if all of it fits. Pick block selects redstone, repeaters, doors, signs, wheat, beds and cake, and
   nothing for a mob. Slab and dye items with a bad data value no longer crash the game.

@@ -119,7 +119,8 @@ ext.releaseTokens = { Map ed ->
         LOADER_LIBRARIES     : (["net.fabricmc:fabric-loader:${fabric_loader_version}", "net.fabricmc:sponge-mixin:${mixin_version}"] +
                 ['asm', 'asm-analysis', 'asm-commons', 'asm-tree', 'asm-util'].collect { "org.ow2.asm:${it}:${asm_version}" })
                 .collect { "        {\"name\": \"${it}\", \"MMC-hint\": \"local\"}" }.join(',\n'),
-    ]).collectEntries { k, v -> [k, v.toString()] }
+    // An edition's own (a content pack's presets, gradle/library.gradle).
+    ] + (ed.tokens ?: [:])).collectEntries { k, v -> [k, v.toString()] }
 }
 ext.releaseFilter = { Map ed ->
     def tokens = releaseTokens(ed)

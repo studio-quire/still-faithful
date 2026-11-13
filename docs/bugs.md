@@ -262,7 +262,7 @@ Their stone sound stays (beta's; not a clear mistake on its own).
 
 ### 10. Tool effectiveness gaps (T)
 The user's call (2026-11-02): every mismatch between what a block is made of and the tool that mines it fast is a bug;
-obsidian and redstone ore keep beta's speed (below).
+obsidian keeps beta's speed (below). Redstone ore kept it too until the user's call of 2026-11-12 (below).
 How beta decides (traced): a break's progress per tick is `Block.getHardness(player)`: without `canHarvest`,
 `1 / hardness / 100`; with it, `PlayerEntity.getBlockBreakingSpeed / hardness / 30`, the speed being the held item's
 `getMiningSpeedMultiplier` (divided by 5 in water and by 5 in the air). `ToolItem.getMiningSpeedMultiplier` returns the
@@ -276,8 +276,8 @@ The table: what each tool mines fast, by block id. **Beta** = its list; **added*
 - Pickaxe, beta: stone, cobblestone, gold/iron/coal/diamond/lapis ore, lapis/gold/iron/diamond blocks, sandstone,
   slabs (43, 44), mossy cobblestone, ice, netherrack. Added (stone or metal material, or stone/iron by substance):
   dispenser 23, powered and detector rails 27, 28, bricks 45, spawner 52, furnaces 61, 62, rail 66, cobblestone stairs
-  67, stone pressure plate 70, iron door 71, stone button 77, glowstone 89 (stone material in b1.6.6 to 1.0), bedrock
-  7 (no effect: unbreakable). Left at beta: obsidian 49, redstone ore 73, 74.
+  67, stone pressure plate 70, iron door 71, redstone ore 73, 74 (since 2026-11-12), stone button 77, glowstone 89
+  (stone material in b1.6.6 to 1.0), bedrock 7 (no effect: unbreakable). Left at beta: obsidian 49.
 - Axe, beta: planks, log, bookshelf, chest. Added (wood material, or wooden by substance): note block 25, wooden
   stairs 53, crafting table 58, signs 63, 68, wooden door 64, ladder 65, wooden pressure plate 72, jukebox 84, fence
   85, pumpkin and jack-o'-lantern 86, 91 (pumpkin material; axe in later versions), locked chest 95 (hardness 0, no
@@ -293,8 +293,14 @@ from the same era or earlier never were (crafting table, furnace, doors); the pi
 already reasons by material. Mojang listed it among fixes in Beta 1.9 Prerelease 6 (tool weaknesses fixed, crafting tables mining faster with an
 axe; rails and redstone ore faster with pickaxes; obsidian, spawners, both doors faster), and 1.0.0-RC1 then raised obsidian's hardness to 50 to restore its slowness (Minecraft
 Wiki's version pages). Obsidian's 15 s with a diamond pickaxe was a property players knew and built around; on the
-list at beta's hardness 10 it would take under 2 s (modern: ~9.4 s at hardness 50), so it stays. Redstone ore's slowness
-is well known too, and stays by the user's call.
+list at beta's hardness 10 it would take under 2 s (modern: ~9.4 s at hardness 50), so it stays in Old Faithful. Still
+Faithful and above follow 1.0 (the user's call, 2026-11-12: `blocks.obsidian`, `docs/still-faithful.md`): on the
+list at hardness 50, 9.4 s with a diamond pickaxe and 250 s without one; Diamond Only keeps beta's 50 s there. Redstone ore's slowness
+is well known too and first stayed by the user's call (2026-11-02); they changed it on 2026-11-12, for Old Faithful and
+every edition above it, on Opus 5.5's case that unlike obsidian's nobody builds around it, and that it's the furnace's
+mistake again (an iron pickaxe required, then mining at hand speed, 4.5 s against iron ore's 0.75 s). The fix's marker
+letter changed with it, since a server on an earlier Old Faithful still times redstone ore as beta (`docs/fixes.md` >
+multiplayer).
 
 **Fixed in Old Faithful** (2026-11-02, `tools.speedByMaterial`): `ToolItem.getMiningSpeedMultiplier` returns the tool's
 speed for the added blocks (`ToolSpeeds`), so every place that times a break agrees. Mining speed only: which blocks need

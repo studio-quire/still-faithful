@@ -119,7 +119,11 @@ final class FixesCheck {
 		mc.interactionManager.breakBlock(bx + 12, Y, bz + 12, 0);
 		results.check("fixes #8: the shears' last cut is used up", inventory.main[inventory.selectedSlot] == null);
 
-		// #9: a wooden slab mined by hand, as holding the button does, tick by tick.
+		// #9: a wooden slab mined by hand, as holding the button does, tick by tick. On the ground, as these mining checks count:
+		// in the air the game mines a fifth as fast, where the slab's stone speed beats planks' (Still Faithful's pack test once
+		// came here with the player not yet landed, 2026-11-13). The loops run within this frame, so nothing moves the player.
+		boolean wasOnGround = mc.player.onGround;
+		mc.player.onGround = true;
 		int sx = bx - 12, sz = bz - 12;
 		world.setBlock(sx, Y, sz, Block.SLAB.id, 2);
 		float vanilla = Block.SLAB.getHardness(mc.player);
@@ -136,12 +140,17 @@ final class FixesCheck {
 				+ ((int) Math.ceil(1.0F / vanilla) + 1) + ")", calls <= asPlanks + 1 && calls < Math.ceil(1.0F / vanilla));
 
 		// #10: for every block, which tools mine it fast, through the game's own multiplier, against docs/bugs.md's table
-		// (beta's lists plus every block of the tool's material, obsidian and redstone ore left slow).
+		// (beta's lists plus every block of the tool's material, obsidian left slow, but for Still Faithful's change).
 		String wrong = "";
+		Set<Integer> pickaxeFast = PICKAXE_FAST;
+		if (stillObsidian()) {
+			pickaxeFast = new HashSet<>(PICKAXE_FAST);
+			pickaxeFast.add(Block.OBSIDIAN.id);
+		}
 		for (Block block : Block.BLOCKS) {
 			if (block != null && block.id >= 256) continue; // a library mod's
 			if (block == null) continue;
-			wrong += fastWrong(block, Item.GOLDEN_PICKAXE, PICKAXE_FAST) + fastWrong(block, Item.GOLDEN_AXE, AXE_FAST)
+			wrong += fastWrong(block, Item.GOLDEN_PICKAXE, pickaxeFast) + fastWrong(block, Item.GOLDEN_AXE, AXE_FAST)
 					+ fastWrong(block, Item.GOLDEN_SHOVEL, SHOVEL_FAST);
 		}
 		results.check("fixes #10: every block's fast tools match the table" + (wrong.isEmpty() ? "" : ":" + wrong), wrong.isEmpty());
@@ -162,6 +171,7 @@ final class FixesCheck {
 		results.check("fixes #10: a crafting table mined with a wooden axe in " + calls + " ticks (" + axeTicks + "; beta "
 				+ ((int) Math.ceil(1.0F / tableBeta) + 1) + ")", calls <= axeTicks + 1);
 		inventory.main[inventory.selectedSlot] = null;
+		mc.player.onGround = wasOnGround;
 
 		// #33: names of a slab and a dye with impossible data values.
 		try {
@@ -510,14 +520,24 @@ final class FixesCheck {
 		return false;
 	}
 
-	// #10's table by block id (docs/bugs.md): beta's own lists, then what the fix adds. Obsidian (49) and redstone ore
-	// (73, 74) stay off the pickaxe's.
+	// #10's table by block id (docs/bugs.md): beta's own lists, then what the fix adds. Obsidian (49) stays off the
+	// pickaxe's.
 	private static final Set<Integer> PICKAXE_FAST = ids(1, 4, 14, 15, 16, 21, 22, 24, 41, 42, 43, 44, 48, 56, 57, 79, 87,
-			7, 23, 27, 28, 45, 52, 61, 62, 66, 67, 70, 71, 77, 89);
+			7, 23, 27, 28, 45, 52, 61, 62, 66, 67, 70, 71, 73, 74, 77, 89);
 	private static final Set<Integer> AXE_FAST = ids(5, 17, 47, 54,
 			25, 53, 58, 63, 64, 65, 68, 72, 84, 85, 86, 91, 95, 96);
 	private static final Set<Integer> SHOVEL_FAST = ids(2, 3, 12, 13, 60, 78, 80, 82,
 			88);
+
+	/** Whether Still Faithful's obsidian change is in the game, which puts obsidian on the pickaxe's list as 1.0 did. */
+	private static boolean stillObsidian() {
+		try {
+			return (Boolean) Class.forName("org.studioquire.oldfaithful.polish.PolishConfig").getMethod("applied", String.class)
+					.invoke(null, "blocks.obsidian");
+		} catch (ReflectiveOperationException | LinkageError e) {
+			return false;
+		}
+	}
 
 	private static Set<Integer> ids(int... ids) {
 		Set<Integer> set = new HashSet<>();

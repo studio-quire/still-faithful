@@ -14,10 +14,6 @@
   "license": "MIT",
   "icon": "assets/oldfaithful-settings/icon.png",
   "environment": "*",
-  "entrypoints": {
-    "preLaunch": ["org.studioquire.oldfaithful.settings.LibraryMend"],
-    "oldfaithful-options:settings": ["org.studioquire.oldfaithful.settings.LibrarySettings"]
-  },
   "mixins": ["oldfaithful-settings.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15.0",

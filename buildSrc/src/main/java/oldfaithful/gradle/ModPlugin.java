@@ -48,12 +48,14 @@ public class ModPlugin implements Plugin<Project> {
 		boolean stillEdition = "still".equals(edition);
 		// The Faithful Library's (`oldfaithful_edition=library`, docs/library-authoring.md): faithful-*, or the mod's own folder name.
 		boolean library = "library".equals(edition);
-		String publicName = fixedEdition ? "oldfaithful" : stillEdition ? "stillfaithful" : library ? "faithful" : "purefaithful";
+		// More Faithful's own (`oldfaithful_edition=more`): morefaithful-*, with the pack's seal, version and links.
+		boolean moreEdition = "more".equals(edition);
+		String publicName = fixedEdition ? "oldfaithful" : stillEdition ? "stillfaithful" : library ? "faithful" : moreEdition ? "morefaithful" : "purefaithful";
 		String modId = project.getName().replaceFirst("^oldfaithful-", publicName + "-");
-		String props = fixedEdition ? "fixed_" : stillEdition ? "still_" : library ? "library_" : "";
+		String props = fixedEdition ? "fixed_" : stillEdition ? "still_" : library ? "library_" : moreEdition ? "more_" : "";
 
 		project.setVersion(editionProp(project, fixedEdition ? "fixed_edition_version" : stillEdition ? "still_edition_version"
-				: library ? "library_version" : "oldfaithful_version"));
+				: library ? "library_version" : moreEdition ? "more_edition_version" : "oldfaithful_version"));
 
 		DependencyHandler deps = project.getDependencies();
 		deps.add("compileOnly", project.files(mc.getNamedJar()));

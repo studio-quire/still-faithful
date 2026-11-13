@@ -134,8 +134,11 @@ public abstract class LibraryTestTask extends ClientStartupTask {
 	/** The registry's own refusals, which come while numbering rather than in a mod's start. */
 	private static final Pattern REGISTRY = Pattern.compile("^java.lang.IllegalStateException: (The (?:stand-in|item stand-in|block|item|family member) (?:of )?([a-z][a-z0-9_-]*):.*)");
 	private static final Pattern CONFIG = Pattern.compile("([a-z0-9_-]+)\\.mixins\\.json");
-	/** A network that didn't answer, not a mod: skins and sounds are fetched from Mojang, and a test run shouldn't fail on a timeout there. */
-	private static final Pattern OFFLINE = Pattern.compile("\\[purefaithful-hardening] WARN (Sounds not checked|Skin or cape not loaded|Beta's \\S+ not fetched from).*(Timeout|UnknownHost|Connect|Socket)\\w*Exception");
+	/**
+	 * A network that didn't answer, not a mod: skins and sounds are fetched from Mojang, and a test run shouldn't fail on a timeout there, or on Mojang's
+	 * profile lookup turning away a name that asked too often (HTTP 429).
+	 */
+	private static final Pattern OFFLINE = Pattern.compile("\\[purefaithful-hardening] WARN (Sounds not checked|Skin or cape not loaded|Beta's \\S+ not fetched from).*((Timeout|UnknownHost|Connect|Socket)\\w*Exception|answered HTTP 429)");
 	/** A mod's own test: {@code Checks} on either side, or a client check run under its name. */
 	private static final Pattern TEST = Pattern.compile("\\[faithful-test] (PASS|FAIL|NOTE) (.*?) \\| (.*)");
 

@@ -42,8 +42,8 @@ public final class FixesConfig implements IMixinConfigPlugin {
 					+ "# hand or axe (and still mine fast with a pickaxe).\n"},
 			{"tools.speedByMaterial", "tools",
 					"# #10: pickaxes, axes and shovels mined fast only the blocks on a short list, so an axe was slow on crafting\n"
-					+ "# tables, doors and fences, a pickaxe on furnaces, bricks and rails, a shovel on soul sand. With this, each\n"
-					+ "# mines fast everything of its material. Obsidian and redstone ore keep beta's slowness. In multiplayer,\n"
+					+ "# tables, doors and fences, a pickaxe on furnaces, bricks, rails and redstone ore, a shovel on soul sand.\n"
+					+ "# With this, each mines fast everything of its material. Obsidian keeps beta's slowness. In multiplayer,\n"
 					+ "# only on a server that has this fix too.\n"},
 			{"furnace.lavaBucket", "furnace",
 					"# #11: a furnace burning a lava bucket used up the bucket too. With this, the empty bucket stays in the\n"
