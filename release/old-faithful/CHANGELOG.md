@@ -5,6 +5,15 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.8 (2026-11-13)
+
+Released with Still Faithful 0.8.1, which carries it; on Pure Faithful 0.1.6, as 0.2.7 was.
+
+- `oldfaithful-settings` won't start beside a Faithful Core older than the library's 0.9.0: the game, or a server,
+  stops at launch with Fabric Loader's message that the two are incompatible, where with 0.2.7 the game stopped later,
+  when a server refused you over mods. This matters only if you've added the library's mods; take Faithful Core 0.9.0
+  or later with this version.
+
 ## 0.2.7 (2026-11-13)
 
 Released with Still Faithful 0.8.0, which carries it; on Pure Faithful 0.1.6, as 0.2.6 was.

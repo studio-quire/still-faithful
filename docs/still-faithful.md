@@ -1,7 +1,7 @@
 # Still Faithful (the third edition)
 
 The third edition: beta with polish, as it might have been. Old Faithful plus what later
-versions improved, still beta in content. Entry numbers are `docs/bugs.md`'s. Decisions are the user's (2026-11-02)
+versions improved, still beta in content. Entry numbers are `docs/bugs.md`'s. Decisions are settled
 unless marked open. Built from 2026-11-02 by Claude Opus 5.5. Public since 0.1.0 (2026-11-03, on Old Faithful 0.1.2
 and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.org/still-faithful/; no Modrinth
 (`docs/release.md` > Modrinth).
@@ -26,7 +26,7 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
   (`docs/release.md`). `./gw prismStillInstance` writes `local/prism/StillFaithful-dev.zip` beside the other dev
   instances. Texts in
   `release/still-faithful/`. The icon (`prism/release/icons/final/stillfaithful-*`): the family's β seal in dusk violet with Old
-  Faithful's silver rim, `07-still-a` (the user's pick, 2026-11-02), made by `tools/icon_candidates.py`.
+  Faithful's silver rim, `07-still-a`, made by `tools/icon_candidates.py`.
 
 ## The changes
 
@@ -35,11 +35,11 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 13 | `blocks.stairsDropStairs` | world | `StairsBlock.dropStacks` drops one of the stairs (same chance, same one random draw as beta's single drop) instead of handing it to the base block |
 | 24 | `leaves.placedStay` | world | Placed leaves get data `kind | 4` (`PlacedLeaves`) instead of beta's `kind | 8` (marked to decay at once); leaves with bit 4 never decay. Bit 4 is unused in beta (every reader masks with 3 or tests 1, 2, 8), later versions use it the same way; a vanilla game reading the world sees ordinary leaves |
 | 10 note | `glowstone.anyTool` | both | `PlayerInventory.isUsingEffectiveTool` is true for glowstone: 1.0's drop and 1.0's speed by hand (about 10 ticks; beta 31 and nothing). Multiplayer: the server marks its login packet ('g', `ServerMarker`, the fixes' format, so both marks share the field); a client mines faster only there |
-| 10 note | `blocks.obsidian` | world | A choice (the user's calls, 2026-11-12). `true`, the default, Polished: as 1.0, pickaxes mine it at their speed (Beta 1.9 put it on the list) and its hardness is 50 (1.0.0-RC1), so a diamond pickaxe takes 189 ticks, 9.4 s (beta 301, 15 s), and anything that can't harvest it 250 s (beta 50). `diamond`, Diamond Only: the same with a pickaxe that harvests it, beta's 50 s without one, as a game without the change times it: on a Polished server, a vanilla player mining obsidian that way sees it gone at 50 s, back 4 s later (the server refused the early break) and gone at 250, and the user would rather have 1.0's numbers by default for the sake of next to no such players. `false`: beta. `Obsidian`: the mining time and `Block.getHardness()` answer 50, the field stays 10. Multiplayer: the login packet's field being full, the server says which in a sign packet straight after it (`ServerMarker.sign`, below: 'o' or 'd'), and a client with the mod times obsidian by that, whatever its own choice but Beta (which loads none of the change, so it times obsidian as beta anywhere); by beta's where none comes |
+| 10 note | `blocks.obsidian` | world | A choice. `true`, the default, Polished: as 1.0, pickaxes mine it at their speed (Beta 1.9 put it on the list) and its hardness is 50 (1.0.0-RC1), so a diamond pickaxe takes 189 ticks, 9.4 s (beta 301, 15 s), and anything that can't harvest it 250 s (beta 50). `diamond`, Diamond Only: the same with a pickaxe that harvests it, beta's 50 s without one, as a game without the change times it: on a Polished server, a vanilla player mining obsidian that way sees it gone at 50 s, back 4 s later (the server refused the early break) and gone at 250; 1.0's numbers stay the default all the same, as such players are next to none. `false`: beta. `Obsidian`: the mining time and `Block.getHardness()` answer 50, the field stays 10. Multiplayer: the login packet's field being full, the server says which in a sign packet straight after it (`ServerMarker.sign`, below: 'o' or 'd'), and a client with the mod times obsidian by that, whatever its own choice but Beta (which loads none of the change, so it times obsidian as beta anywhere); by beta's where none comes |
 | 20 | `liquids.lavaThins` | world | Where beta draws its 3-in-4 refusal to thin flowing lava (and then schedules nothing, so cut-off lava lingers), the lava thins and its next tick comes 4 times later, as later versions do; the same draw is made, so the world's random runs as before. Lava already stuck in a world goes once something beside it changes |
 | 20 | `liquids.waterSources` | world | The "still water below" test reads the block below's data, not the flowing block's own |
 | 34 | `render.droppedItemSize` | client | Dropped non-cube blocks (stairs, fences, cactus, plates, buttons, trapdoors) at a quarter scale like every dropped block, not a half |
-| - | `menu.texturePacks` | client | The title screen's Mods and Texture Packs button reads Texture Packs, as later betas renamed it (user, 2026-11-05) |
+| - | `menu.texturePacks` | client | The title screen's Mods and Texture Packs button reads Texture Packs, as later betas renamed it |
 | 34 | `render.bowPose` | client | Players' and skeletons' bows take the held-tool path, shifted and turned (`BowPose`); third person only |
 | 12 | `boats.sturdy` | world | A break needs beta's own condition (a sideways collision while still moving over 0.15 along the free axis) and a real crash: at least 0.25 blocks a tick lost into what it hit. So every break here would also be one in beta; scrapes along a shore or an item never break a boat. Items and arrows aren't solid to boats (as #31 for carts) |
 | 12 | `boats.handling` | world | In water, with nobody paddling (no rider, or a rider not moving), speed × 0.96 a tick on top of beta's 0.99: from top speed it stops in about 8 blocks, not about 40 (measured 7.7 against 18.1 in 60 ticks). Partly in the water, a boat comes to rest 0.1885 over the surface, where beta's bobbed about 0.1 up and down around 0.185 for good: its push up worked out from where the surface lies against it instead of beta's count of wet fifths, and its rise and fall × 0.8 a tick (below). Paddling is beta's: same top speed, acceleration, turning. A boat `boats.steering` moves has that switch's momentum instead of the coasting; the float applies to every boat |
@@ -50,12 +50,12 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | | `blocks.chestPairs` | world (drawn on the client) | Chests pair as later versions pair them (below): a chest placed joins one beside it only if that one faces the same way, stands to its left or right and isn't joined, and never while sneaking; a chest can go anywhere, beside a double chest too. A chest joined so says who to in its data (6 to 13). Needs `blocks.chestsFaceYou`, as pairs go by facing |
 | | `render.chestLids` | client | A double chest's top and bottom are one lid: four half-lids made from the texture pack's lid in tiles beta leaves as placeholders (below) |
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
-| | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's, the user's call, 2026-11-08) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width (the user's ask, 2026-11-07) |
+| | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width |
 | | `render.particleDistance` | client | Particles made within 32 blocks of the camera, not beta's 16, and a puff (a blast's, a mob dying or appearing) within 64 (below) |
 | | `render.entityDistance` | client | Everything drawn within 64 blocks at least (a zombie's distance), where beta's distance went by the box: a dropped item 16, a chicken 21, an arrow 32; bigger things as beta (below) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
 | | `combat.heldAttack` | client (any server) | While the attack button is held, beta's repeat of the click every 5 ticks hits only the entity the press landed on; any other under the crosshair is passed over, and every one if the press was on a block or on air. The rest of the click is beta's, so mining and the swing are unchanged (`heldattack.MinecraftMixin`, below) |
-| | `furnace.woodenFuel` | world | The user's ask (2026-11-09): wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
+| | `furnace.woodenFuel` | world | Wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
 | | `mobs.skeletonArrows` | world | A skeleton's arrow starts at its eyes less 0.1, where `ArrowEntity` puts any shooter's and later versions a skeleton's, not 1.4 higher, over its head; aimed so it crosses the target's distance where beta's would, spread as widely there (`SkeletonAim`, below) |
 | | `mobs.squidSurface` | world | A squid in water rises each tick at most a fifth of the way to 0.3 under the surface (its middle's), so it slows as it nears, never comes out and swims on there; deeper, beta's swim (`Squids`, below) |
 | | `skins.modern` | client | 64x64 skins kept whole and drawn as a modern client draws them, on a player model of their own; 64x32 skins stay beta's, processor and model (`ModernSkin`, `ModernPlayerModel`, below) |
@@ -63,12 +63,12 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | 6 | `sky.dusk` | client | `smooth` (default), `stepped` or `beta`. Light applied when the chunks are drawn, not baked into them, so no chunk rebuilds: stepped draws beta's own picture at each whole darkness step, the whole view at once; smooth glides between them (below). Needs OpenGL 2.0 |
 
 "World" means where the world runs: the server in multiplayer, the client in single player.
-Dying mobs that aren't solid, built here on 2026-11-08, went to Old Faithful at the user's word (#81, `docs/fixes.md`).
+Dying mobs that aren't solid, built here on 2026-11-08, went to Old Faithful (#81, `docs/fixes.md`).
 
 ### Dusk and dawn without rebuilds (#6)
 
-The switch is a choice (user, 2026-11-03): **Smooth** (the default, once its fog followed the terrain; the user
-first found smooth dusk "a little weird" with the fog stepping) glides; **Stepped** keeps beta's eleven steps, each
+The switch is a choice: **Smooth** (the default, once its fog followed the terrain: with the fog still
+stepping, smooth dusk looked odd at first) glides; **Stepped** keeps beta's eleven steps, each
 one beta's own picture, but the whole view changes at once with no rebuild wave; **Beta** is beta's baking and rebuilds (the dusk mixins left out). On the screen,
 "Dusk: Stepped / Smooth / Beta"; Stepped and Smooth switch live (the same draw-time light, only the darkness it's
 drawn at differs: `DuskLight.smooth`), to or from Beta waits for a restart (the options mod's `Setting` with both
@@ -92,7 +92,7 @@ darkness (beta's reading at the two whole steps either side, mixed). A darkness 
 compressed dusk beta marked about 260-270 chunks in 11 steps, this none. Cost: 26-40% of blocks take the second,
 no-output pass; chunk building measured 0-20% slower (noisy); the shader's frame cost wasn't measured. The fog's
 brightness (below Far view distance beta darkens the fog and the horizon by the light at the camera, eased a tenth a
-tick) reads the same darkness too (2026-11-03, the user's ask): in smooth dusk it glides with the terrain instead of
+tick) reads the same darkness too (2026-11-03): in smooth dusk it glides with the terrain instead of
 stepping and easing after each of beta's steps; in stepped it's beta's. At Far that brightness is always 1, and the
 fog colour followed the time of day continuously already.
 Limits: run only on our LWJGL component and an NVIDIA GPU (the GL20 calls exist in LWJGL 2, unrun there; without
@@ -102,7 +102,7 @@ off for those.
 
 ### Fences (#30)
 
-The user's ask (2026-11-07), after it was kept as beta. Built by Claude Opus 5.5 the same day. Beta's fence is a whole
+Changed on 2026-11-07 after first being kept as beta. Built by Claude Opus 5.5 the same day. Beta's fence is a whole
 block to aim at and a whole 1 x 1.5 x 1 box to walk into, whatever it joins; here it's the shape it's drawn as. A fence
 joins only fences beside it in beta (`renderFence`), so the arms follow that, and fence gates don't exist.
 - **Shape.** As 1.8 to 1.12 cover it, two boxes: one along z where it joins north or south, one along x where it joins
@@ -128,9 +128,9 @@ joins only fences beside it in beta (`renderFence`), so the arms follow that, an
   cows and sheep (0.9) still don't. The "smart farm" (the whole box over farmland, #30) goes with it. Path finding is
   beta's, which treats a fence block as solid either way; mobs only stop snagging on posts as they cut corners.
 
-### Chests (the user's ask, 2026-11-08)
+### Chests (2026-11-08)
 
-The user asked for chests that "connect their textures and handle doubling in a similar way to modern minecraft". Built
+Chests that join their textures and pair as later versions' do. Built
 by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
 - **Pairs** (`blocks.chestPairs`). Beta joins any two chests side by side and forbids a third beside a pair, so rows of
   double chests need gaps. Here a placed chest faces you (#69) and joins a chest on its left or right that faces the same
@@ -151,20 +151,19 @@ by Claude Opus 5.5 the same day; the full rule is `Chests`' class comment.
   placeholders beta never draws, as terrain.png is loaded and again after a pack is chosen. A chest's top and bottom both
   lay a tile out by world x and z, so one set serves both. A mod that also writes into those placeholder tiles would
   clash; none we know of does. A drawn lid of our own was tried the same day, twice (streaks, then the original's own
-  grain shapes), and the user chose this one made from the pack's lid over both (in history: 84d8cb6, 6086323).
+  grain shapes), and this one made from the pack's lid replaced both (in history: 84d8cb6, 6086323).
 - **Multiplayer.** Which chests join, and what opens, is the server's; a client draws by the data it's sent, so a client
   without the change draws chests joined the new way by beta's rule (a row of doubles looks like one long chest broken
   oddly), and opens what the server opens. A client with the change on a server without it may show a chest placed
   beside a double chest for a moment before the server takes it back, as for any refused placement; nothing for that
   needs the server marker, whose field is full anyway.
 
-### Skeleton arrows (the user's ask, 2026-11-10)
+### Skeleton arrows (2026-11-10)
 
-Asked for on 2026-11-08 and built as the start alone (0.4.0, off by default after the user tried it), then taken out in
-0.4.1 as there weren't many good ways to make it better (user, 2026-11-09). Asked for again on 2026-11-10: like later
-versions, balanced to keep about the same beta efficiency, just from somewhere other than over the head, and fine for
-skeletons to shoot from under a two-high ceiling. Built by Claude Opus 5.5 the same day. On by default, as later
-versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), where 0.4.0 shipped it off.
+First built as the arrow's new starting point alone (0.4.0, off by default), then taken out in
+0.4.1 as there weren't many good ways to make it better. Built again on 2026-11-10 by Claude Opus 5.5: from
+the eyes as in later versions, aimed to hit about as often as beta's, and able to shoot from under a two-high ceiling. On by default, as later
+versions have it (Claude Opus 5.5 and Fable 5.2's call), where 0.4.0 shipped it off.
 - **Beta.** `SkeletonEntity.attack` makes the arrow at the eyes less 0.1 (`ArrowEntity`'s shooter constructor, as for a
   player), lifts it 1.4, to 2.83 over the feet, and aims from there at the target's eyes less 0.2, plus 0.2 up for each
   block across, at speed 0.6 and spread 12 (each part of the direction off by a normal 0.09). The 0.2 is the allowance
@@ -194,7 +193,7 @@ versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), w
   0.4.0 keeps it off until changed (the changelog says where); 0.4.1 and later never wrote it.
 - **Beside Wolf Packs**, whose wrap of `spawnEntity` in the same method tells the packs about a shot: different calls,
   both apply.
-- **Spider jockeys** (found 2026-11-10 after 0.6.0, on the user's question). The skeleton sits 0.175 over its spider's
+- **Spider jockeys** (found 2026-11-10 after 0.6.0). The skeleton sits 0.175 over its spider's
   feet (`getPassengerRidingHeight`, 0.9 * 0.75 - 0.5), and beta's arrow spares only its shooter, for its first 4 ticks.
   From the eyes the arrow starts 0.4 over the spider's box as the arrow tests it (grown 0.3, so 1.2 high and 1.0 out
   each way), where beta's started 1.8 over, so a shot steeply down went into the spider, the more the steeper (1 below,
@@ -207,10 +206,10 @@ versions have it and as asked outright (Claude Opus 5.5 and Fable 5.2's call), w
   against 45). A client keeps the arrow's owner from its spawn packet, so one with the mod agrees; one without it may
   show the arrow glancing off the spider for a moment while the server's flies on.
 
-### Boats at rest on the water (the user's report, 2026-11-11)
+### Boats at rest on the water (2026-11-11)
 
-The user, playing More Faithful: is the boat meant to bob continuously up and down? It wasn't: Boat Handling had
-promised a boat that rides steadily since 0.1.0, and its damping only shrank beta's bob. Fixed in Boat Handling by
+Boats bobbed continuously up and down at rest, though Boat Handling had
+promised a boat that rides steadily since 0.1.0: its damping only shrank beta's bob. Fixed in Boat Handling by
 Claude Opus 5.5 the same day (`mixin/boathandling`, `Boats.wetShare`).
 - **Beta.** `BoatEntity.tick` tests five slices of the boat's box, each 0.12 high, the first from 0.125 under the box,
   and pushes it up by 0.04 × (2 × wet − 1) a tick, the wet share in fifths (fully under: downward speed halved and
@@ -243,13 +242,13 @@ Claude Opus 5.5 the same day (`mixin/boathandling`, `Boats.wetShare`).
   about half a second; beta's own and on every entity, left alone.
 - **Cost.** Up to 18 block reads a tick for a boat partly in the water.
 
-### Boat steering (the user's ask, 2026-11-10)
+### Boat steering (2026-11-10)
 
-The user: boats a bit faster and easier to steer, then could we have the modern steering controls too. Built by Claude
-Opus 5.5 the same day; it waited to ship with World Rules' Pickup Reach (the user's word), and both came out in 0.7.0
+Boats a bit faster and easier to steer, then later versions' steering controls too. Built by Claude
+Opus 5.5 the same day; it waited to ship with World Rules' Pickup Reach, and both came out in 0.7.0
 (2026-11-11). Still
-Faithful, `boats.steering`, on by default; the user hasn't said whether it belongs here or as a More Faithful world
-rule, so its physics live in `BoatSteering`, apart from the mixins (`mixin/boatsteering`), to move if they prefer.
+Faithful, `boats.steering`, on by default; whether it belongs here or as a More Faithful world
+rule is open, so its physics live in `BoatSteering`, apart from the mixins (`mixin/boatsteering`), to move if it goes there.
 - **Beta.** Paddling adds a fifth of the rider's own motion each tick (`BoatEntity.tick`), which is the rider's keys
   turned by where the rider looks, and keeps 0.99 of the speed: W goes the way you look, A and D sideways to it. The
   boat's yaw swings toward where it moved, up to 20 degrees a tick, and a rider's view turns with the vehicle
@@ -262,7 +261,7 @@ rule, so its physics live in `BoatSteering`, apart from the mixins (`mixin/boats
   In water the boat keeps 0.9 of its speed and turn rate each tick, applied before the keys and then the move (beta's
   0.99 after the move steps aside), so a push settles at push / (1 - 0.9), 200 times the push in blocks a second: W at 0.325 a tick, 6.5
   blocks a second, the same in every direction (beta's 0.4 limit on each axis lifted, so diagonals are no faster); S
-  and a turn key alone near 0.05. The user's call (2026-11-11): about 6.5 to 6.6, a little faster than beta (about 5.8
+  and a turn key alone near 0.05. The speed is about 6.5 to 6.6, a little faster than beta (about 5.8
   blocks a second measured); later versions push 0.04 (8 blocks a second), and the first build had 0.05 (10). One
   constant, `FORWARD_PUSH`. The momentum carries a boat on
   through a turn, so it drifts: at full turn its motion trails its heading by about 50 degrees, as in later versions.
@@ -309,10 +308,9 @@ rule, so its physics live in `BoatSteering`, apart from the mixins (`mixin/boats
   had.
 - **Cost.** A few multiplications a tick a boat, and on a server a sine and cosine per riding move.
 
-### Squid at the surface (the user's ask, 2026-11-10)
+### Squid at the surface (2026-11-10)
 
-The user, playing: squid jitter at the surface; it's their own motion and bob, but could it look more natural, with
-less bob. Built by Claude Opus 5.5 the same day.
+Squid jittered at the surface, from their own motion and bob; with less bob they look more natural. Built by Claude Opus 5.5 the same day.
 - **What it was.** Old Faithful's #77 lets squid swim up, so they reach the surface. A squid in water sets its speed every
   tick to its swim direction times its pulse, and keeps a direction until its 1-in-50 a tick re-pick (about 2.5 s); out
   of the water (#77's test: its middle over the water's real surface) it falls, its sideways speed zeroed and its
@@ -347,17 +345,16 @@ less bob. Built by Claude Opus 5.5 the same day.
   Faithful client on a server without the change sees the server's bounce; a smoothing of its own would draw squid
   somewhere other than the server has them, so there's none.
 
-### Shift-click (the user's ask, 2026-11-09)
+### Shift-click (2026-11-09)
 
-Only where beta's own shift-click stopped short, nothing it couldn't do (the user's call): it moved a stack between a
+Only where beta's own shift-click stopped short, nothing it couldn't do: it moved a stack between a
 container and the inventory, or the inventory and the hotbar, but did nothing in a dispenser, never put anything into a
 furnace and never put armour on. `inventory.shiftClick`, with nothing held:
 - **Dispenser**: both ways, as a chest's (out to the hotbar's end first).
 - **Furnace**, from the inventory: what smelts (`SmeltingRecipeManager`) to the top slot, else fuel (the furnace's own
   `getFuelTime`, so other mods' fuels count) to the bottom; if that slot holds something else, nothing moves, as in later
   versions. Logs go on top. Anything else, beta's.
-- **Armour**, on the inventory screen: an `ArmorItem` goes on where its place is empty; else beta's. Not pumpkins (the
-  user's call): they're carried in stacks.
+- **Armour**, on the inventory screen: an `ArmorItem` goes on where its place is empty; else beta's. Not pumpkins: they're carried in stacks.
 
 Made of beta's own clicks (`ShiftClicks`, hooked where `HandledScreen.mouseClicked` sends a shift-click): pick the stack
 up, put it down slot by slot as beta's `insertItem` would (onto the same item, then an empty slot), put back what didn't
@@ -369,13 +366,13 @@ follow Faithful Core's rule where it's installed (stack data). Only vanilla's ow
 
 Later versions' other handling (dragging to spread a stack, double-click to gather, the drop key over a slot, crafting
 many batches at once, the crafting table's grid taking shift-clicks, keeping what's held when a screen closes) stays
-beta's: built the same day and undone at the user's word, for only beta's gaps and no new capabilities.
+beta's: built the same day and undone, for only beta's gaps and no new capabilities.
 
-### Held attack (the user's ask, 2026-11-11)
+### Held attack (2026-11-11)
 
-The user: no attacking something by accident after breaking a block, or after moving the crosshair off something,
+No attacking something by accident after breaking a block, or after moving the crosshair off something,
 while holding the button down; a Still Faithful change. Built by Claude Opus 5.5 the same day; the rule below was Claude
-Opus 5.5's pick, told to the user, who may still choose later versions' (below).
+Opus 5.5's pick, and later versions' is the other choice (below).
 - **Beta.** A press of the attack button calls `handleMouseClick(0)` on whatever the crosshair is on: an entity is hit,
   a block's mining starts, nothing gets a swing and a 10-tick wait. While the button is held,
   `Minecraft.tick` calls it again every `tps / 4` ticks (four times a second) on whatever the crosshair is on then;
@@ -397,9 +394,9 @@ Opus 5.5's pick, told to the user, who may still choose later versions' (below).
 - **Multiplayer.** Client input only: a server is sent a hit only when the client makes one, so it works on any server
   and a server needs nothing; with the switch it's just sent fewer.
 
-### Particle and entity distance (the user's ask, 2026-11-09)
+### Particle and entity distance (2026-11-09)
 
-The user, playing with Explosive Arrows: the blast doesn't show at a distance. Built by Claude Opus 5.5 the same day.
+From play with Explosive Arrows: the blast doesn't show at a distance. Built by Claude Opus 5.5 the same day.
 - **Beta.** `WorldRenderer.addParticle` makes no particle more than 16 blocks from the camera, whatever made it.
   `Entity.shouldRender` draws a thing within 64 times its box's average side (times `renderDistanceMultiplier`, 10 for
   other players): a dropped item 16, a chicken 21, an arrow 32, a minecart or pig 57, a zombie 64, a spider 79;
@@ -437,8 +434,8 @@ The user, playing with Explosive Arrows: the blast doesn't show at a distance. B
 
 Pure Faithful's hardening fetches real skins, 64x64 included, but beta's `SkinImageProcessor` draws them on a 64x32
 canvas and `ModelPart` divides V by 32. Client-only: nothing from the server or other players. No setting beyond the
-switch. Built 2026-11-05 by Claude Opus 5.5; drawn as a modern client draws them since the same day, after the user
-asked whether the far faces of a layer looked the same.
+switch. Built 2026-11-05 by Claude Opus 5.5; drawn as a modern client draws them since the same day, so the far faces of a layer
+look as they do there.
 - **Whole skins.** The skin's download gets `ModernSkin.processor` instead of beta's (capes, through the same call, keep
   beta's). A 64x64 image becomes a `ModernSkin` (a BufferedImage, which is the mark); anything else goes to beta's
   processor, so classic skins are beta's exactly.
@@ -459,7 +456,7 @@ asked whether the far faces of a layer looked the same.
   faces are collected, sorted and drawn each frame with GL's own calls, not display lists or the tessellator, whose
   `normal()` ruins a normal with a negative x (a rolled arm's top went dark). A skin with no half-transparent pixels
   looks as it did, sorted or not; a half-transparent one now blends rather than showing as solid. The last is the look
-  most unlike beta, and the user's call if they don't want it. Not "improved transparency", 26.3's order-independent
+  most unlike beta, and could go back if it isn't wanted. Not "improved transparency", 26.3's order-independent
   option, which is off by default.
 - **Far faces.** Since 1.21.9 `entity.fsh` has `PER_FACE_LIGHTING`: `gl_FrontFacing` picks the normal's light or its
   negative, so a face seen from behind is lit as if facing you, which fixed-function GL calls two-sided lighting (on
@@ -535,7 +532,7 @@ shear, milk, saddle and ride them. So an animal is kept for good once:
 - it hatched from an egg a player threw.
 
 Cows, pigs, sheep and chickens; wolves keep beta's rule (tamed ones already stay; a wild one you hit turns hostile).
-Not kept: animals a player hits (the user's call, 2026-11-02: hit animals needn't stay), and animals fenced in without
+Not kept: animals a player hits (hit animals needn't stay), and animals fenced in without
 being tended (so a penned wild chicken, or a pig without a saddle, still despawns). The mark is saved as `PersistenceRequired` (later versions' tag for the same thing, so a
 world carried forward keeps them); beta ignores and drops it. Kept animals count towards beta's animal cap (about 17
 around one player), so a big farm near you means fewer wild animals spawning nearby; Beta 1.8 changed spawning to
@@ -769,27 +766,27 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   Passed 2026-11-02.
 - `serverTest`, `clientAudit` and `clientAuditSdl` carry the mod, so every mixin is applied and audited.
 - Not checked by a test: how modern skins look on real players and between a real client and server (reasoned:
-  nothing goes over the network, each client draws what it fetched); the bow pose and dropped item sizes (what's seen: the user's), boat handling's and Boat Steering's feel
-  (the user's), glowstone between a real client and server (the marker and gating mirror #9/#10's, audited and
+  nothing goes over the network, each client draws what it fetched); the bow pose and dropped item sizes (what's seen, judged by eye), boat handling's and Boat Steering's feel
+  (judged in play), glowstone between a real client and server (the marker and gating mirror #9/#10's, audited and
   reasoned), animals kept by riding a minecart or hatched from an egg (the same keep call, reasoned).
 
 ## Kept as beta
 - Eating at full health stays possible (#35): mods add foods with other effects, and blocking eating would need
   adapting for each.
 - New worlds spawning near 0,0 on servers with the Nether on (#52).
-- Torches drawn at full brightness (#34): deliberate in `renderTorch`; the user likes it, the glow is how they
-  remember early versions.
+- Torches drawn at full brightness (#34): deliberate in `renderTorch`; the glow is part of how early
+  versions look.
 - Clouds passing through tall terrain (#34): a feature, they float at one height, as in later versions.
 - Multiplayer: the mining click tempo (#36), other players' 11° turning steps (#50), not holding a player still
   after a teleport (#16b).
 - Closing the window without saving: players use it to undo item loss.
-- The vignette's banding at night (user, 2026-11-03): beta's own. Its texture is a smooth fade, but it multiplies a
+- The vignette's banding at night: beta's own. Its texture is a smooth fade, but it multiplies a
   dark 8-bit frame, which has only a few levels to step through, so the fade shows as rings.
 
 ## Open (traced 2026-11-02)
 
-The user's calls (2026-11-02): #31 fixed in Still Faithful on a switch, as recommended (built: The changes); #63
-stays beta; #66's generation slips skipped. The spawner's corner-centred area: asked whether it matters.
+Decided: #31 fixed in Still Faithful on a switch, as recommended (built: The changes); #63
+stays beta; #66's generation slips skipped. The spawner's corner-centred area: open, whether it matters.
 
 
 - **#63, slimes skip the room check.** Slimes spawn below y 16 (not 40), in slime chunks (1 in 10), a further 1 in 10;

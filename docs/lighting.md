@@ -72,7 +72,7 @@ Not on a multiplayer client: there the server's light is the world's (and `Chunk
 received from a server). The client's own queue handling (the corner columns, water, no clearing) applies as it does
 anywhere.
 
-### Distant lava stayed dark (found by the user, 2026-11-02)
+### Distant lava stayed dark
 
 The first version sent what the check found through vanilla's queue. The single player client works through that
 queue at 500 updates a frame, newest first, and exploring adds work faster than that, so a far chunk's lava (a lake's
@@ -154,7 +154,7 @@ fixes, are marked; the spread made the server's start faster than vanilla's own.
 
 ## The switch (`config/oldfaithful-lighting.properties`)
 
-`lava.lightGenerated`, on by default (the user's call, 2026-11-02): lava from terrain generation lights as it loads.
+`lava.lightGenerated`, on by default: lava from terrain generation lights as it loads.
 The file is written with an explanation on first start (`LightingConfig`, as `oldfaithful-fixes` does); a server's
 setting is its world's. Old Faithful's settings screen (Lava Light, `docs/options.md` > The settings screen) changes it
 while the game runs: the check reads it per chunk, so it changes land as it loads, and either way the light it finds

@@ -1,7 +1,7 @@
 # b1.7.3's own bugs: the catalogue (phase 5, the Fixed edition)
 
 Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves all of it alone except where an entry
-says it may be the user's call to take into Purist. Old Faithful (Fixed) is narrow (user, 2026-11-02): beta as it was
+says it may go into Purist too. Old Faithful (Fixed) is narrow: beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
 not to Fixed. Fixed so far: fifty-one entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-four switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
@@ -25,7 +25,7 @@ Key:
 - **Status**: **T** = cause traced in the decompiled code here (class/method given); **L** = listed by a fix mod,
   the wiki or wide knowledge, cause not traced (the entry says so).
 - **Kind**: **bug** (clearly wrong), **quirk** (part of beta's feel: a toggle, default as beta), **ask** (what later
-  versions changed and players may have built around: the user's call; Old Faithful leaves it as beta), **speed**.
+  versions changed and players may have built around; Old Faithful leaves it as beta), **speed**.
 - **Ed.** (edition): **Pure** = Pure Faithful, so every edition (worlds lost, crashes, security, speed with identical
   pixels); **OF** = Old Faithful (a clear mistake); **SF** = Still Faithful (an ask); **none** = a quirk, beta's
   feel. "OF / SF" splits an entry: its bug part and its ask part.
@@ -109,9 +109,9 @@ Key:
 | 68 | Single player: a rejoin prepares the terrain around the world's spawn, not around the player. Nothing a player notices; left as beta. The suffocation reported with it may well be #75's | bug | none | none | T |
 | 69 | Chests can't be turned: the front is worked out from the blocks around (south when free-standing, sideways in a corner) | ask | SF | mid | built (SF) |
 | 70 | Dots of sky flicker along block edges where render chunks meet: each chunk is placed with a rounding error bigger than beta's overlap | bug | OF | mid | fixed (OF) |
-| 71 | Screen-aligned lines flicker over the block-breaking cracks (seen by the user); the cracks never lose depth to their block in measurement | ? | ? | low-mid | not reproduced; set aside (user) |
+| 71 | Screen-aligned lines flicker over the block-breaking cracks; the cracks never lose depth to their block in measurement | ? | ? | low-mid | not reproduced; set aside |
 | 72 | Dots of sky along some edges of grass, stone, dirt, planks, bricks, wool and others: a face's texture starts exactly on its tile's edge, and a hair of rounding reads the transparent tile beside it in the atlas | bug | OF | mid | fixed (OF) |
-| 73 | Create New World and Rename World: in a big window the title comes down among the fields (seen by the user) | bug | OF | low | fixed (OF) |
+| 73 | Create New World and Rename World: in a big window the title comes down among the fields | bug | OF | low | fixed (OF) |
 | 74 | Under a block 2 above the floor, a step-up sinks the player 0.3 into the floor or a ledge, then the push-out shoves them out | bug | OF | mid | fixed (OF) |
 | 75 | Rejoining while touching a wall can put the box a rounding step inside it: the player walks in, suffocates if the wall reaches the eye, and is pushed out | bug | OF | low-mid | fixed (OF) |
 | 76 | Squid make footsteps on the sea floor, and step on what's there (redstone ore lights) | bug | OF | low | fixed (OF) |
@@ -147,7 +147,7 @@ column of air down through y 0 could make it spin. Wolves heal by raw pork's val
 (`WolfEntity.interact`): maybe deliberate, an SF note at most. Trees growing over glass, torches and chests beside
 saplings (`OakTreeFeature`'s canopy check is a layer off) lasted until well after beta.
 
-## Possibly the user's call for Purist too
+## Possibly for Purist too
 
 Purist fixes what broke because hardware and systems moved on. Three entries sit on that line:
 - **1 and 2 (save safety).** Not caused by modern machines, but they lose players' worlds, and a hardening pack that
@@ -188,10 +188,9 @@ light falling behind water or ice can leave it too bright (`World.updateLight`'s
 past a million; a full save keeps light half done. Not causes: the 50-deep cap can't be reached, and the 500 a call
 only paces the work. What players see change: underground lava lakes and the Nether's lava seas light their
 surroundings (fewer hostile mobs spawn right beside them), and the rare dark pocket fills in. A first version queued its
-fixes behind vanilla's 500-a-frame queue, so in single player far lava stayed dark until the player came near (the
-user, 2026-11-02); now what a loading chunk needs is lit at once (`docs/lighting.md` > Distant lava stayed dark). The original "high,
+fixes behind vanilla's 500-a-frame queue, so in single player far lava stayed dark until the player came near; now what a loading chunk needs is lit at once (`docs/lighting.md` > Distant lava stayed dark). The original "high,
 never heals" impact was the catalogue's guess; fresh worlds measured show mostly the lava, so "mid". Generated lava's
-light has a switch, on by default (the user's call, 2026-11-02): `lava.lightGenerated` in
+light has a switch, on by default: `lava.lightGenerated` in
 `config/oldfaithful-lighting.properties`; off leaves it dark as beta did, every other fix staying on
 (`docs/lighting.md` > The switch).
 
@@ -201,7 +200,7 @@ last hurt, has a 1 in 800 chance a tick of vanishing, and beyond 128 blocks vani
 loaded); `canDespawn()` is true for every mob except a
 tamed wolf (`WolfEntity`). So penned cows, pigs (saddled ones too), sheep and chickens disappear whenever the player
 wanders off. Beta 1.8 stopped passive mobs despawning. Players rebuilt farms around this for years; whether it's a bug
-or beta's design is the user's call (a fix: passive mobs never despawn, or only naturally spawned ones away from
+or beta's design is a judgement call (a fix: passive mobs never despawn, or only naturally spawned ones away from
 players' builds; Beta 1.8's way pairs with its changed animal spawning). **Built in Still Faithful** (2026-11-02,
 `animals.keepTended`): animals a player has looked after stay (`docs/still-faithful.md` says what counts).
 
@@ -222,10 +221,10 @@ sky brightness is baked into the chunk meshes. Each step re-meshes the whole vie
 and with a far view the darkening sweeps across over seconds), and the light changes in visible steps. Beta 1.8 made
 the cycle smooth with no chunk updates (a lightmap). Fix: apply sky brightness at draw time (a lightmap or a
 per-vertex sky term), so no rebuild is needed. It changes how dusk looks (smooth instead of stepped), so not a pure
-speed win: the user's call, Fixed edition, possibly a toggle. Interaction: phase 4 (chunk building throughput; the
+speed win: a judgement call, Fixed edition, possibly a toggle. Interaction: phase 4 (chunk building throughput; the
 vsync chunk budget). **Built in Still Faithful** (2026-11-02, `sky.dusk`): light applied when the chunks are
 drawn, exactly beta's at each step (checked pixel by pixel), no rebuilds; needs OpenGL 2.0. Smooth by default, its fog following
-the terrain (the user's call after playing both, 2026-11-03); stepped (beta's steps, the whole view at once) or beta's
+the terrain; stepped (beta's steps, the whole view at once) or beta's
 rebuild as choices.
 
 ### 7. Grey sky while a container is open (T)
@@ -261,8 +260,8 @@ keeps its stone speed. Both sides; in multiplayer the client mines faster only o
 Their stone sound stays (beta's; not a clear mistake on its own).
 
 ### 10. Tool effectiveness gaps (T)
-The user's call (2026-11-02): every mismatch between what a block is made of and the tool that mines it fast is a bug;
-obsidian keeps beta's speed (below). Redstone ore kept it too until the user's call of 2026-11-12 (below).
+Decided: every mismatch between what a block is made of and the tool that mines it fast is a bug;
+obsidian keeps beta's speed (below). Redstone ore kept it too until 2026-11-12 (below).
 How beta decides (traced): a break's progress per tick is `Block.getHardness(player)`: without `canHarvest`,
 `1 / hardness / 100`; with it, `PlayerEntity.getBlockBreakingSpeed / hardness / 30`, the speed being the held item's
 `getMiningSpeedMultiplier` (divided by 5 in water and by 5 in the air). `ToolItem.getMiningSpeedMultiplier` returns the
@@ -294,10 +293,10 @@ already reasons by material. Mojang listed it among fixes in Beta 1.9 Prerelease
 axe; rails and redstone ore faster with pickaxes; obsidian, spawners, both doors faster), and 1.0.0-RC1 then raised obsidian's hardness to 50 to restore its slowness (Minecraft
 Wiki's version pages). Obsidian's 15 s with a diamond pickaxe was a property players knew and built around; on the
 list at beta's hardness 10 it would take under 2 s (modern: ~9.4 s at hardness 50), so it stays in Old Faithful. Still
-Faithful and above follow 1.0 (the user's call, 2026-11-12: `blocks.obsidian`, `docs/still-faithful.md`): on the
+Faithful and above follow 1.0 (`blocks.obsidian`, `docs/still-faithful.md`): on the
 list at hardness 50, 9.4 s with a diamond pickaxe and 250 s without one; Diamond Only keeps beta's 50 s there. Redstone ore's slowness
-is well known too and first stayed by the user's call (2026-11-02); they changed it on 2026-11-12, for Old Faithful and
-every edition above it, on Opus 5.5's case that unlike obsidian's nobody builds around it, and that it's the furnace's
+is well known too and at first stayed as beta's; it changed on 2026-11-12, for Old Faithful and
+every edition above it, since unlike obsidian's nobody builds around it, and it's the furnace's
 mistake again (an iron pickaxe required, then mining at hand speed, 4.5 s against iron ore's 0.75 s). The fix's marker
 letter changed with it, since a server on an earlier Old Faithful still times redstone ore as beta (`docs/fixes.md` >
 multiplayer).
@@ -324,22 +323,22 @@ bucket: the bucket) leaves it in the fuel slot.
 ### 12. Boats break on collisions (T, ask)
 `BoatEntity.tick`: any horizontal collision above 0.15 speed kills the boat and drops three planks and two sticks.
 Players hated it, but it was how beta's boats worked, and later versions changed it on purpose. Options: keep, toggle
-(default beta), or fix. The user's call. Traced further (2026-11-02): `Entity.move` zeroes the velocity of a blocked
+(default beta), or fix: a judgement call. Traced further (2026-11-02): `Entity.move` zeroes the velocity of a blocked
 axis, so the speed tested is what's left along the free axis: a boat sliding along a shore or an item at over 0.15
 breaks, while one driven head-on into a wall at any speed doesn't (beta players learnt to land head-on).
 **Built in Still Faithful** (2026-11-02, `boats.sturdy`, `boats.handling`; `docs/still-faithful.md`).
 
 ### 13. Stairs drop their material (T, ask)
 `StairsBlock.getDroppedItemId/Count` delegate to the base block: wooden stairs drop a plank, cobblestone stairs one
-cobblestone, from a recipe of six blocks for four stairs. Later versions drop the stairs. Bug or beta design: the
-user's call. **Built in Still Faithful** (2026-11-02, `blocks.stairsDropStairs`).
+cobblestone, from a recipe of six blocks for four stairs. Later versions drop the stairs. Bug or beta design: a
+judgement call. **Built in Still Faithful** (2026-11-02, `blocks.stairsDropStairs`).
 
 ### 14. Autosave every 2 seconds (T, ask, speed)
 `World.tick` calls `saveWithLoadingDisplay(false, null)` when the world time is a multiple of `saveInterval` (40
 ticks): level.dat plus up to 24 dirty chunks (`ChunkCache.save`), compressed and written on the game thread. A
 periodic hitch while building or exploring. Moving saves off the thread or spacing them out changes timing and the
 crash-loss window, so it isn't a pure speed win (phase 4 didn't take it). With entry 2 fixed, a longer interval is
-safer. The user's call. **Built in Still Faithful** (2026-11-02, `saves.backgroundAutosave`): the same saves at the
+safer. A judgement call. **Built in Still Faithful** (2026-11-02, `saves.backgroundAutosave`): the same saves at the
 same moments, compressed and written by a thread of their own, on top of the saves mod (`docs/still-faithful.md`).
 
 ### 15. Multiplayer mob jitter (T)
@@ -423,7 +422,7 @@ is off.
 `Screenshot.take` reallocates its pixel buffer only when `capacity < width * height`, but uses `width * height * 3`
 bytes. After the window grows (say 1281x720 to a 1920x1080 maximise), `glReadPixels` overruns the buffer and the
 screenshot fails. Vanilla's window could be resized too, but our resizable, HiDPI-scaled window makes it common.
-Fix: compare against the size actually used. Risk: none. **Fixed in both editions** (user, 2026-11-02): `oldfaithful-display`'s
+Fix: compare against the size actually used. Risk: none. **Fixed in both editions**: `oldfaithful-display`'s
 `ScreenshotMixin` drops a buffer too small for the read.
 
 ### 19. Water flowing down destroys without drops (T)
@@ -440,7 +439,7 @@ neither changes nor schedules another tick, so flowing lava cut off from its sou
 next to it changes. Water: the check meant to make a new source above still water reads the current block's data
 (`world.getBlockMeta(x, y, z) == 0`, never true for flowing water there) instead of the block below, so sources only
 form over solid ground. Both are slips in the code, but both shape builds players made (lava lighting, water
-setups), so: the user's call; toggles likely. **Built in Still Faithful** (2026-11-02, `liquids.lavaThins`,
+setups), so: a judgement call; toggles likely. **Built in Still Faithful** (2026-11-02, `liquids.lavaThins`,
 `liquids.waterSources`): lava thins every time, waiting four times longer on beta's refusals, as later versions do.
 
 ### 21. Far Lands (L, quirk)
@@ -472,7 +471,7 @@ Leaves decay only once bit 8 of their data is set (`LeavesBlock.onTick`). The bi
 broken log (`LogBlock.onBreak`) and within 1 of any broken leaves block (`LeavesBlock.onBreak`), and placed leaves get
 it at once: `LeavesBlockItem.getPlacementMetadata` returns `meta | 8` (corrected 2026-11-02, seen in the running game:
 placed birch leaves have data 10). So placed leaves decay on their next random tick unless a log is within 4. Beta
-1.8 added a no-decay bit. Beta's design or a bug: the user's call, Still Faithful's.
+1.8 added a no-decay bit. Beta's design or a bug: a judgement call for Still Faithful.
 **Built in Still Faithful** (2026-11-02, `leaves.placedStay`, `docs/still-faithful.md`): placed leaves get bit 4
 instead, and never decay.
 
@@ -524,7 +523,7 @@ UniTweaks' "sleeping camera rotation fix" may address either. Neither is clearly
 ### 30. Fences (T for the face, ask)
 The bottom face of a fence on a block renders dark, and the fence's hitbox ignores its connections. The oversized
 hitbox reaches over farmland, which players used to stop crops being trampled ("smart farms", Beta 1.8 removed it):
-the lighting is a bug, the hitbox the user's call (not traced).
+the lighting is a bug, the hitbox a judgement call (not traced).
 The face, traced: flat lighting (`BlockRenderManager.renderFlat`) lights a face that lies inside the block's own space
 from that space for the top and the four sides (`maxY != 1`, `minZ > 0`...), and the door renderer does for its
 underside too, but `renderFlat`'s underside always takes the light of the block below. A fence's bars have raised
@@ -534,7 +533,7 @@ lighting (`renderSmooth`) takes every face's light from outside the block, so th
 both modes. Only raised undersides change: fence bars, and the inner faces of pistons pushing down. Smooth lighting's
 other faces of partial blocks (a slab's top under a ceiling) keep beta's way: not listed, and how smooth lighting treats
 partial blocks as a whole is a bigger question than a slip.
-**The shape in Still Faithful** (the user's ask, 2026-11-07, `blocks.fenceShape`): a post with arms, as later versions
+**The shape in Still Faithful** (`blocks.fenceShape`): a post with arms, as later versions
 have it, to aim at and to walk into; `docs/still-faithful.md` > Fences.
 
 ### 31. Minecarts (T, ask)
@@ -545,11 +544,10 @@ an arrow lying on the track collides with it and stops dead. **Fixed in Old Fait
 method, so an item floating in a boat's path is a wall to it too, and boats break on hitting walls at speed (#12): the
 same slip, left as beta for now since it touches #12's question. In the cart-on-cart branch the check meant to read the other cart's motion mixes `velocityZ` with `prevX` (a
 position) where `velocityX` belongs. Partly traced: the item push is plain; what the slip does to two-cart behaviour,
-including the booster trick players rely on, isn't worked out. Items: bug. The slip: the user's call once it's
+including the booster trick players rely on, isn't worked out. Items: bug. The slip: a judgement call once it's
 understood. Traced 2026-11-02 (`docs/still-faithful.md` > Open): the gate it breaks never fires on east-west track
 and fires almost everywhere on north-south and curved track (walling carts off from each other there); boosters come
-from the normal branch, so the slip switches them off on most N-S track. **Built in Still Faithful** (2026-11-02, `minecarts.cartCollisions`, the
-user's call): the rail under the cart decides, so every axis behaves as east-west track did (`docs/still-faithful.md` >
+from the normal branch, so the slip switches them off on most N-S track. **Built in Still Faithful** (2026-11-02, `minecarts.cartCollisions`): the rail under the cart decides, so every axis behaves as east-west track did (`docs/still-faithful.md` >
 Carts meeting carts). The gate does fire for carts side by side on parallel east-west tracks, as meant; and a booster
 pair that keeps meeting overflows its stored speed after about 1,100 ticks, which beta's own guards end harmlessly
 (the pair stops). Also: `MinecartEntity.animateHurt` (client) grows the wobble as `strength + strength * 10`, where the
@@ -583,7 +581,7 @@ server adds `amount * 10`, and prints "Animating hurt" to stdout on every hit. C
   - Left, judgement calls (built in Still Faithful, 2026-11-02: the bow and dropped item sizes): bow held like an item (third person; beta has no bow pose, Beta 1.8 added one with the
     draw); torches at full brightness (an explicit check in `renderTorch`, deliberate); dropped item sizes (non-cube 3D
     blocks drop at twice the size, `ItemRenderer.render`'s `isFullCube` test: a slip, but fixing it visibly changes
-    familiar drops, so the user's call); clouds through blocks (design); entities unlit in the void
+    familiar drops, so a judgement call); clouds through blocks (design); entities unlit in the void
     (`Entity.getBrightnessAtEyes`; reads as deliberate, and the fix would touch game logic).
   - Left, small but not worth it now: torch bottom (`renderTiltedTorch` draws no underside: a missing face, but adding
     one means choosing its texture); grass block item (the item draws the side texture on every face; unobtainable in
@@ -620,17 +618,17 @@ dirt by hand takes 15 ticks; beta 20 for every later block, fixed 15; a vanilla 
 Skeletons strafe around the player (Beta 1.8 changed it): their AI, a quirk.
 
 ### 38. Footsteps burst at the bottom of stairs (T)
-Noticed by the user while playing (2026-11-02). `Entity.move` adds walked distance to `horizontalSpeed` every tick,
+Noticed in play. `Entity.move` adds walked distance to `horizontalSpeed` every tick,
 but plays a step (and advances `nextStepSoundDistance` by one) only when the block under the feet isn't air.
 Going down stairs the player is briefly airborne, so distance piles up silently; back on solid ground one step
 plays every tick until the counter catches up: a rattle of steps at the bottom. Fix: when no step can play,
 keep `nextStepSoundDistance` level with the distance walked, so the backlog never builds. Risk: none.
 **Fixed in Old Faithful** (2026-11-02, `sound.stepsAfterFalls`): after each move, the next step is kept within one of
-the distance walked, so a landing owes at most one step. Steps filling in the short drops down a staircase (Still Faithful) were
-discussed and left out (the user, 2026-11-03).
+the distance walked, so a landing owes at most one step. Still Faithful doesn't fill in steps for the short drops down a
+staircase.
 
 ### 39. The cursor's item draws behind the player and labels (T)
-Noticed by the user (2026-11-02). `HandledScreen.render` draws the stack held on the cursor at z +32 with depth
+Noticed in play. `HandledScreen.render` draws the stack held on the cursor at z +32 with depth
 on, then `drawForeground` (labels such as "Crafting") with depth off; `InventoryScreen.drawBackground` drew the
 player model earlier at z 50 with depth on. So the held item passes behind the model and under the labels. Fix:
 draw the cursor stack after `drawForeground`, above everything, as later versions do. Risk: mods drawing
@@ -642,7 +640,7 @@ the screen more widely, so a clash there is what the switch is for. It also cove
 container text".
 
 ### 40. Sliders can't reach every percentage (T)
-Noticed by the user (2026-11-02). `SliderWidget` takes its value from the mouse's GUI x across a 142-unit track, so
+Noticed in play. `SliderWidget` takes its value from the mouse's GUI x across a 142-unit track, so
 there are 143 positions at any window size. Volume (0-100%, 0.7% a step) can reach every whole percent but only by
 hitting the right GUI pixel, fiddly at large GUI scales; sensitivity is labelled 0-200% (`GameOptions.getString`),
 1.4% a step, so about four in ten values can't be chosen. The cause is the whole-unit mouse: the screen has more
@@ -650,11 +648,11 @@ pixels than GUI units at any scale above Small. Risk: none.
 **Fixed in Old Faithful** (2026-11-02, `gui.sliderSteps`): the sliders read the mouse to the screen pixel (142s + 1
 positions at GUI scale s), land on whole labelled steps (the smallest float that labels as that step), and draw the
 knob on its pixel. Every label is reachable from Normal (2) up; at Small the volumes all are, and 143 of
-sensitivity's 201, one per pixel. An arrow-key nudge came first and was taken out at the user's word (2026-11-02):
+sensitivity's 201, one per pixel. An arrow-key nudge came first and was taken out:
 fix the cause, not a key workaround. The game's own three sliders only; a mod's are left alone.
 
 ### 41. Repeaters don't update what they power (T)
-Fixed, on by default: the user's call (2026-11-02), though a circuit could have a repeater beside a door it never opened.
+Fixed, on by default, though a circuit could have a repeater beside a door it never opened.
 Five blocks look at their power only when the neighbour update comes from a block whose `canEmitRedstonePower()` is
 true: doors, both halves (`DoorBlock.neighborUpdate`), trapdoors, note blocks, dispensers and TNT (each one's
 `neighborUpdate`). Every redstone source returns true there (wire, torches, levers, buttons, plates, detector rails)
@@ -824,7 +822,7 @@ relative moves and spawns don't, a 1/64-block bob every 400 ticks.
 bob (probably meant: an absolute position rounds down, and the lift keeps a mob out of the floor).
 
 ### 51. A server movement check (T)
-About what a server trusts from its clients; the details are kept private. Left as beta in every edition (user, 2026-11-02).
+About what a server trusts from its clients; the details are kept private. Left as beta in every edition.
 
 ### 52. `allow-nether=false` resets time and spawn on restart (T; fixed in Pure for the Nether off)
 Seen 2026-11-02 while testing #42 on the vanilla server. Traced: `MinecraftServer.loadWorld` always makes the Nether
@@ -848,7 +846,7 @@ level's data should be the overworld's alone); the spawn near 0, 0 is what beta 
 Found by the piston hunt (below), 2026-11-02; the details are kept private. Fixed in both editions (`oldfaithful-saves`).
 
 ### 54. A piston interaction that can lose blocks (T)
-Found by the piston hunt (below), 2026-11-02; the details are kept private. Left as beta in every edition (user, 2026-11-02): it's rare, technical players use the behaviour, and changing the order pistons write in risks breaking contraptions.
+Found by the piston hunt (below), 2026-11-02; the details are kept private. Left as beta in every edition: it's rare, technical players use the behaviour, and changing the order pistons write in risks breaking contraptions.
 
 ### 55. A lone door top passes updates to the block below (T, seen)
 `DoorBlock.neighborUpdate`: a top half (data bit 8) checks that a door is below it and removes itself if not, then,
@@ -904,7 +902,7 @@ Beyond that the head swings between two angles every tick (a zombie looking 45 d
 under a player, about 80 degrees). Fix: step from `-pitch`. OF, low (cosmetic); worth a look in game first.
 **Fixed in Old Faithful** (2026-11-02, `mobs.headNod`). Mob pitch only sets how the head is drawn: skeletons' arrows
 and ghasts' fireballs are aimed apart from it. Checked on the real server (`ServerWorldFixesTest`): a pig looking 45
-degrees up settles at -45 (beta: -40, 0, -40, 0...). How it looks in game is the user's check.
+degrees up settles at -45 (beta: -40, 0, -40, 0...). How it looks in game is left to the eye; no test covers it.
 
 ### 60. /tp keeps the fall (T)
 `ServerPlayNetworkHandler.teleport` (used by /tp) moves the player without resetting `fallDistance`, so a player
@@ -997,8 +995,8 @@ player is read (`World.addPlayer` reads it afterwards; `getPlayerForProxy` alway
 prepare after the player is placed and are fine. Old Faithful 0.1.3 to 0.2.0 (`world.rejoinTerrain`, client) centred
 `prepareWorld` on the saved player's position when no player existed yet. **Removed in 0.2.1**, as below; a config file
 naming the switch loads as before, since only the switches the mod knows are read.
-It was written up as the cause of a report by the user playing Still Faithful (2026-11-03: on a rejoin about 230 blocks
-from spawn they walked a little into a wall, took suffocation damage and were pushed out), reasoning that the walls had no
+It was written up as the cause of a report from play in Still Faithful: on a rejoin about 230 blocks
+from spawn the player walked a little into a wall, took suffocation damage and was pushed out. The reasoning: the walls had no
 collision until their chunks loaded (`World.getEntityCollisions` skips a column whose chunk isn't loaded, and
 `ChunkCache.isChunkLoaded` is true only for chunks already in it). Measured 2026-11-06, that isn't what happens. `World.updateEntity`
 doesn't tick the player until the chunks within 32 blocks are loaded, and with the switch off, 160 real rejoins (`:harness:ledgeHunt`,
@@ -1031,7 +1029,7 @@ disk cache; a client with vsync on, which builds more a frame, isn't run hidden 
 wasn't tried. A slow disk might show more, moved from the first frames to the loading screen.
 
 ### 69. Chests can't be turned (T, ask)
-Asked by the user (2026-11-03). Beta stores no facing for a chest (data always 0); `ChestBlock.getTextureId` works the
+Beta stores no facing for a chest (data always 0); `ChestBlock.getTextureId` works the
 front out every time it's drawn: away from an opaque block behind it, south when free-standing, and its east-west test
 runs after the north-south one, so in a corner a chest turns sideways; a double chest faces across its length the same
 way. Later versions keep a facing chosen at placement. SF. **Built in Still Faithful** (2026-11-03,
@@ -1041,7 +1039,7 @@ looked along it. Data 0 (every chest placed before) keeps beta's rule, so nothin
 draws every chest by beta's rule, and the dropped item has data 0 as before. Checked in `clientStartupTestStill`.
 
 ### 70. Sky through the seams between chunks (T, measured)
-Reported by the user playing Still Faithful (2026-11-03): dots of sky colour along block edges, worse when moving.
+Reported from play in Still Faithful: dots of sky colour along block edges, worse when moving.
 Beta builds each render chunk (16 blocks a side) as a display list of vertices relative to its corner, exact, and
 places it in two translations that nearly cancel: `ChunkRenderer.render` by (the chunk's 1024-block region - the
 camera, the camera cast to a float), then the list's own `translateToRenderPosition` by the chunk's place in that
@@ -1072,17 +1070,17 @@ flying, so 0.1 to 0.2 ms a frame for the per-chunk matrix calls (a push, a trans
 instead of one for each 1024-block region); nothing under vsync.
 
 ### 71. Lines over the block-breaking cracks (seen, not reproduced; set aside)
-Reported by the user playing Still Faithful (2026-11-03), in their words or close to them: looking down, breaking the
+Reported from play in Still Faithful: looking down, breaking the
 top of a block, with the camera facing a diagonal direction, flickering lines flash over the breaking animation. It
-looked like z-fighting (they first said "as if aliasing"), but it wasn't the cracks going behind their block and it
+looked like z-fighting (at first described as aliasing), but it wasn't the cracks going behind their block and it
 wasn't fighting with its block; it was across the whole crack, not at the block's edges, in bands parallel with the
 screen (straight screen-aligned stripes). What was ruled out (`:harness:seamCheck -Pseams.crack`, the crack tiles
 made opaque, each camera position drawn without and with the cracks): over nine views from diagonal to almost
 straight down, standing on the block or two blocks off, at 20, 20, at 4100, 4100 and at -9000, -9000, with smooth and
 with beta's dusk, the cracks never lost depth to their block (0 of 7.4 million crack pixels at each place), so a fix
-for that (drawing the cracks through the block's own chunk transform) was dropped. Not yet tried: the user's real
-settings in a hidden run (window size, the visible window's depth bits), the real crack textures and blending in
-motion. **Set aside by the user** (2026-11-03); open. Next step if it returns: a screenshot or short recording of the
+for that (drawing the cracks through the block's own chunk transform) was dropped. Not yet tried: the settings it was seen with
+in a hidden run (window size, the visible window's depth bits), the real crack textures and blending in
+motion. **Set aside**; open. Next step if it returns: a screenshot or short recording of the
 bands, ideally with F3 showing the position and the window's size.
 
 ### 72. Sky through the edges of some blocks' textures (T, measured)
@@ -1098,7 +1096,7 @@ snowy grass sides and diamond ore read partly transparent neighbours. Measured w
 over 160 frames in the test room with beta's drawing and 10 with #70's fix (0.06 a frame), on block edges of grass
 tops and stone bottoms (plus one stray pixel at a pillar's corner); none once the atlas's transparent texels are made
 opaque. Where the neighbouring texel is opaque the same slip gives a pixel of the neighbour's colour instead (atlas
-bleeding), not measured. OF (a clear mistake), mid. **Fixed in Old Faithful** (2026-11-03, the user's go,
+bleeding), not measured. OF (a clear mistake), mid. **Fixed in Old Faithful** (2026-11-03,
 `render.textureEdges`, client): while a chunk is built, each finished quad's texture coordinates that lie exactly on a
 tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`); quads whose range crosses a
 tile edge, and beta's own 0.01-texel end, are left alone. Measured with #70's fix on both ways: 10 hole pixels over 160
@@ -1117,7 +1115,7 @@ through. Not yet known: whether Pure Faithful or vanilla shows it (only Still Fa
 #72's kind (an edge reading past its tile) or a crack in the geometry. ? (only seen, low).
 
 ### 81. A dying mob stays solid while it falls over (T, read in the source)
-The user's ask (2026-11-08), first for Still Faithful, then for Old Faithful once the evidence was weighed. A mob at 0
+Built first for Still Faithful, then moved to Old Faithful the same day, once the evidence was weighed. A mob at 0
 health stays 20 ticks, falling over, before it's removed (`LivingEntity.tick`: `deathTime`, then `markDead`), and
 `isPushable` and `isCollidable` are `!dead`, true until then: it pushed and was pushed, and projectiles struck it while
 its `damage` refused every hit (`health <= 0` returns false), so an arrow bounced back (`ArrowEntity.tick`'s failed-damage
@@ -1157,7 +1155,7 @@ beta already sent whenever the view held still. Still Faithful's Boat Steering r
 a server (`docs/still-faithful.md`).
 
 ### 84. Mobs at the edges of the screen vanish while part of them is still in view (T, measured)
-The user's sense while playing (2026-11-11): mobs at the edge of the view sometimes seemed to be culled.
+Seen in play: mobs at the edge of the view sometimes seemed to be culled.
 `WorldRenderer.renderEntities` draws an entity only while `culler.isVisible(entity.boundingBox)`: its bare box, where it
 is this tick. But it's drawn where it's interpolated to between ticks (`EntityRenderDispatcher.render`), up to a tick's
 move behind, and most models reach past their boxes. Measured in the real game, unseen, by `:harness:cullingMeasure`
@@ -1186,8 +1184,8 @@ measured). Measured again with it: every kind drawn at the furthest point any of
 drops (with the dying poses). Checked in `FixesCheck` both ways (`docs/fixes.md`).
 
 ### 74. A step-up under a low roof sinks into the floor (T, seen)
-Asked about by the user (2026-11-06), who remembered being moved slightly into a block and pushed out on a simple
-one-block ledge, single player on Still Faithful; whether theirs had a block overhead isn't known yet. Later versions'
+Reported from play (from memory): a player was moved slightly into a block and pushed out on a plain
+one-block ledge, single player on Still Faithful; whether that ledge had a block overhead isn't known yet. Later versions'
 MC-72868, fixed in 1.8.1-pre1. `Entity.move`'s step-up rises at most `stepHeight`, moves, then always goes down the full
 `stepHeight`, using a collision list gathered upward from the feet, which leaves out the floor being stood on (touching
 isn't intersecting). When a block overhead clips the rise (2 air blocks: rise 0.2), the descent ends 0.3 below where it
@@ -1291,7 +1289,7 @@ At the surface (fixed, near it meaning the middle within a block of the surface;
 Never wholly out of the water. A squid at the top bobs: 11 to 16% of its ticks near the surface are in the out-of-water branch, each
 a tick or up to 3 long, so in that branch's gravity it drops back a little and swims up again, with a one-tick change of tentacles.
 That's the same hop beta's squid did at the floor all the time (about 200 changes of branch a minute, and 194 a minute for a fixed
-squid kept at the top by a 1-deep pool); the user, playing, found it a jitter (2026-11-10): Still Faithful's Squid
+squid kept at the top by a 1-deep pool), which reads as a jitter in play: Still Faithful's Squid
 Surfacing eases a squid off 0.3 under the surface instead, and Old Faithful keeps the bounce, beta's own squid code at
 the surface (`docs/still-faithful.md` > Squid at the surface). Elsewhere, the same as beta: water 1 deep (mean height 0.19 both, the
 second half); a trough of flowing water thinning out, all 6 squid carried off its end onto dry stone within the first minute and left

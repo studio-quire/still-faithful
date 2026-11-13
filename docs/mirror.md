@@ -46,7 +46,7 @@ the verification file and write them again the same way.
 
 ## Later: public, under studio-quire
 
-For when the edition is public (the user picked MIT for our code on 2026-11-01; publishing is still a separate step):
+For when the edition is public (MIT for our code; publishing is still a separate step):
 
 - **Where**: a static Maven repository, a `studio-quire/maven` repository served by GitHub Pages at a subdomain of
   studioquire.org (`maven.studioquire.org`, DNS on Cloudflare as the site is). Maven layout needs paths, which GitHub

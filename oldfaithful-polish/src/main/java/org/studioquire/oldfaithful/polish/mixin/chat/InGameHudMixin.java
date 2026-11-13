@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.At;
  * Chat's dark bars as long as each line's own text. Beta draws every line's bar 320 wide (the width lines wrap at),
  * from x 2, where the text starts, and 1 above the text to the bottom of its shadow. Here a line's bar runs from 1
  * before the text to the end of its text (whose width counts the column its last letter's shadow falls in) and 1 further,
- * a gap each side like the 1 beta leaves above (the user's call, 2026-11-08), so each line has its own length; a line with no text has none. Height, colour, fade and
+ * a gap each side like the 1 beta leaves above, so each line has its own length; a line with no text has none. Height, colour, fade and
  * wrapping are beta's, and the open chat screen's history is drawn here too (its typing bar is its own, and stays).
  * The line is told by the bar's place: beta puts line i's top at -9i - 1 in the chat's own coordinates; a bar anywhere
  * else (another mod moving the chat) is left as beta draws it.

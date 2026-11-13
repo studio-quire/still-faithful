@@ -685,8 +685,8 @@ CANDIDATES = [
 ]
 
 
-# The user's note on 07-old-c (2026-11-02): keep the green, but the mint ring and the β's gradient toward it read
-# teal, so the icon feels blue; a silver rim and β instead. Each: (key, name, silver, shadow).
+# 07-old-c keeps its green, but the mint ring and the β's gradient toward it read teal, so the icon feels blue; a
+# silver rim and β instead. Each: (key, name, silver, shadow).
 SILVERS = [("s1", "Neutral silver", (206, 208, 208), OUT),
            ("s2", "Green-tinged silver", (200, 212, 203), OUT),
            ("s3", "Neutral silver, green shadow", (206, 208, 208), (14, 44, 30)),
@@ -731,7 +731,7 @@ def still_seal(top_hue, bottom_hue, sat=0.5, light=1.0):
     return c07_beta((t, b, STILL_SILVER), glyph_tint=STILL_SILVER, shadow=shadow)
 
 
-# More Faithful's seal (the user's pick, 2026-11-10, of Claude Fable 5.2's rounds): crimson, with the silver rim and beta
+# More Faithful's seal (from Claude Fable 5.2's rounds): crimson, with the silver rim and beta
 # of Old and Still Faithful. The first warm seal, where the ladder goes from beta itself to beta with more in it. It sits
 # a little deeper than the first three: a red as light as Pure's blue is salmon.
 def more_seal():
@@ -896,12 +896,12 @@ def main(argv=None):
     for size in (32, 64, 128, 256, 512):
         pure.resize((size, size), Image.NEAREST).save(final / f"purefaithful-{size}.png", optimize=True)
     pure.resize((128, 128), Image.NEAREST).save(final / "purefaithful.png", optimize=True)
-    # Old Faithful's: the spring green the user picked (07-old-c) with a silver rim and β, s3 (the silvers looked alike
-    # to them at icon sizes; s3's green shadow is the one that differs, 2026-11-02).
+    # Old Faithful's: the spring green of 07-old-c with a silver rim and β, s3 (the silvers look alike at icon sizes;
+    # s3's green shadow is the one that differs).
     old = silver_seal(*next((silver, shadow) for key, _, silver, shadow in SILVERS if key == "s3")).image()
     for size in (32, 64, 128, 256, 512):
         old.resize((size, size), Image.NEAREST).save(final / f"oldfaithful-{size}.png", optimize=True)
-    # Still Faithful's: dusk violet (07-still-a), the user's pick (2026-11-02).
+    # Still Faithful's: dusk violet (07-still-a).
     still = still_seal(*next((t, b) for key, _, t, b, _ in STILLS if key == "a")).image()
     for size in (32, 64, 128, 256, 512):
         still.resize((size, size), Image.NEAREST).save(final / f"stillfaithful-{size}.png", optimize=True)

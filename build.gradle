@@ -28,7 +28,7 @@ dependencies {
     sdlNatives "org.studioquire.oldfaithful.natives:openal-soft:${openal_version}:natives-linux"
 }
 
-// An importable Prism instance for the user's client checks (docs/building.md): our own components for Minecraft
+// An importable Prism instance for client checks by hand (docs/building.md): our own components for Minecraft
 // (launch settings and Java 21), LWJGL (our builds) and Fabric Loader, every library inside the zip with Prism's
 // "local" hint, so nothing but the game itself is downloaded. Written to local/prism/, never committed.
 tasks.register('prismDevInstance', Zip) {

@@ -38,7 +38,7 @@ BETA = [
     ".......",
 ]
 # The one drawn is CHOSEN; the others were looked at beside it, kept for a sheet if the look is ever reconsidered.
-# "along" shipped first; the user picked "tuft" from two rounds of variants (2026-11-11).
+# "along" shipped first; "tuft" replaced it after two rounds of variants (2026-11-11).
 VARIANTS = {
     # A white tuft round beta's own hook, pale where it meets the rod's side: a fly tied on.
     "tuft": [
@@ -96,8 +96,8 @@ BOBBER_BETA = [
     "..=.=...",
     "...==...",
 ]
-# Named as on the sheets the user chose from (2026-11-11). They picked "four-soft", the one that read most like a
-# feather to them (only the four-pixel shapes did): their own shape, a feather lying over the hook's barb and bend,
+# Named as on the sheets of 2026-11-11. "four-soft" is the one drawn, the one that read most like a feather (only the
+# four-pixel shapes did): a feather lying over the hook's barb and bend,
 # those two a shade darker. T1 to T5 were the first round.
 BOBBER_VARIANTS = {
     # Four pixels slanting down over the hook: the tip, the barb (light) beside white, the bend (light).

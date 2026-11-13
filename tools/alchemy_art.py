@@ -28,11 +28,11 @@ INVENTORY_GREY = (0x8b, 0x8b, 0x8b, 255)
 # The gilded things, pixel by pixel, each over its own outline (beta's rose, dandelion and feather, Blue Flowers'
 # lupin), all gold and one metal (Claude Fable 5.2, 2026-11-09): pale and bright gold in the light, the stems' gold
 # in the middle, and for the dark the orange of beta's gold ingot, with the ingot's white glint on the feather only.
-# The user's "let's try" after two rounds that kept a trace of each flower's colour: nothing here is made to tell the
-# four apart or from their plain flowers, since their outlines and the gold do that (their word: we overrate how much
-# help people need to tell things apart). The feather was a pale cream and is now the flowers' gold, with their darks.
-# Of those two rounds the user liked the first pass's rose and dandelion (Claude Opus 5.5), and preferred none of the
-# second's six bluebells and redrawn rose and dandelion (Fable 5.2).
+# This came after two rounds that kept a trace of each flower's colour: nothing here is made to tell the
+# four apart or from their plain flowers, since their outlines and the gold do that (small differences are
+# enough to tell things apart). The feather was a pale cream and is now the flowers' gold, with their darks.
+# The two rounds were a first pass by Claude Opus 5.5 and a second, six bluebells and a redrawn rose and dandelion,
+# by Fable 5.2.
 INKS = {
     "W": "ffffff", "P": "fff697", "h": "ffef6d", "y": "fad42c",  # the glint, then pale to bright gold
     "s": "e3ad15", "u": "b77d0b",  # the stems' gold, and the rose's thorns
@@ -58,8 +58,8 @@ GILDED = {
 
 # Each family's liquid, weak to strong, as the health potions have it: the surface's highlight, then light to dark.
 # Health's are the first round's (Claude Opus 5.5, 2026-11-06), kept as they are.
-# Haste's were butter, yellow and amber; amber and brownish yellow in a bottle look like something unfortunate (the
-# user, 2026-11-09, who asked for the dandelion's own colours). So (Fable 5.2): a pale lemon, the dandelion's lemon
+# Haste's were butter, yellow and amber; amber and brownish yellow in a bottle look like something unfortunate, and the
+# dandelion's own colours suit it. So (Fable 5.2, 2026-11-09): a pale lemon, the dandelion's lemon
 # with its own shades, and for the strong one a sharper lemon leaning to lime, since yellow only gets darker by going
 # olive or brown, and the dandelion's olive as a whole bottle looked murky.
 LIQUIDS = {
@@ -105,7 +105,7 @@ def potion(bottle, shades):
 
 
 def drained(full, empty, left):
-    """A timed potion's bottle in the inventory (Claude Fable 5.2's prototype D, the user's pick, 2026-11-09): the plain
+    """A timed potion's bottle in the inventory (Claude Fable 5.2's prototype D, 2026-11-09): the plain
     potion's own sprite with its liquid down to {@code left} of its rows, the top one left keeping the surface's pale line."""
     rows = sorted({y for y in range(16) for x in range(16) if full.getpixel((x, y)) != empty.getpixel((x, y))})
     surface = full.getpixel((6, rows[0]))

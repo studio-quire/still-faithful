@@ -128,7 +128,7 @@ tasks.register('nativesTest') {
     dependsOn nativesChecks
 }
 
-// A local server with our mods for the user's client checks: online mode, localhost only (no firewall prompt), the
+// A local server with our mods for client checks by hand: online mode, localhost only (no firewall prompt), the
 // world kept in local/run/server between runs. Type `stop` to end it.
 tasks.register('runServer', JavaExec) {
     group = 'oldfaithful'

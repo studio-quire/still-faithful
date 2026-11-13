@@ -1,10 +1,8 @@
 # Our LWJGL component: the LWJGL 2 API on LWJGL 3 and SDL3
 
-Claude Opus 5.5, 2026-11-01. Phase 3's windowing, input and sound layer, as `docs/windowing-survey.md` recommended
-and the user accepted: our own MIT implementation of the LWJGL 2 API that b1.7.3 and its mods call, on LWJGL 3.4.3
+Claude Opus 5.5, 2026-11-01. Phase 3's windowing, input and sound layer, as `docs/windowing-survey.md` recommended: our own MIT implementation of the LWJGL 2 API that b1.7.3 and its mods call, on LWJGL 3.4.3
 with SDL3 as the only backend, shipped as the launcher's `org.lwjgl` component in place of LWJGL 2. First milestone
-(Windows, enough for a client check) built and tested windowlessly; the user's first client check of it passed
-(2026-11-01) and its findings (title, mouse speed, paste) are fixed.
+(Windows, enough for a client check) built and tested windowlessly; its first client check by hand passed and its findings (title, mouse speed, paste) are fixed.
 
 ## What ships
 
@@ -101,15 +99,14 @@ instance around it (`docs/building.md`).
 - **Sound**: one device and context as LWJGL 2 opened them; when the system's default output changes, the device
   moves to the new default (OpenAL Soft's system-events and reopen extensions) instead of going silent.
 - **Vsync** is set explicitly at creation, never left to the driver: off in the layer itself, as LWJGL 2 set it (swap
-  interval 0; b1.7.3 never changes it), and **on for players** through the display mod's `vsync=true` (2026-11-02:
-  the user found the game really bad without it on today's displays, where it tears and judders at hundreds of fps).
+  interval 0; b1.7.3 never changes it), and **on for players** through the display mod's `vsync=true` (without vsync, the game tears and judders at hundreds of fps on today's displays).
   `Settings.vsync` carries the choice; `Display.setVSyncEnabled` still works. Vsync starves b1.7.3's chunk building,
   which `oldfaithful-speed` makes up for (`docs/speed.md` > Chunk building under vsync).
 - Gamma (`setDisplayConfiguration`), custom cursor images and OpenCL sharing aren't offered.
 
 ## Mouse: matching LWJGL 2's feel (2026-11-01)
 
-The user's first client check found mouse look faster than vanilla at the same sensitivity, though smooth. Cause:
+The first client check by hand found mouse look faster than vanilla at the same sensitivity, though smooth. Cause:
 LWJGL 2 on Windows never read the mouse itself. Grabbed, it took WM_MOUSEMOVE pointer positions and re-centred the
 cursor each frame (`WindowsMouse`, `WindowsDisplay.centerCursor` in its source), so the game saw the pointer's
 movement: the device's counts after Windows' pointer speed slider and, with "Enhance pointer precision" on (Windows'
@@ -128,7 +125,7 @@ its relative system scale by default, which applies that same function to raw in
 registry curves and settings, and follows changes to them live; our float accumulation keeps the fractions as
 Windows' pointer does. The "after" column therefore equals the LWJGL 2 one by construction. Not measured: SDL's port
 against Windows itself, which needs injected input (SendInput) and so moves the cursor of whoever is using the PC.
-The user's feel check is the real test.
+How it feels in play is the real test.
 
 The choice, for the Purist edition: on Windows, beta's mouse look followed the desktop pointer's settings,
 acceleration included, for every player; players who had turned acceleration off (many had) got one pixel per count
@@ -140,7 +137,7 @@ pointer) needs the same look when it comes. Linux: below.
 
 ## Even motion under vsync (Claude Opus 5.5, 2026-11-02)
 
-The user found mouse look slightly uneven with vsync on ("micro-stutters"), our instance better than plain b1.7.3
+Mouse look was slightly uneven with vsync on ("micro-stutters"), our instance better than plain b1.7.3
 but not smooth; with the speed mod off, better still. Three causes, from the code and the benchmark's per-frame
 timing (`docs/speed.md` > The benchmark, columns `pump_us` and `instant_us`):
 - **When input is read.** b1.7.3 reads the mouse when `Display.update` returns, before it renders; the frame shows
@@ -164,9 +161,9 @@ What we do (display mod, our layer only):
   time. The timer (`TimerMixin`) and the mouse cut-off both use it, so movement and turning agree and each frame moves
   the world by one refresh's worth. Without vsync it's the measured time at full precision; `frame.smooth=false` is
   vanilla's timing exactly.
-- `mouse.subpixel` (off by default; the user's call, 2026-11-02: off in Purist, an option in Fixed): look turns by the unrounded motion (`MouseState.takenFX`,
+- `mouse.subpixel` (off by default; off in Purist, an option in Fixed): look turns by the unrounded motion (`MouseState.takenFX`,
   the same events the integer deltas came from), so slow diagonals don't step. A feel change against beta's whole
-  pixels: which editions take it, and the default, are the user's call.
+  pixels, so Old Faithful's settings screen offers it as Smooth Look.
 
 ## Linux (Claude Opus 5.5, 2026-11-01)
 
@@ -193,7 +190,7 @@ library. The Java side needed no change.
 - **Not tested here**: Wayland itself (SDL prefers it when the compositor supports what it wants, else X11 through
   XWayland; libdecor draws the title bar on GNOME), real audio servers (PipeWire, PulseAudio, ALSA: all built in and
   loaded at runtime), IMEs (IBus is built in), controllers, NVIDIA's and AMD's drivers, HiDPI. Those need Linux
-  players (the user's plan: a few outside testers).
+  players (a few outside testers).
 
 ## The display mod (`oldfaithful-display`)
 
@@ -219,16 +216,15 @@ library. The Java side needed no change.
 - **Remembering the window** (`window.remember`): its windowed bounds, maximised state and display are kept as the game
   stops (`config/purefaithful-display-window.properties`) and restored next launch, following the display by name if
   it moved in the desktop and onto another if it's gone; a launcher setting changed since the window was kept wins
-  (the file holds the launcher's request then), so the last thing changed wins. Fullscreen is kept too (the user's ask,
-  2026-11-02; vanilla didn't): a game that stopped fullscreen opens its kept window and goes fullscreen over it as F11
+  (the file holds the launcher's request then), so the last thing changed wins. Fullscreen is kept too (vanilla didn't): a game that stopped fullscreen opens its kept window and goes fullscreen over it as F11
   would, so the game's flag agrees and one F11 brings that window back (maximised or not). Fullscreen comes as
   `fullscreen.exclusive` says now, on whichever display the window opened on (its own, or the one it was fitted
-  onto if that's gone); a changed launcher setting opens windowed, as the launcher asks. **Off in Pure Faithful**, on in Old Faithful (user, 2026-11-02): Pure only undoes our launch's loss of the
+  onto if that's gone); a changed launcher setting opens windowed, as the launcher asks. **Off in Pure Faithful**, on in Old Faithful: Pure only undoes our launch's loss of the
   launcher's settings; remembering the window is a change from the original, so it belongs to the Fixed edition,
   which sets it on by default (`oldfaithful-options`, below).
 - **Starting maximised** (`window.startMaximized`, 2026-11-02): with neither the launcher's setting (Prism's property,
   or `--width`/`--height`) nor a remembered placement, the window opens maximised over the game's usual size. Off in
-  Pure Faithful; on in Old Faithful (the user's ask), which with `window.remember` makes it the first start only.
+  Pure Faithful; on in Old Faithful, which with `window.remember` makes it the first start only.
 - **Defaults from other mods**: a mod's fabric.mod.json can ask for defaults, `"custom":
   {"purefaithful-display:defaults": {"<setting>": "<value>"}}`; they stand in for ours wherever the config file says
   nothing and are what gets written for a missing setting. Old Faithful's `oldfaithful-options` asks for
@@ -276,24 +272,24 @@ library. The Java side needed no change.
 
 ## Not done yet, and doubts
 
-- Real windows and focus, the mouse's feel and sound through speakers stay the user's checks; the start-up test
+- Real windows and focus, the mouse's feel and sound through speakers stay checks by hand; the start-up test
   covers start-up, the de-AWT path, input plumbing and a world, unseen.
 - Untested here: fullscreen (borderless and exclusive) and display scales other than 100% (this PC's), multiple
   monitors, real IMEs and non-US layouts, an actual default-device change. A real Prism launch with a window size or
   maximised set (the hidden test passes Prism's property itself, and a hidden window's maximise is SDL's pending one,
   applied when it's shown).
-- A tear on alt-tab (the user, Still Faithful's play-test, 2026-11-03): in borderless fullscreen, sometimes a line
+- A tear on alt-tab (seen in Still Faithful's play-test): in borderless fullscreen, sometimes a line
   of tearing with the world showing through (the pause backdrop, most likely). Not reproducible unseen (it's in
   what the display scans out; a read-back frame is whole). From the code (Claude Opus 5.5): every frame is drawn
   whole and swapped with vsync, focus changes neither the window's size nor the swap interval, and the pause screen
   comes 0.5 s after focus is lost (beta's `onFrameUpdate`), so a frame without the backdrop is one from before the
   pause: most likely the driver's present path switching between flipping a window that covers the display and
-  composing it, and briefly showing its older buffer. The user's answers: a maximised window doesn't seem to do it;
+  composing it, and briefly showing its older buffer. Tried: a maximised window doesn't seem to do it;
   NVIDIA's "Prefer layered on DXGI swapchain" doesn't stop it. Remedy if ever wanted: a window one pixel larger than
   the display in borderless fullscreen (always composed, as Chromium does; up to a frame more latency, as maximised).
-  Left alone (the user's call, 2026-11-03).
+  Left alone.
 - Java 25 prints LWJGL's `sun.misc.Unsafe` deprecation warning (its legacy memory backend); harmless now.
-- macOS (at release, the user's call): natives need CI (`docs/natives.md`) and the main-thread dispatch the survey
+- macOS (after the first release): natives need CI (`docs/natives.md`) and the main-thread dispatch the survey
   describes. Linux arm64: planned
   in `docs/natives.md`. Linux x64 on real desktops: above.
 - Controllers (SDL gamepad), an icon for the window, IME candidate placement, `Display.sync`-based frame pacing.

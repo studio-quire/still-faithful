@@ -35,7 +35,7 @@ import org.studioquire.oldfaithful.selftest.mixin.RedstoneTorchInvoker;
  * world runs, when that mod is loaded (`:harness:clientStartupTestFixed`). Each check sets up a small scene well
  * above the ground, away from the player and from the others, and reads the outcome some ticks later; on vanilla
  * every one of them comes out the other way. What only shows on screen or by ear (the sky, the cursor's item,
- * footsteps, undersides) and the bed check (it needs a sleeping player and a monster's path) are the user's or
+ * footsteps, undersides) and the bed check (it needs a sleeping player and a monster's path) are checked in play or
  * reasoned (docs/fixes.md). Pending ticks saved with their chunk (#42) are checked on the real server
  * (`:oldfaithful-fixes:serverTicksTest`), as are the world fixes from the piston hunt. The player's own sneak step off
  * an inside corner (#57) is made first, synchronously; the last scene puts the player in a boat and out again (then

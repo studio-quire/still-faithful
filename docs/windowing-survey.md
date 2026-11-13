@@ -91,7 +91,7 @@ without us taking on a dead C codebase on three platforms:
 - For comparison, Pylon is about 8k lines in total, including vector utilities and Forge/multi-version glue.
 - Getting to "good on Windows" is a matter of weeks of model work.
 - **The real cost is platform shake-out, not code:** macOS arm64, Wayland compositors, keyboard layouts and IMEs. Every
-  open bug in every layer below is of that kind, and the user's Windows PC can't check them. We need a plan for macOS
+  open bug in every layer below is of that kind, and the one Windows PC here can't check them. We need a plan for macOS
   and Linux testing: hardware, or a few outside players. Whatever we choose, that is the open question for phase 3.
 
 **What to learn from the others** (ideas only; their code is LGPL and stays out of ours):
@@ -122,7 +122,7 @@ covers an early release before phase 3 completes.
 
 **Distribution caveat.** A library component is natural in our pack. For "our mods on their own in existing setups" it
 means asking players to swap a Prism component, as lwjgl3ify does with its patch files, rather than dropping in a jar.
-A jar-in-jar or agent form could come later if people ask. Worth a word with the user.
+A jar-in-jar or agent form could come later if people ask. Worth discussing.
 
 ## What b1.7.3 actually calls
 

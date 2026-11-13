@@ -6,7 +6,7 @@
 Per floor kind: what a player could strip out (bookshelves, obsidian, iron doors, ore, metal blocks), anything from the
 Nether, and what makes no sense as a built place: blocks floating with nothing joined to them, posts on nothing, half
 beds, doors or ladders with nothing to hold them, chests that can't open or be reached, anything that burns where lava could set fire beside it (`lava_lights`),
-water with something solid right over it (a monster under it can't come up, and drowns: a free grinder, the user found),
+water with something solid right over it (a monster under it can't come up, and drowns: a free grinder),
 and a hidden room that isn't sealed (`hidden_room`).
 Prints a line for each fault and a table at the end; exits 1 if there's a fault of a kind that's meant never to happen.
 """

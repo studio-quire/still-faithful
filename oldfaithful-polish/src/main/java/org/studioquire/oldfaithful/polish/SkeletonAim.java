@@ -3,7 +3,7 @@ package org.studioquire.oldfaithful.polish;
 /**
  * Skeleton Arrows ({@code mobs.skeletonArrows}): a skeleton's arrow leaves from its eyes, as in later versions, instead
  * of 1.4 blocks higher, over its head, where beta's {@code SkeletonEntity.attack} lifts it; and it's aimed so it hits as
- * often as beta's did (the user's ask, 2026-11-10: beta's efficiency from a different place).
+ * often as beta's did (beta's efficiency from a different place).
  * <p>
  * Beta aims at the target's eyes less 0.2 from wherever the arrow starts, plus 0.2 up for every block across, which is
  * what makes up for gravity. So from the eyes, aimed beta's way, the arrow still arrives about where beta's did. What

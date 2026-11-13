@@ -14,8 +14,8 @@ import net.minecraft.item.ToolItem;
  * shovel. The pickaxe's harvest check already goes by material (stone and metal), so a pickaxe was required for a
  * furnace or redstone ore yet mined it at hand speed. With this, a tool also mines fast every block of its material,
  * and a few blocks whose material says nothing of what they're made of (rails, stone buttons, ladders). Obsidian keeps
- * beta's speed (the user's call, 2026-11-02: its slowness is well known, and at beta's hardness it would take under 2
- * seconds with a diamond pickaxe). Redstone ore kept it too until the user's call of 2026-11-12. Mining speed only:
+ * beta's speed (its slowness is well known, and at beta's hardness it would take under 2
+ * seconds with a diamond pickaxe). Redstone ore kept it too until 2026-11-12. Mining speed only:
  * which blocks need a tool to drop is unchanged.
  */
 public final class ToolSpeeds {

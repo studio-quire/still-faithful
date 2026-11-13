@@ -33,7 +33,7 @@ def water(i):
 class Walker:
     def __init__(self, d, dig_doors=False):
         self.d = d
-        # Mining through an iron door with no lever in reach: only to get out of a cell a way landed in (the user's call, 2026-11-08: a breach into a cell, believable, dug out of).
+        # Mining through an iron door with no lever in reach: only to get out of a cell a way landed in (a breach into a cell is believable, and a player digs out of it).
         self.dig_doors = dig_doors
         self.id = d.id
         self.ground = d.info["groundY"]

@@ -6,9 +6,9 @@ Writes library/blue-flowers' textures/block/blue_flower.png (the id keeps its fi
 --sheet FILE also writes an enlarged sheet of both beside beta's rose, dandelion and a few of its dyes, read from
 the game jar in local/cache for the sheet only. Alchemy's golden lupin is drawn over this outline in tools/alchemy_art.py.
 
-Both are the user's picks (2026-11-12). The lupin is the first sketch made of one, kept through four rounds of other candidates
-(not kept here: five shapes in six shadings; spires scattered with single light and dark pixels, which they found speckled;
-spires shaded as beta shades its own plants), with three changes they asked for: its top right dark pixel less dark, its stem
+The lupin is the first sketch made of one, kept through four rounds of other candidates
+(not kept here: five shapes in six shadings; spires scattered with single light and dark pixels, which read as speckled;
+spires shaded as beta shades its own plants), with three changes: its top right dark pixel less dark, its stem
 and leaves lit from the left where the sketch alternated light and dark along them, and its lightest blues a quarter of the way
 to its middle blue. The dye is a pile in the family of beta's, its inside scattered as beta's Cyan is.
 What beta does, for whoever draws beside it next, read off its sprites: its tones sit in clusters, not scattered (the mushrooms

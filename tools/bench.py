@@ -103,7 +103,7 @@ def user_idle_s():
 
 
 def wait_until_away():
-    """After a cursor-guard trip: carry on at once if the user is away, otherwise wait until they are (user, 2026-11-01)."""
+    """After a cursor-guard trip: carry on at once if the user is away, otherwise wait until they are."""
     idle = user_idle_s()
     if idle >= AWAY_S:
         print(f"  user idle {idle:.0f} s (away): retrying", flush=True)

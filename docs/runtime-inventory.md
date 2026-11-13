@@ -192,7 +192,7 @@ Prism picked Mojang's 21.0.7 for the client check. What an instance can and can'
   use, and works); our log's first lines record the Java that ran. The pack's guide (phase 7) gets one optional step,
   "download Temurin 21 in Prism and pick it for the instance". No in-game nag: a hard-coded "current" version rots.
 - **Later, if it matters**: our own installer (phase 7) can fetch a pinned Temurin; or suggest upstream that Prism's
-  automatic download fall back to Temurin, or let a component prefer it (an outward step, so the user's call).
+  automatic download fall back to Temurin, or let a component prefer it (an outward step, so not taken without a decision).
 - Exposure meanwhile is modest: the game talks to Mojang (and, once, Modification Station's archive for beta's own
   bow and door sounds) over HTTPS and to servers through packet code we harden; the
   JDK fixes missing from 21.0.7 are mostly in areas the game doesn't use, though TLS and image decoding are reached.
@@ -224,7 +224,7 @@ Prism picked Mojang's 21.0.7 for the client check. What an instance can and can'
 ## Not checked
 
 - Prism itself: its handling of local-hint libraries and natives, and of `file://` URLs, is from reading its source;
-  the user's client check with our instance is the test. Our natives were run headlessly (`docs/natives.md`); the
+  a client check by hand with our instance is the test. Our natives were run headlessly (`docs/natives.md`); the
   inventory's downloads were only read.
 - The third-party arm builds in Prism's meta, and LF's armhf/riscv64/ppc64el OpenAL against any source.
 - LWJGL's exact CMake options for its OpenAL builds (they live in LWJGL-CI's workflow, not the jar).

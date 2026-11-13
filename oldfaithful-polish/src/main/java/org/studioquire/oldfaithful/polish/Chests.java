@@ -21,7 +21,7 @@ import net.minecraft.world.World;
  * A double chest faces across its length. Placing a chest beside one that has a facing joins it (as later versions do);
  * otherwise both halves take the placer's, turned to the nearer side across the pair if the player looked along it.
  * <p>
- * Pairs as later versions make them (blocks.chestPairs, the user's ask, 2026-11-08): a chest placed joins a chest
+ * Pairs as later versions make them (blocks.chestPairs): a chest placed joins a chest
  * beside it only if that one faces the same way, stands to its left or right and isn't joined already, and never while
  * sneaking; any chest can go anywhere, beside a double chest too. So a chest joined that way says who to in its data:
  * {@link #PAIRED} + (facing - 2) * 2 + side, 6 to 13, the side 0 for a partner clockwise of its front (seen from above)

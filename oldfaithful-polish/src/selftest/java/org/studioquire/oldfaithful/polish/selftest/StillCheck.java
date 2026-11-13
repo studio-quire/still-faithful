@@ -44,7 +44,7 @@ import javax.imageio.ImageIO;
  * (`:harness:clientStartupTestStill`), after Old Faithful's fixes. Each scene is set up well above the ground, away
  * from the player and from FixesCheck's (which sit 12 blocks out). Every check expects the change where its switch was
  * on at start and beta's behaviour where it was off, so a run with every switch off checks the other side.
- * What's only seen (the bow, dropped item sizes, the boat's feel) is the user's.
+ * What's only seen (the bow, dropped item sizes, the boat's feel) is checked by eye, in play.
  */
 public final class StillCheck implements WorldCheck {
 	private static final int Y = 110;
@@ -578,7 +578,7 @@ public final class StillCheck implements WorldCheck {
 			player.z = pz;
 		}
 		results.check("still #4: an untouched cow 200 blocks from the player despawned, as in beta", wild.dead);
-		results.check("still #4: a cow the player hit despawned (hitting doesn't keep, the user's call)", hit.dead);
+		results.check("still #4: a cow the player hit despawned (hitting doesn't keep)", hit.dead);
 		results.check("still #4: a sheared sheep " + (sheared.dead ? "despawned" : "stayed"), sheared.dead != on);
 		results.check("still #4: a saddled pig " + (saddled.dead ? "despawned" : "stayed"), saddled.dead != on);
 		results.check("still #4: a chicken loaded with the mark " + (chicken.dead ? "despawned" : "stayed"), chicken.dead != on);

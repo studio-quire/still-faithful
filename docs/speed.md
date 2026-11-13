@@ -3,14 +3,14 @@
 Claude Opus 5.5, 2026-11-01. A benchmark of the real game, a baseline against vanilla, a profile of where the time
 goes, and the plan that follows from it.
 
-## Rules (user, 2026-11-01)
+## Rules
 
-- **Reliability first** (user, 2026-11-02): what they meant by "pure wins only" is above all never trading safety,
+- **Reliability first**: "pure wins only" means above all never trading safety,
   security or stability for speed; speed trade-offs in general aren't ruled out, and fixes may cost speed. The rule as
   first written, which the work so far followed:
 - **Pure wins only.** An optimisation goes in only if it trades nothing away: looks, behaviour, world generation
   (bit-identical), mod compatibility, memory, determinism, worse lows for better averages. Anything that costs
-  something is written up with the cost stated concretely and goes to the user as a question, or is dropped.
+  something is written up with the cost stated concretely and goes in only as an accepted trade-off, or is dropped.
   World generation, precisely: the generator and each chunk's terrain stay bit-identical, but decoration (trees, ores,
   lakes and the like spilling into neighbouring chunks) depends on the order chunks load and populate, and frame rate
   shifts that order (above all how fast chunks are built, which asks for their neighbours). So a seed's details were
@@ -60,8 +60,8 @@ run's JFR profile (`run --jfr`): time on the game thread by part of the game, an
 LWJGL 2's `Display` sets swap interval 0 on creation; our layer first left it to the driver (1), so the game was held
 to the display's refresh, which starved chunk building at the default Balanced (it builds chunks until a 1/120 s
 deadline, already passed at 60 Hz): at far distance 1,420 render chunks were still unbuilt after 120 s, where LWJGL 2
-built them all in 34 s. We set 0 as LWJGL 2 did; the user then played without vsync and found it really bad on
-today's displays (tearing, uneven pacing at hundreds of fps). So vsync is now on for players (the display mod's
+built them all in 34 s. We set 0 as LWJGL 2 did; without vsync, on today's displays the game
+tears and paces unevenly at hundreds of fps. So vsync is now on for players (the display mod's
 `vsync=true`; our layer sets the interval explicitly either way, `docs/lwjgl.md`), and the starved chunk building is
 made up for by `oldfaithful-speed` (Chunk building under vsync, below). The benchmark's `--vsync` takes `off`
 (throughput), `on` (as players have it) or `driver`.
@@ -264,7 +264,7 @@ scheduled ticks.
 - Meshing allocation: the profile's `ArrayList.grow` comes from `renderChunks`' list, which is cleared, not
   replaced, so it only grows once: a sampling artefact, nothing to fix.
 
-### With a trade-off (decided by the user, 2026-11-02: neither is done)
+### With a trade-off (neither is done)
 
 - **Chunk meshing off the main thread** (distant chunks only; nearby ones stay synchronous as vanilla builds
   them). The biggest gain for loading and flying, but mods that hook `ChunkBuilder.rebuild` or the tessellator

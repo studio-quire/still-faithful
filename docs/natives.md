@@ -123,7 +123,7 @@ What the script does:
   - In debug mode LWJGL says `AL_SOFT_callback_buffer` and `AL_SOFT_events` lack entry points: its binding wants
     `...DirectSOFT` variants that OpenAL Soft added after 1.25.2 (LWJGL's own OpenAL.dll is a later commit). Those two
     extensions then read as absent; nothing else changes, and we don't use them.
-- What only the user's client check shows: a real window, input, and sound through the speakers.
+- What only a client check by hand shows: a real window, input, and sound through the speakers.
 
 ## Can LWJGL 2's own natives be built the same way?
 
@@ -188,7 +188,7 @@ The component's four libraries for Linux x64, built here in Docker from the same
   Soft), libdecor's, and `wayland-protocols-NOTICES.txt`, the notices of the protocol files whose generated code is
   in `libSDL3.so`. The sources archives are shared with Windows.
 - **Not built: LWJGL 2 for Linux.** The component replaces LWJGL 2 on every platform; the LWJGL 2 instance stays a
-  Windows comparison point (the user's first client check), and nothing we ship would load a Linux LWJGL 2.
+  Windows comparison point, and nothing we ship would load a Linux LWJGL 2.
 - **Tested**: `docs/lwjgl.md` > Linux.
 
 ### Linux arm64 (planned)
@@ -199,17 +199,17 @@ players who'd use it (Raspberry Pi, Asahi Macs) are few; a GitHub `ubuntu-24.04-
 the repository is public. LWJGL's classifier is `natives-linux-arm64`; how Prism's component format selects natives
 by architecture is still to check.
 
-## macOS: the plan (needs CI, waits until release)
+## macOS: the plan (needs CI)
 
-Not built yet; it needs Macs, which means CI. It waits until release (user, 2026-11-01): no CI minutes on the private
-repo for it now. Outside players test it (the user's decision).
-- **Where**: GitHub Actions in this repo's public home under studio-quire once it's public (free for public repos).
+Not built yet; it needs Macs, which means CI, so releases are Windows only until then. No CI minutes on the private
+repo for it. Outside players test it.
+- **Where**: GitHub Actions in this repo's public home under studio-quire (free for public repos).
 - **What**: the component's libraries (`liblwjgl.dylib`, `liblwjgl_opengl.dylib`, `libSDL3.dylib`, `libopenal.dylib`)
   for arm64 (`macos-14`/`15`) and x64 (`macos-13` while it exists, or cross-compiled), separate per architecture as
   LWJGL's jars have, with LWJGL's `config/macos/build.xml` flags and deployment targets; OpenAL Soft on CoreAudio.
   Built twice to compare where the toolchain allows (`-ffile-prefix-map`; `ld -no_uuid` or accept the UUID).
   Gatekeeper: dylibs loaded by Java don't need notarising when the launcher downloads them without quarantine (Prism
-  does), but check on a real Mac; signing needs an Apple developer account (paid: the user's call).
+  does), but check on a real Mac; signing needs an Apple developer account (paid).
 - **The layer needs work too**: on macOS SDL's window and events must live on the main thread, which the game's own
   thread layout doesn't give it (`docs/windowing-survey.md` has the dispatch design).
 - Windows arm64 would cross-compile here with the MSVC ARM64 tools (not installed yet).

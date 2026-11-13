@@ -23,8 +23,8 @@ new baseline and carries on (before 2026-11-03 it stopped the test and "restored
 user's game's mouse mid-play). A clip already there when the guard starts is someone else's too, as the command hasn't
 run, and its release is never a problem. The guard only ever clears a clip, never sets one: a clip it put back on a game
 that had just let go pinned the user's cursor (2026-11-06, to one pixel at the screen's centre).
-With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (the user's call, 2026-11-03: their own game grabbing the cursor
-stopped tests; the harness's HandsOff still keeps the test game from grabbing).
+With PRIVATE_DESKTOP_NO_GUARD=1 the guard is off (for when a game of the user's own grabbing the cursor keeps
+stopping tests; the harness's HandsOff still keeps the test game from grabbing).
 A display mode change isn't the command's either: it moves the cursor and the screen's edges, so the guard stands
 aside for a few seconds (2026-11-05: a test started during a display flip took 1600x900 as the clip to keep,
 and put the user's cursor back in it).

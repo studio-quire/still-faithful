@@ -7,7 +7,7 @@ import net.minecraft.entity.passive.WolfEntity;
 /**
  * #4: beta despawns every animal far enough from players (all but tamed wolves), penned ones too. Here an animal a
  * player has dealt with is kept for good, and wild ones despawn as before. Dealt with, as beta players deal with
- * animals (beta has no feeding, breeding or leads). Not hitting: the user's call (2026-11-02), hit animals needn't stay.
+ * animals (beta has no feeding, breeding or leads). Not hitting: hit animals needn't stay.
  * <ul>
  * <li>right-clicked to some effect: milked, sheared, ridden, or given an item that it took (a saddle, a dye);</li>
  * <li>riding something or ridden (an animal pushed into a minecart to carry it home, a saddled pig ridden);</li>

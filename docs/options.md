@@ -1,6 +1,6 @@
 # Old Faithful's options mod (oldfaithful-options)
 
-Claude Opus 5.5, 2026-11-02. Things the user asked for in Old Faithful that aren't fixes of beta's mistakes
+Claude Opus 5.5, 2026-11-02. Additions to Old Faithful that aren't fixes of beta's mistakes
 (`docs/fixes.md` has those): options and comforts. Pure Faithful has none of them. Client only. Public id
 `oldfaithful-options` (`oldfaithful_edition=fixed`, `docs/release.md` > Names); in Old Faithful's release only. Switches in `config/oldfaithful-options.properties`, one per package under `mixin/`, as
 the fix mod has them.
@@ -10,7 +10,7 @@ the fix mod has them.
 | `options.fov` | A FOV slider, 30 to 110 degrees, 70 ("Normal", beta's) by default |
 | `gui.normalScale` | A first start (no options.txt) has GUI Scale at Normal instead of Auto; an existing file keeps its choice |
 | `options.screen` | Old Faithful... in Options: the settings screen (below) |
-| `title.quitGame` | Quit Game on the title screen (user, 2026-11-02: Old Faithful only, not Pure Faithful) |
+| `title.quitGame` | Quit Game on the title screen (Old Faithful only, not Pure Faithful) |
 | (display mod) | The window opens maximised the first time, then where the player left it, fullscreen included |
 
 ## The settings screen
@@ -23,7 +23,7 @@ Claude Opus 5.5, 2026-11-02. So players needn't edit config files: **Options > O
 above Video Settings and Controls on their 24-pixel pitch, in the gap beta leaves under its options (left out if
 another mod has put something there). Beta's own look throughout: its buttons, font, background and layout.
 
-- **Shape** (user, 2026-11-05): wide buttons lead somewhere and switches are short, on beta's two widths. The top page
+- **Shape**: wide buttons lead somewhere and switches are short, on beta's two widths. The top page
   has a wide (200) button per menu, from a sixth of the way down, Done at `height/6 + 168`: **Fixes...**, **Changes...**
   (the word for what isn't a fix; ours) and **Mods...**, the hint naming a menu's sections. A menu with nothing in it isn't
   there, and with only one the top page is skipped: Options goes straight to it, which is what "Mods..." does on an
@@ -108,10 +108,9 @@ decides when it's given.
 
 ## Not added
 
-- Shift (sneak) to leave a vehicle, a later version's addition: beta's right-click on the vehicle stays the only way
-  (user, 2026-11-02).
-- Antialiasing (multisampling the game's window, 2026-11-03): built and checked, then removed after the user's
-  play-test showed light blue (the sky) through the seams between blocks at 4x/8x. Not important to the user, so
+- Shift (sneak) to leave a vehicle, a later version's addition: beta's right-click on the vehicle stays the only way.
+- Antialiasing (multisampling the game's window, 2026-11-03): built and checked, then removed after a
+  play-test showed light blue (the sky) through the seams between blocks at 4x/8x. Not important enough, so
   dropped rather than chased (the commit and its revert are in git if it's ever wanted). Since measured
   (2026-11-03, `docs/bugs.md` #70): single-sample rendering shows the same sky through the seams between render
   chunks, only more rarely; multisampling tests several points per pixel, so it finds the cracks more often, and it
@@ -151,5 +150,5 @@ decides when it's given.
   page, Done back to the menu, a mod with only Enabled, and a hundred made-up mods for the arrows. Its pictures, in
   `local/run/client-startup-library/settings-shots/`, are the ones with every level. What's on a server and Options going
   straight to Mods on an edition without this mod: `libraryRulesTest`.
-- The user's to look at: the slider's feel, the hand at wide settings, Quit Game in fullscreen; the settings screen
+- To look at in play: the slider's feel, the hand at wide settings, Quit Game in fullscreen; the settings screen
   (the wording, the sections, the asterisk).

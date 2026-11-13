@@ -10,7 +10,7 @@ import net.minecraft.util.math.MathHelper;
  * it faces, S backs it gently, and a turn key alone gives a small push forward. In water the boat keeps
  * {@link #MOMENTUM} of its speed and turn each tick, applied before the keys and then the move, so a held push settles
  * at push / (1 - momentum): W at {@link #TOP_SPEED}, the same in every direction. Later versions push 0.04 forward
- * (0.4 a tick, 8 blocks a second); here 0.0325, 6.5 blocks a second (the user's call, 2026-11-11: about 6.5 to 6.6, a
+ * (0.4 a tick, 8 blocks a second); here 0.0325, 6.5 blocks a second (aimed at 6.5 to 6.6, a
  * little faster than beta's measured 5.8). Out of the water beta's own friction
  * stands (halved each tick on the ground, 0.99 in the air); the turn there decays by {@link #GROUND} on the ground.
  * <p>

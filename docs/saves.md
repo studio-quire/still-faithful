@@ -1,7 +1,7 @@
 # Saves that can't lose a world (`oldfaithful-saves`)
 
 Claude Opus 5.5, 2026-11-02. Fixes `docs/bugs.md` #1 and #2 (and #52, a server's level.dat; #43 and #65, block
-entities that crash), which the user put in Purist (2026-11-02): nothing
+entities that crash), which go in Purist too: nothing
 changes in play, the files stay b1.7.3's own format (plain b1.7.3 and other tools read them, and we read theirs), and
 a crash, a kill or a power cut leaves every file as it was before a save or after it, never damaged. Both editions,
 client and server.

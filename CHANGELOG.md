@@ -7,6 +7,14 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.8.1 (2026-11-13)
+
+On Old Faithful 0.2.8 and Pure Faithful 0.1.6. Still Faithful's own mod is unchanged.
+
+- From Old Faithful 0.2.8, which it carries: if you've added the Faithful Library's mods to your instance, a Faithful
+  Core older than the library's 0.9.0 now stops the game, or a server, at launch, with Fabric Loader's message that it
+  and `oldfaithful-settings` are incompatible; take the core from 0.9.0 on. Old Faithful's changelog has the detail.
+
 ## 0.8.0 (2026-11-13)
 
 On Old Faithful 0.2.7 and Pure Faithful 0.1.6.

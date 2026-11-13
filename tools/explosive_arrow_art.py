@@ -3,7 +3,7 @@
     python tools/explosive_arrow_art.py [--sheet PATH] [--dry]
 
 Writes the item's sprite and the flying arrow's texture into library/explosive-arrows' assets, each beta's own from the
-game jar in local/cache with only the head redrawn (the user, 2026-11-09: it should change its head, not its shaft).
+game jar in local/cache with only the head redrawn.
 The head is a short stick of TNT lying along the arrow, red with TNT's pale band across its middle, lit from the upper
 left as beta's arrowhead is. --sheet PATH also writes a sheet for looking at: beta's arrow beside it, enlarged, at its
 own size, in the hotbar, and the flying texture; --dry writes nothing into the mod.

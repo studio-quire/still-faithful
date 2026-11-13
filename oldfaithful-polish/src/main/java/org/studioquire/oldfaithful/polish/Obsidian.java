@@ -6,7 +6,7 @@ import net.minecraft.item.PickaxeItem;
 import net.minecraft.item.ToolItem;
 
 /**
- * Obsidian mined as in 1.0 (#10's note; the user's call, 2026-11-12). Beta's pickaxe list leaves it out, so a diamond
+ * Obsidian mined as in 1.0 (#10's note). Beta's pickaxe list leaves it out, so a diamond
  * pickaxe mined it at hand speed, 15 s at hardness 10. Beta 1.9 put it on the list and 1.0.0-RC1 raised its hardness to
  * 50 to keep it slow: 9.4 s with a diamond pickaxe, and 250 s instead of 50 for anything that can't harvest it (beta's
  * and 1.0's rule gives such a tool no speed). The block's hardness field stays 10; the mining time and
@@ -15,7 +15,7 @@ import net.minecraft.item.ToolItem;
  * The switch's second choice, diamond, keeps beta's 50 s without a diamond pickaxe. That's how a game without this
  * change times it, and in multiplayer the client times a break and the server checks it: on a server with 1.0's 250 s,
  * a vanilla player who mines obsidian by hand sees it gone at 50 s, back 4 s later (the server refused the early
- * break), and gone at 250 s. The default is 1.0's all the same (the user's call, 2026-11-12: such players are next to
+ * break), and gone at 250 s. The default is 1.0's all the same (such players are next to
  * none, and agreeing with vanilla players is a bonus, not a goal).
  * <p>
  * A client with this change mines obsidian as the server it's on says, whatever its own choice: the login packet's

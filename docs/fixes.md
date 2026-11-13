@@ -29,7 +29,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 27 | `vehicles.dismountOnTop` | both | Getting off a vehicle, the height asked for is nudged up by the least amount that puts the rider's box on top |
 | 8 | `tools.lastUse` | server; single player | The used-up tool stays in the hand until the block has dropped, then goes |
 | 9 | `slabs.wooden` | both | Where mining speed and harvest are decided with the position known: a wooden slab harvests as planks and mines at least as fast |
-| 10 | `tools.speedByMaterial` | both | Pickaxes, axes and shovels mine fast every block of their material (`ToolSpeeds`, the table in `docs/bugs.md`); obsidian keeps beta's speed (the user's call); redstone ore did too until 2026-11-12 |
+| 10 | `tools.speedByMaterial` | both | Pickaxes, axes and shovels mine fast every block of their material (`ToolSpeeds`, the table in `docs/bugs.md`); obsidian keeps beta's speed; redstone ore did too until 2026-11-12 |
 | 11 | `furnace.lavaBucket` | world | Fuel that names a crafting remainder (only the lava bucket) leaves it in the slot |
 | 19 | `liquids.dropsBelow` | world | The downward flow drops (water) or fizzes (lava) what it replaces, as the sideways flow does |
 | 25 | `slimes.splitOnOverkill` | world | Health below zero counts as killed for splitting |
@@ -76,7 +76,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 75 | `movement.boxAgainstWalls` | both; every entity | `setPosition` moves a side face that lands just past a sixteenth (within 1e-7) back onto it; the position itself is left alone |
 | 76 | `squids.footsteps` | both | A squid's moves take no steps: no footsteps (the client plays those), nothing stepped on |
 | 77 | `squids.swimming` | world; a client's only for its animation | A squid's water test asks about its middle, a flat box at half its height under the water's real surface, not an inside-out box |
-| 81 | `mobs.dyingBodies` | both, each its own | A mob at 0 health isn't pushable and its push loop in `tickMovement` passes over everything; arrows, snowballs, eggs, fishing lines and fireballs skip it (`dyingmobs`). A client decides whether a dying mob pushes its player (it hears the death from the server), the server everything else. The crosshair still meets it, as in later versions. Built in Still Faithful's polish first and moved here the same day (the user, 2026-11-08) |
+| 81 | `mobs.dyingBodies` | both, each its own | A mob at 0 health isn't pushable and its push loop in `tickMovement` passes over everything; arrows, snowballs, eggs, fishing lines and fireballs skip it (`dyingmobs`). A client decides whether a dying mob pushes its player (it hears the death from the server), the server everything else. The crosshair still meets it, as in later versions. Built in Still Faithful's polish first and moved here the same day |
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 | 84 | `render.entityCulling` | client | An entity is culled by its box where it's drawn in that frame (between its last tick's place and this one's, as the renderer puts it), grown on every side by a block, a squid's by 1.5, a ghast's by 3, a dying mob's by its height besides, a sleeping player's to 2 (`EntityCulling`, a wrap of the box `renderEntities` hands the culler) |
@@ -248,7 +248,7 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   numbers in `docs/bugs.md` #84.
 - `:harness:ledgeHunt` (`docs/building.md`) is the measurement behind #74 and #75, with each switch on and off (`docs/bugs.md`).
 - Not checked by a test: #7, #39, #38, #30 and #34's hotbar, riding poses and death screen, and how #59's heads look
-  (what's seen and heard: the user's check), #67's resending of kept blocks to a vanilla client (reasoned: a vanilla
+  (what's seen and heard), #67's resending of kept blocks to a vanilla client (reasoned: a vanilla
   client's copy of the falling block clears them; not played), #40's mouse (the logic is the unit test), #26 (needs a sleeping player and a monster's path; reasoned in the mixin's comment), #8 on a real
   server (the same change as single player's, in the server's method; audited), #9 and #10 between a real client and
   server (the marker and the gating are audited and reasoned, not played), #75 on a multiplayer login beside a wall (the same
