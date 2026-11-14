@@ -13,7 +13,7 @@ public final class FenceOutline {
 	}
 
 	public static void draw(World world, int x, int y, int z, double cameraX, double cameraY, double cameraZ) {
-		double[] edges = Fences.outline(world, x, y, z, Block.FENCE.id, GROW);
+		double[] edges = Fences.outline(world, x, y, z, Block.FENCE, GROW);
 		Tessellator t = Tessellator.INSTANCE;
 		t.start(1);
 		for (int i = 0; i < edges.length; i += 3) t.vertex(edges[i] - cameraX, edges[i + 1] - cameraY, edges[i + 2] - cameraZ);

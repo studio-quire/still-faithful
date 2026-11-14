@@ -25,12 +25,12 @@ abstract class FenceBlockMixin extends Block {
 	@Override
 	@SuppressWarnings({"rawtypes", "unchecked"})
 	public void addIntersectingBoundingBox(World world, int x, int y, int z, Box box, ArrayList boxes) {
-		if (Fences.thinCollision(world)) Fences.addCollisions(world, x, y, z, this.id, box, boxes);
+		if (Fences.thinCollision(world)) Fences.addCollisions(world, x, y, z, this, box, boxes);
 		else super.addIntersectingBoundingBox(world, x, y, z, box, boxes);
 	}
 
 	@Override
 	public HitResult raycast(World world, int x, int y, int z, Vec3d startPos, Vec3d endPos) {
-		return Fences.raycast(world, x, y, z, this.id, startPos, endPos);
+		return Fences.raycast(world, x, y, z, this, startPos, endPos);
 	}
 }

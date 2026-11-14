@@ -70,6 +70,9 @@ tasks.register('serverTicksTest', Test) {
     def remapped = tasks.named('remapJar')
     def speedMod = project(':oldfaithful-speed').tasks.named('remapJar')
     dependsOn remapped, scenarioRemap, speedMod
+    // #85 once more beside Still Faithful's Leaf Reach, where the polish mod is in the build (not Old Faithful's own repository).
+    def polished = rootProject.findProject(':oldfaithful-polish') != null
+    if (polished) dependsOn ':oldfaithful-polish:remapJar'
     def serverClasspath = files(configurations.loaderRuntime, mc.intermediaryMappings, mc.serverJar)
     inputs.files(serverClasspath)
     outputs.upToDateWhen { false }
@@ -85,6 +88,9 @@ tasks.register('serverTicksTest', Test) {
         // The side of the square of chunks whose ticks are counted through a save and a restart (-Pticks.square=48 for a long queue).
         systemProperty 'oldfaithful.fixes.bulk', providers.gradleProperty('ticks.square').getOrElse('24')
         systemProperty 'oldfaithful.fixes.seed', providers.gradleProperty('fixes.seed').getOrElse('')
+        if (polished) {
+            systemProperty 'oldfaithful.polish.mod', project(':oldfaithful-polish').tasks.named('remapJar').get().output.get().asFile.absolutePath
+        }
     }
 }
 

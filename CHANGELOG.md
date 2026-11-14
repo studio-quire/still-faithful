@@ -7,6 +7,42 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.9.0 (2026-11-14)
+
+On Old Faithful 0.2.9 and Pure Faithful 0.1.6.
+
+In Still Faithful's own mod, on new switches under Polish:
+
+- Water is lit smoothly while Smooth Lighting is on (Smooth Water). Beta lit water a block at a time even then, so
+  torchlight lay on a pond in squares and a tree's shade on it in blocks; now the light on it shades smoothly, like the
+  ground around it, and darkens a little against a wall or a bank, as the ground does (Shaded). Even lights it smoothly
+  without darkening it there, and Beta as beta did; the settings screen switches between them at once, but from Beta
+  after a restart. With Smooth Lighting off, water looks as it did. Lava keeps beta's look: it lights itself, so it's
+  evenly bright already. In Fast graphics with Smooth Lighting, ice no longer shows its light in triangles where the
+  light varies across it. It's your own game's: it works on any server, which needs nothing.
+- Cactus is lit smoothly while Smooth Lighting is on (Smooth Cactus). Beta lit it a face at a time even then, so by a
+  torch a cactus stood out in flat light from the smoothly lit sand round it; now the light on it shades smoothly like
+  the ground around it, and it darkens toward its foot, as in later versions. With Smooth Lighting off, it looks as it
+  did. It's your own game's: it works on any server, which needs nothing.
+- Leaves stay on a tree within 6 blocks of its wood, counted through the leaves, as in later versions (Leaf Reach).
+  Beta's reached 4, and the upper corners of a big oak's leaf clusters are 5 or 6 from its wood, so once a log or
+  leaves near them were cut they fell, and the fall spread: cutting a big oak at its foot could bring down more than
+  a third of its leaves, from the top too, dropping saplings onto the tree. Now only a few leaves fall, 7 or more from
+  wood. Worlds you have get it as they are. After you cut a tree down, its leaves within 6 of another tree's wood now
+  stay up. In multiplayer it's the server's: a client needs nothing.
+- Fences join walls and other blocks as in later versions (Fence Joins), not only other fences: a fence beside stone,
+  planks, glass, a chest, the back of stairs, a door's flat side or any other block with a whole, solid side toward it
+  reaches out to it, where beta's stood apart as a post. Leaves, pumpkins and jack-o'-lanterns are left apart, as in
+  later versions. With Fence Shape, the arms are also what you aim at and bump into; with Fence Shape at Beta, they're
+  only drawn. Your own game draws them on any server; bumping into them on a server needs it to have Fence Shape, as
+  walking past posts does. Fences already built change too: a post standing against a wall, like a table leg or a
+  lamp post, now reaches out to it. On a server with Fence Joins and Fence Shape, a player with Fence Shape whose
+  Still Faithful is 0.8.1 or earlier, or who has Fence Joins at Beta, may be pulled back stepping from the top of a wall one block high onto
+  a fence that joins it.
+- From Old Faithful 0.2.9, which it carries: leaves far off, at the edge of the land the game has loaded, no
+  longer float on with nothing holding them or fall from a whole tree (Distant Leaves, under Fixes > Blocks and Items);
+  with Leaf Reach, a leaf within 7 of unloaded land waits for it to load. Old Faithful's changelog has the detail.
+
 ## 0.8.1 (2026-11-13)
 
 On Old Faithful 0.2.8 and Pure Faithful 0.1.6. Still Faithful's own mod is unchanged.

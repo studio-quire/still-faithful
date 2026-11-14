@@ -42,6 +42,8 @@ public final class FixesSettings implements SettingsProvider {
 					"A slab or dye with an impossible data value crashed the game when its name was shown."},
 			{"blocks.fallingSandKeepsKind", "blocks", WORLD, "Falling Sand",
 					"Falling sand or gravel deleted any block of its own kind it passed into."},
+			{"leaves.besideUnloaded", "blocks", WORLD, "Distant Leaves",
+					"Leaves far off, at the edge of the loaded world, could float with nothing holding them, or fall from a whole tree."},
 
 			{"slimes.splitOnOverkill", "mobs", WORLD, "Slimes Splitting", "A big slime killed by one strong hit didn't split."},
 			{"pigs.saddleDrop", "mobs", WORLD, "Saddled Pigs", "A saddled pig lost its saddle when killed."},

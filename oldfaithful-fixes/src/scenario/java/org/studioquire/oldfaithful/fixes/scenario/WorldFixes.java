@@ -38,7 +38,15 @@ public final class WorldFixes {
 
 	public static void tick(ServerWorld world) {
 		if (world.dimension.id != 0) return;
+		if (ticks < 0 && "leaves".equals(System.getProperty("oldfaithful.fixes.scenario"))) {
+			// #85 alone (ServerWorldFixesTest's run with Still Faithful's Leaf Reach): nothing to wait for.
+			leavesBesideUnloaded(world);
+			ticks = SETTLE;
+			say("done");
+			return;
+		}
 		if (ticks < 0) {
+			leavesBesideUnloaded(world);
 			ox = world.getSpawnPos().x + 300;
 			oz = world.getSpawnPos().z;
 			// A server ticks an entity only with every chunk within 32 blocks of it loaded.
@@ -305,6 +313,56 @@ public final class WorldFixes {
 			deepest = Math.max(deepest, zombie.boundingBox.maxX - wall);
 		}
 		say("#75 zombie read beside a wall: " + inside + " of " + walks + " inside it, the next step " + String.format(Locale.ROOT, "%.3f", deepest) + " in");
+	}
+
+	/**
+	 * #85: marked leaves beside a chunk that isn't loaded, each put through beta's own decay check just after a leaf
+	 * elsewhere left the other answer in the check's one shared array (a leaf by a log kept before a lone leaf, a lone
+	 * leaf dropped before one by a log); then that chunk loaded and each checked again the same way. A leaf 3 from the
+	 * chunk is within the loaded test of either reach (beta's 4 asks for 5 each way, Leaf Reach's 6 for 7), one 6 from it
+	 * only of Leaf Reach's. In chunks nothing else loads (x -2048, z 2048, undecorated, so no trees), where no random tick
+	 * comes. A leaf is "marked" with its mark, "kept" without it, "fell" when gone.
+	 */
+	private static void leavesBesideUnloaded(ServerWorld world) {
+		int cx = -128, cz = 128, x0 = cx * 16, z = cz * 16 + 8;
+		// The chunk west of it too: the primers' checks, 3 in from the west side, reach into it.
+		world.chunkCache.loadChunk(cx - 1, cz);
+		world.chunkCache.loadChunk(cx, cz);
+		boolean early = world.chunkCache.isChunkLoaded(cx + 1, cz);
+		int[] keeps = {x0 + 3, 110, z}, drops = {x0 + 3, 120, z};
+		int[] lone = {x0 + 13, 104, z}, held = {x0 + 13, 100, z}, far = {x0 + 10, 108, z};
+		world.setBlockWithoutNotifyingNeighbors(x0 + 2, 110, z, Block.LOG.id, 0);
+		world.setBlockWithoutNotifyingNeighbors(x0 + 12, 100, z, Block.LOG.id, 0);
+		for (int[] p : new int[][] {lone, held, far}) mark(world, p);
+		StringBuilder seen = new StringBuilder();
+		for (int round = 0; round < 2; round++) {
+			if (round == 1) world.chunkCache.loadChunk(cx + 1, cz);
+			leafCheck(world, keeps, true);
+			leafCheck(world, lone, false);
+			leafCheck(world, drops, true);
+			leafCheck(world, held, false);
+			leafCheck(world, keeps, true);
+			leafCheck(world, far, false);
+			seen.append(round == 0 ? "" : "; once it's loaded, ").append("lone ").append(leafState(world, lone)).append(", by a log ")
+					.append(leafState(world, held)).append(", 6 from it ").append(leafState(world, far));
+		}
+		say("#85 marked leaves 3 from a chunk not loaded" + (early ? " (it was loaded from the start)" : "") + ": " + seen
+				+ " (primers: by a log " + leafState(world, keeps) + ", lone " + leafState(world, drops) + ")");
+	}
+
+	private static void mark(ServerWorld world, int[] p) {
+		world.setBlockWithoutNotifyingNeighbors(p[0], p[1], p[2], Block.LEAVES.id, 8);
+	}
+
+	/** Beta's decay check on a leaf, as a random tick runs it; a primer is marked (and put back if it fell) first. */
+	private static void leafCheck(ServerWorld world, int[] p, boolean primer) {
+		if (primer) mark(world, p);
+		if (world.getBlockId(p[0], p[1], p[2]) == Block.LEAVES.id) Block.LEAVES.onTick(world, p[0], p[1], p[2], new java.util.Random(85));
+	}
+
+	private static String leafState(ServerWorld world, int[] p) {
+		if (world.getBlockId(p[0], p[1], p[2]) != Block.LEAVES.id) return "fell";
+		return (world.getBlockMeta(p[0], p[1], p[2]) & 8) != 0 ? "marked" : "kept";
 	}
 
 	private static void say(String s) {

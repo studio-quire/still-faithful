@@ -5,7 +5,7 @@
   "name": "Still Faithful self-test (test harness only, not shipped)",
   "environment": "client",
   "entrypoints": {
-    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.polish.selftest.StillCheck", "org.studioquire.oldfaithful.polish.selftest.FenceCheck", "org.studioquire.oldfaithful.polish.selftest.ChatCheck", "org.studioquire.oldfaithful.polish.selftest.DuskCheck", "org.studioquire.oldfaithful.polish.selftest.SkinCheck", "org.studioquire.oldfaithful.polish.selftest.ShiftClickCheck", "org.studioquire.oldfaithful.polish.selftest.DistanceCheck", "org.studioquire.oldfaithful.polish.selftest.SkeletonCheck", "org.studioquire.oldfaithful.polish.selftest.SquidCheck", "org.studioquire.oldfaithful.polish.selftest.BoatCheck", "org.studioquire.oldfaithful.polish.selftest.HeldAttackCheck"]
+    "oldfaithful-selftest:world": ["org.studioquire.oldfaithful.polish.selftest.StillCheck", "org.studioquire.oldfaithful.polish.selftest.FenceCheck", "org.studioquire.oldfaithful.polish.selftest.ChatCheck", "org.studioquire.oldfaithful.polish.selftest.DuskCheck", "org.studioquire.oldfaithful.polish.selftest.SkinCheck", "org.studioquire.oldfaithful.polish.selftest.ShiftClickCheck", "org.studioquire.oldfaithful.polish.selftest.DistanceCheck", "org.studioquire.oldfaithful.polish.selftest.SkeletonCheck", "org.studioquire.oldfaithful.polish.selftest.SquidCheck", "org.studioquire.oldfaithful.polish.selftest.BoatCheck", "org.studioquire.oldfaithful.polish.selftest.HeldAttackCheck", "org.studioquire.oldfaithful.polish.selftest.SmoothWaterCheck", "org.studioquire.oldfaithful.polish.selftest.SmoothCactusCheck", "org.studioquire.oldfaithful.polish.selftest.LeafReachCheck"]
   },
   "mixins": ["oldfaithful-polish-selftest.mixins.json"],
   "depends": {

@@ -5,6 +5,16 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.9 (2026-11-14)
+
+Released with Still Faithful 0.9.0, which carries it; on Pure Faithful 0.1.6, as 0.2.8 was.
+
+- Leaves far off, at the edge of the land the game has loaded (about 150 blocks out), no longer float on with nothing
+  holding them, or fall from a whole tree (Distant Leaves, under Blocks and Items). Beta judged a leaf there by what
+  another tree's leaves had last left behind; now such a leaf waits until the land round it is loaded, then stays or
+  falls by its own tree. Leaves already left floating in a world stay. In multiplayer it's the server's: a client
+  needs nothing.
+
 ## 0.2.8 (2026-11-13)
 
 Released with Still Faithful 0.8.1, which carries it; on Pure Faithful 0.1.6, as 0.2.7 was.

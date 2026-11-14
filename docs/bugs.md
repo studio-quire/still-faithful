@@ -4,7 +4,7 @@ Claude Opus 5.5, 2026-11-02. Second pass, then the first fixes. Purist leaves al
 says it may go into Purist too. Old Faithful (Fixed) is narrow: beta as it was
 meant to work, its clear mistakes fixed, and anything players built around left as beta (at most a setting that
 defaults to beta). What later versions changed, the **ask** entries, belongs to the polished edition, Still Faithful,
-not to Fixed. Fixed so far: fifty-one entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-four switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
+not to Fixed. Fixed so far: fifty-three entries in `oldfaithful-fixes` (`docs/fixes.md`), with fifty-six switches between them (#34 has four) in `config/oldfaithful-fixes.properties`; lighting (#3) in `oldfaithful-lighting` (`docs/lighting.md`).
 
 Sources:
 - The decompiled game (`local/decomp/b1.7.3-named`, Babric's names), read for causes.
@@ -123,6 +123,7 @@ Key:
 | 82 | An arrow that starts a tick exactly on the face it's about to strike is put at NaN: beta divides by how far it moved, which is none | bug | ? | ? | seen in Explosive Arrows, not looked into for plain arrows |
 | 83 | Multiplayer: a rider's look goes to the server only while it holds still, so other players never see a riding player's head turn and the server's yaw for them drifts | bug | OF | low-mid (MP) | fixed (OF) |
 | 84 | Mobs at the edges of the screen vanish while part of them is still in view (a head, arms, a squid's tentacles, half a ghast): beta culls by the bare box where they are this tick, though most models reach past it and are drawn up to a tick behind | bug | OF | mid | fixed (OF) |
+| 85 | A marked leaf beside a chunk that isn't loaded (the rim of the ticked land, some 150 blocks out) stays or falls by what the last leaf checked anywhere left in the check's shared array: a stray leaf floats on for good, or a leaf falls from a whole tree | bug | OF | low | fixed (OF) |
 
 #32 (video settings sliders can't be dragged) left the table: vanilla has no slider there (its entry).
 
@@ -1182,6 +1183,33 @@ frame, grown on every side by a block, a squid's by 1.5 and a ghast's by 3, a dy
 sleeping player's to 2 (its box shrinks to a fifth of a block under a body 1.8 long; reasoned from the code, not
 measured). Measured again with it: every kind drawn at the furthest point any of it shows, in all 3,301 slides that beta
 drops (with the dying poses). Checked in `FixesCheck` both ways (`docs/fixes.md`).
+
+### 85. A leaf beside unloaded land decides by another leaf's check (T, seen on the real server)
+Found 2026-11-14 by Claude Opus 5.5, building Still Faithful's Leaf Reach. `LeavesBlock.onTick`, for a leaf marked to
+look for a log (data bit 8), fills its array `decayRegion` from the blocks 4 each way and floods it from the logs there
+only `if (world.isRegionLoaded(...))` over the cube 5 each way; when that fails it skips both and still reads the
+array's middle, keeping the leaf (its mark cleared) or dropping it by that. The array is a field of the block, one for
+every leaf of the kind, so the middle holds what the last check anywhere left: mostly "stay", as most leaves checked
+are in reach. So a marked leaf within 5 of a chunk that isn't loaded is judged by some other leaf's surroundings: one
+out of reach of wood is kept, unmarked, and floats for good; one in reach falls from a whole tree when the last check
+dropped its leaf. Where: random ticks reach the chunks within 9 of a player. A server loads those within its view
+distance (10 by default) of where it last re-centred the view, which waits until the player has gone 8 blocks (and is a
+chunk off west and north of 0, #16b), so the ticked square's leading rim can sit beside a chunk not loaded; single player
+loads the chunks it ticks and those it draws, so at Normal render distance or shorter (8 chunks drawn each way) the rim
+sits beside land never loaded. Growing trees and new land mark many leaves, so marked leaves there are common, though
+the result is rare to see and far off. The marking in `onBreak` (a leaf's, 2 each way; a log's, 5) is skipped where
+its cube isn't loaded, but next to nothing breaks a block there (block ticks wait for 8 each way loaded, entities for
+32), so it's left as beta. bug, OF, low.
+**Fixed in Old Faithful** (2026-11-14, `leaves.besideUnloaded`): where the region test fails the check
+decides nothing, so the leaf keeps its mark and a later random tick decides once the land round it is loaded. A leaf
+left marked beside land that stays unloaded costs a region test (a few chunk lookups) when a random tick lands on it,
+and the mark is saved with it as beta's is, so a vanilla game reads the world as before. Keyed on `onTick`'s own region
+test, so it holds at Still Faithful's Leaf Reach (7 each way there, so a leaf within 7 waits) and for every leaf that
+runs beta's check, Faithful Core's `Leaves` included. Checked on the real server (`ServerWorldFixesTest`,
+`docs/fixes.md`): a lone marked leaf and one by a log, 3 from a chunk that isn't loaded, each checked just after a
+leaf elsewhere left the other answer. With the fix both wait, marked, and once the chunk loads the lone one falls and
+the other is kept; beta's kept the lone one, unmarked, and dropped the one by a log. With Leaf Reach a leaf 6 from the
+chunk waits too, where at beta's reach it's decided at once.
 
 ### 74. A step-up under a low roof sinks into the floor (T, seen)
 Reported from play (from memory): a player was moved slightly into a block and pushed out on a plain

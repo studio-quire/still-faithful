@@ -9,9 +9,9 @@ import org.studioquire.oldfaithful.options.settings.SettingsRegistry;
 /**
  * Still Faithful's switches on the settings screen (Old Faithful's options mod, docs/options.md > The settings screen):
  * a section of their own in Changes, "Polish", since they're the edition's deliberate departures from beta rather than
- * fixes of its mistakes. Each reads "Polished" or "Beta" (dusk: Stepped, Smooth or Beta). Every one waits for a restart, as the
- * fixes do (a change that's off has no mixins in the game), except dusk between Stepped and Smooth. Only loaded by the
- * options mod, on the client.
+ * fixes of its mistakes. Each reads "Polished" or "Beta" (dusk: Stepped, Smooth or Beta; obsidian and smooth water have
+ * three of their own). Every one waits for a restart, as the fixes do (a change that's off has no mixins in the game),
+ * except dusk between Stepped and Smooth, and smooth water but from Beta. Only loaded by the options mod, on the client.
  */
 public final class PolishSettings implements SettingsProvider {
 	private static final String WORLD = "world";
@@ -22,6 +22,7 @@ public final class PolishSettings implements SettingsProvider {
 	static final String[][] ROWS = {
 			{"blocks.stairsDropStairs", WORLD, "Stair Drops", "Stairs dropped a plank or a cobblestone instead of themselves."},
 			{"leaves.placedStay", WORLD, "Placed Leaves", "Leaves you placed decayed unless a log was near."},
+			{"leaves.reach", WORLD, "Leaf Reach", "Leaves decayed more than 4 blocks from a log, so big oaks lost the tops of their leaf clusters."},
 			{"glowstone.anyTool", CLIENT, "Glowstone",
 					"Glowstone dropped nothing unless mined with a pickaxe. On a server, only where it has this change too."},
 			{PolishConfig.OBSIDIAN_KEY, WORLD, "Obsidian",
@@ -47,10 +48,15 @@ public final class PolishSettings implements SettingsProvider {
 			{"render.chestLids", CLIENT, "Chest Lids", "A double chest's lid had a border down the middle, one lid to each half."},
 			{"blocks.fenceShape", CLIENT, "Fence Shape",
 					"Fences were whole blocks to walk into and aim at. On a server, walking past posts needs this change there too."},
+			{"blocks.fenceJoins", CLIENT, "Fence Joins",
+					"Fences joined only other fences, standing apart from a wall, glass or any other block beside them."},
 			{"inventory.shiftClick", CLIENT, "Shift-Click", "Shift-click did nothing in a dispenser, and never filled a furnace or put armour on."},
 			{"combat.heldAttack", CLIENT, "Held Attack",
 					"Holding the button to attack or mine hit whatever came under the crosshair, not just what you'd clicked."},
 			{"render.chatBars", CLIENT, "Chat Bars", "Every line of chat had a dark bar the chat's full width behind it, however short the line."},
+			{PolishConfig.SMOOTH_WATER_KEY, CLIENT, "Smooth Water",
+					"With Smooth Lighting, water was still lit in squares. Shaded: walls darken it, as they do the ground. Even: they don't."},
+			{"render.smoothCactus", CLIENT, "Smooth Cactus", "With Smooth Lighting on, cactus was still lit flat, a face at a time, against the smooth sand round it."},
 			{"render.droppedItemSize", CLIENT, "Dropped Blocks", "Dropped stairs, fences and other part-blocks lay at twice the size."},
 			{"render.entityDistance", CLIENT, "Entity Distance",
 					"Small things vanished close by: a dropped item past 16 blocks, a chicken past 21, an arrow past 32."},
@@ -79,6 +85,10 @@ public final class PolishSettings implements SettingsProvider {
 						.running(() -> PolishConfig.applied(row[0]) ? PolishConfig.obsidianAtStart() : "false").serverDecides());
 				continue;
 			}
+			if (row[0].equals(PolishConfig.SMOOTH_WATER_KEY)) {
+				r.add(GROUP, smoothWater(row));
+				continue;
+			}
 			Setting s = Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], PolishConfig.defaultValue(row[0]), "false", "Beta", "true", "Polished")
 					.running(() -> String.valueOf(PolishConfig.applied(row[0])));
 			r.add(GROUP, WORLD.equals(row[1]) ? s.serverDecides() : s);
@@ -99,6 +109,19 @@ public final class PolishSettings implements SettingsProvider {
 				.running(() -> PolishConfig.applied(row[0]) ? (DuskLight.smooth ? "smooth" : "stepped") : "beta")
 				.applyNow(v -> {
 					if (PolishConfig.applied(row[0]) && !v.equals("beta")) DuskLight.smooth = v.equals("smooth");
+				});
+	}
+
+	/**
+	 * Shaded, Even or Beta, at once while the change's mixins are in (Beta by their standing aside: SmoothWater.choose);
+	 * from Beta, after a restart, since a game started at Beta has none of them in.
+	 */
+	private static Setting smoothWater(String[] row) {
+		return Setting.choice(PolishConfig.FILE, row[0], row[2], row[3], SmoothWater.SHADED, SmoothWater.SHADED, "Shaded", SmoothWater.EVEN, "Even",
+				SmoothWater.BETA, "Beta")
+				.running(() -> PolishConfig.applied(row[0]) ? SmoothWater.look : SmoothWater.BETA)
+				.applyNow(v -> {
+					if (PolishConfig.applied(row[0])) SmoothWater.choose(v);
 				});
 	}
 

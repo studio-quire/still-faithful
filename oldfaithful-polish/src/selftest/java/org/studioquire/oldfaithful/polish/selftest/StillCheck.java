@@ -42,8 +42,11 @@ import javax.imageio.ImageIO;
 /**
  * Still Faithful's changes in a running single-player world, from the harness's start-up test
  * (`:harness:clientStartupTestStill`), after Old Faithful's fixes. Each scene is set up well above the ground, away
- * from the player and from FixesCheck's (which sit 12 blocks out). Every check expects the change where its switch was
- * on at start and beta's behaviour where it was off, so a run with every switch off checks the other side.
+ * from the player. FixesCheck's scenes were laid out round where the player stood before it moved them to its boat, so
+ * here they lie some 24 blocks east and south, among these: its slimes' floor a block from two chest scenes, its rail
+ * through glowstone's cell. It removes its slimes once counted, as a mob in a cell stops a chest being placed there.
+ * Every check expects the change where its switch was on at start and beta's behaviour where it was off, so a run with
+ * every switch off checks the other side.
  * What's only seen (the bow, dropped item sizes, the boat's feel) is checked by eye, in play.
  */
 public final class StillCheck implements WorldCheck {
@@ -332,7 +335,7 @@ public final class StillCheck implements WorldCheck {
 		placeChest(mc, sx + 1, y, sz, 0.0F);
 		mc.player.input.sneaking = false;
 		if (on) {
-			results.check("still pairs: a chest placed sneaking beside one facing the same way stays single (data " + world.getBlockMeta(sx + 1, y, sz) + ")",
+			results.check("still pairs: a chest placed sneaking beside one facing the same way stays single (" + chestData(sx, y, sz) + ", " + chestData(sx + 1, y, sz) + ")",
 					Chests.partner(world, sx, y, sz, id) == 0 && Chests.partner(world, sx + 1, y, sz, id) == 0 && Block.CHEST.getTextureId(world, sx + 1, y, sz, 2) == tex + 1);
 		}
 		// Facing another way, beside a single one: no join; the old one stays single.
@@ -340,7 +343,7 @@ public final class StillCheck implements WorldCheck {
 		placeChest(mc, fx, y, fz, 0.0F);
 		placeChest(mc, fx + 1, y, fz, 90.0F);
 		if (on) {
-			results.check("still pairs: a chest facing east beside one facing north doesn't join it",
+			results.check("still pairs: a chest facing east beside one facing north doesn't join it (" + chestData(fx, y, fz) + ", " + chestData(fx + 1, y, fz) + ")",
 					Chests.partner(world, fx, y, fz, id) == 0 && Chests.partner(world, fx + 1, y, fz, id) == 0 && Block.CHEST.getTextureId(world, fx + 1, y, fz, 5) == tex + 1);
 		}
 		// A pair from before (two chests of beta's) with a chest placed beside it: still one pair, and the new one alone.
@@ -400,6 +403,11 @@ public final class StillCheck implements WorldCheck {
 		} catch (java.io.IOException e) {
 			results.check("still lids: the pack's terrain.png read: " + e, false);
 		}
+	}
+
+	/** For a check's message: a chest's data, or that none went in (a mob or cart in the cell stops a placement). */
+	private String chestData(int x, int y, int z) {
+		return world.getBlockId(x, y, z) == Block.CHEST.id ? "data " + world.getBlockMeta(x, y, z) : "no chest";
 	}
 
 	private void placeChest(Minecraft mc, int x, int y, int z, float yaw) {

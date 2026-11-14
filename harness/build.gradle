@@ -359,13 +359,15 @@ if (!stillMods.isEmpty() && !fixedMods.isEmpty()) {
                         "-Doldfaithful.selftest.stallMs=${(duskFull ? 860 : 390) * 1000}".toString(),
                         "-Doldfaithful.selftest.duskFull=${duskFull}".toString(),
                         // -Pstill.squidClip: SquidCheck also films squid at the surface (local/run/squid-surface/), about 70 s more.
-                        "-Doldfaithful.selftest.squidClip=${providers.gradleProperty('still.squidClip').isPresent()}".toString()]
+                        "-Doldfaithful.selftest.squidClip=${providers.gradleProperty('still.squidClip').isPresent()}".toString(),
+                        // -Pstill.waterLooks: SmoothWaterCheck also pictures lava lit smoothly (a look not taken) and times rebuilding open water.
+                        "-Doldfaithful.selftest.waterLooks=${providers.gradleProperty('still.waterLooks').isPresent()}".toString()]
         // -Pstill.beta: every Still Faithful switch off, so each check must find beta's behaviour instead. A new switch joins this list
         // (StillCheck fails a run whose switches came up mixed).
         if (providers.gradleProperty('still.beta').isPresent()) {
-            configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'glowstone.anyTool',
+            configs.put('stillfaithful-polish.properties', ['blocks.stairsDropStairs', 'leaves.placedStay', 'leaves.reach', 'glowstone.anyTool',
                     'blocks.obsidian', 'liquids.lavaThins', 'liquids.waterSources', 'render.droppedItemSize', 'render.bowPose', 'boats.sturdy',
-                    'boats.handling', 'boats.steering', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface', 'combat.heldAttack'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
+                    'boats.handling', 'boats.steering', 'minecarts.cartCollisions', 'animals.keepTended', 'saves.backgroundAutosave', 'blocks.chestsFaceYou', 'skins.modern', 'menu.texturePacks', 'blocks.fenceShape', 'render.chatBars', 'blocks.chestPairs', 'render.chestLids', 'inventory.shiftClick', 'furnace.woodenFuel', 'render.particleDistance', 'render.entityDistance', 'mobs.skeletonArrows', 'mobs.squidSurface', 'combat.heldAttack', 'render.smoothWater', 'blocks.fenceJoins', 'render.smoothCactus'].collect { it + '=false' }.join('\n') + '\nsky.dusk=beta\n')
         }
         // -Pstill.switches="boats.handling=false": switches written into stillfaithful-polish.properties instead, the
         // rest as shipped, for measuring one switch against the rest (with -Ptest.only). A check that reads its switch

@@ -33,6 +33,8 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	public static final String DUSK_KEY = "sky.dusk";
 	/** Obsidian is a choice too: true (1.0's), diamond (1.0's with a diamond pickaxe only), or false (beta). */
 	public static final String OBSIDIAN_KEY = "blocks.obsidian";
+	/** And smooth water: true (Shaded, darkened against walls), even (not darkened), or false (beta's). */
+	public static final String SMOOTH_WATER_KEY = "render.smoothWater";
 	/** Pairs go by which way chests face, so they need #69's facings. */
 	private static final String PAIRS_KEY = "blocks.chestPairs", FACING_KEY = "blocks.chestsFaceYou";
 	private static final String HEADER = "# stillfaithful-polish: Still Faithful's changes, what later versions improved while beta stayed beta.\n"
@@ -50,6 +52,12 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					"# #24: leaves you placed decayed unless a log was near (they were placed already marked to decay). With this,\n"
 					+ "# placed leaves never decay; leaves on trees still do. Placed leaves carry a mark in their data that\n"
 					+ "# beta ignores, so the world still opens in beta.\n"},
+			{"leaves.reach", "leafreach",
+					"# Leaves stayed on a tree only within 4 blocks of its wood (counted through the leaves). A big oak's leaf clusters\n"
+					+ "# are up to 5 blocks tall with wood only under their middle, so once a log or leaves near them were cut their upper\n"
+					+ "# corners fell, and each fall set the leaves round it checking: a cut at a big oak's foot could bring down more than\n"
+					+ "# a third of its leaves, from the top too, dropping saplings onto the tree. With this, leaves stay within 6 blocks of\n"
+					+ "# wood, as in later versions. In multiplayer, the server's.\n"},
 			{"glowstone.anyTool", "glowstone",
 					"# #10: glowstone dropped nothing unless mined with a pickaxe. With this, it drops by hand or with any tool,\n"
 					+ "# as from 1.0 (and mines at the speed 1.0 had). In multiplayer, mining is faster only on a server that\n"
@@ -125,6 +133,12 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# to the fences beside it, as in later versions, both to aim at and to bump into: you can stand against a post\n"
 					+ "# and walk past its corner, and still can't jump over it. In multiplayer, walking past posts needs a server with\n"
 					+ "# this change too (elsewhere fences stay whole to walk into); what you aim at is always yours.\n"},
+			{"blocks.fenceJoins", "fencejoins",
+					"# A fence joined only the fences beside it: against a wall, a house or any other block it stood apart, a post\n"
+					+ "# with a gap. With this, a fence reaches to any block with a whole, solid side toward it, as in later versions:\n"
+					+ "# stone, planks, glass, a chest, the back of stairs, a door's flat side; not leaves, pumpkins or jack-o'-lanterns.\n"
+					+ "# With blocks.fenceShape on, the arms are also what you aim at and bump into (in multiplayer, bumping\n"
+					+ "# into them needs the server to have blocks.fenceShape too); with it off, they're only drawn and the fence stays a whole block. Drawn on any server.\n"},
 			{"render.chatBars", "chat",
 					"# Each line of chat had a dark bar behind it the full width of the chat, however short the line. With this,\n"
 					+ "# a line's bar ends just past its own text, as long as the line is.\n"},
@@ -172,6 +186,16 @@ public final class PolishConfig implements IMixinConfigPlugin {
 					+ "# chicken past 21, an arrow past 32, a zombie past 64. With this, everything shows within 64 blocks at least,\n"
 					+ "# as far as a zombie, and bigger things as far as before. A server sends dropped items and arrows within 64\n"
 					+ "# blocks, so it needs nothing.\n"},
+			{SMOOTH_WATER_KEY, "smoothwater",
+					"# With Smooth Lighting on, water was still lit a block at a time, so torchlight lay on a pond in squares and a\n"
+					+ "# tree's shade on it in blocks. true: water is lit smoothly like the ground around it, and darkens a little\n"
+					+ "# against a wall, a bank or a post, as the ground at its foot does. even: smoothly, but nothing solid darkens\n"
+					+ "# it. false: beta's. Only while Smooth Lighting is on (with it off, water looks as it did). The settings\n"
+					+ "# screen switches between them at once, but from false only after a restart. Your own game's, on any server.\n"},
+			{"render.smoothCactus", "smoothcactus",
+					"# With Smooth Lighting on, cactus was still lit a face at a time, in flat light beside the smoothly lit sand. With\n"
+					+ "# this, cactus is lit smoothly like the ground around it, and shaded at its foot, as in later versions, while\n"
+					+ "# Smooth Lighting is on (with it off, cactus looks as it did). Your own game's, on any server.\n"},
 			{"combat.heldAttack", "heldattack",
 					"# Holding the button to attack or mine went on hitting whatever came under the crosshair, four times a second:\n"
 					+ "# the animal behind a block you'd just mined, or a tame wolf the crosshair passed across. With this, holding it\n"
@@ -184,6 +208,7 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	private static volatile boolean read;
 	private static String dusk = "smooth";
 	private static String obsidian = "true";
+	private static String smoothWater = "true";
 
 	@Override
 	public void onLoad(String mixinPackage) {
@@ -219,6 +244,9 @@ public final class PolishConfig implements IMixinConfigPlugin {
 			} else if (OBSIDIAN_KEY.equals(c[0])) {
 				obsidian = obsidianMode(v);
 				if (obsidian.equals("false")) off.add(c[0]);
+			} else if (SMOOTH_WATER_KEY.equals(c[0])) {
+				smoothWater = smoothWaterMode(v);
+				if (smoothWater.equals("false")) off.add(c[0]);
 			} else if (!Boolean.parseBoolean(v)) {
 				off.add(c[0]);
 			}
@@ -259,6 +287,17 @@ public final class PolishConfig implements IMixinConfigPlugin {
 	/** The obsidian choice the game started with: true, diamond or false. */
 	public static String obsidianAtStart() {
 		return obsidian;
+	}
+
+	/** The smooth water choice as read: even, false, or true (Shaded) for anything else, as the settings screen reads it. */
+	static String smoothWaterMode(String value) {
+		String v = value.trim().toLowerCase(java.util.Locale.ROOT);
+		return v.equals("even") ? "even" : v.equals("false") ? "false" : "true";
+	}
+
+	/** The smooth water choice the game started with: true (Shaded), even or false (Beta). */
+	public static String smoothWaterAtStart() {
+		return smoothWater;
 	}
 
 	/** Whether the change was on when the game started, so its mixins are in. */

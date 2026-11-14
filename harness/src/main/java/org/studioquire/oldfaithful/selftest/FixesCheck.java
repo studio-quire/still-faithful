@@ -511,7 +511,13 @@ final class FixesCheck {
 		int smaller = 0;
 		for (Object e : world.entities) {
 			// `near` goes by x and z: slimes born in a slime chunk under the platform aren't these.
-			if (e instanceof SlimeEntity && ((SlimeEntity) e).getSize() == 2 && near((Entity) e, bx, bz + 12) && Math.abs(((Entity) e).y - Y) < 6) smaller++;
+			if (e instanceof SlimeEntity && ((SlimeEntity) e).getSize() == 2 && near((Entity) e, bx, bz + 12) && Math.abs(((Entity) e).y - Y) < 6) {
+				smaller++;
+				// Counted, they go (alive, they don't split). Once the player moves to the boat's spot their floor lies
+				// among Still Faithful's chest scenes, its north edge a block from two of them, and a slime resting on the
+				// edge overhangs a chest's cell, so the chest can't be placed there (StillCheck failed on it, 2026-11-14).
+				((Entity) e).markDead();
+			}
 		}
 		results.check("fixes #25: the overkilled big slime split (" + smaller + " smaller slimes)", smaller == 4);
 		results.check("fixes #29: the saddled pig dropped its saddle", dropped(world, bx, bz - 12, Item.SADDLE.id, -1));

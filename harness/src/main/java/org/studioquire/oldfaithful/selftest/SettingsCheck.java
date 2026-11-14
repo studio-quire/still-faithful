@@ -530,7 +530,8 @@ final class SettingsCheck {
 		walk(mc, "Changes", titles);
 		boolean still = FabricLoader.getInstance().isModLoaded("stillfaithful-polish");
 		results.check("Changes: " + titles, titles.equals(still
-				? java.util.Arrays.asList("Changes: Polish (1/4)", "Changes: Polish (2/4)", "Changes: Polish (3/4)", "Changes: Window and Mouse (4/4)")
+				? java.util.Arrays.asList("Changes: Polish (1/5)", "Changes: Polish (2/5)", "Changes: Polish (3/5)", "Changes: Polish (4/5)",
+						"Changes: Window and Mouse (5/5)")
 				: java.util.Collections.singletonList("Changes: Window and Mouse")));
 		return true;
 	}
@@ -591,7 +592,13 @@ final class SettingsCheck {
 	}
 
 	/** A mod's own settings, besides its rules, as its page shows them in a pack as it comes: the whole button, so each at its default. */
-	private static final java.util.Map<String, List<String>> PACK_SETTINGS = java.util.Collections.singletonMap("Blue Flowers", java.util.Collections.singletonList("Yellow Flower: Dandelion"));
+	private static final java.util.Map<String, List<String>> PACK_SETTINGS = new java.util.HashMap<>();
+
+	static {
+		PACK_SETTINGS.put("Blue Flowers", java.util.Collections.singletonList("Yellow Flower: Dandelion"));
+		PACK_SETTINGS.put("Dry Grass", java.util.Arrays.asList("Grass: Sage", "Leaves: Sage"));
+		PACK_SETTINGS.put("Stars", java.util.Arrays.asList("Stars: Shown", "Size: Smallest", "Brightness: Beta", "Number: More"));
+	}
 
 	private static java.util.Map<String, String> packMods(String given) {
 		java.util.Map<String, String> mods = new java.util.TreeMap<>();

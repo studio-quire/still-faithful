@@ -23,7 +23,8 @@ import org.junit.jupiter.api.Test;
 /**
  * The world fixes from the piston hunt and the read after it (#55, #56, #59, #64, #66, #67, #76, #77, and #74 and #75 on a mob) on the real b1.7.3
  * dedicated server: the scenario mod's scenes (WorldFixes) once with oldfaithful-fixes, then once without it, where each
- * must show beta's bug (so each check is known to see what it checks). Each in a new world of its own.
+ * must show beta's bug (so each check is known to see what it checks). Each in a new world of its own. And #85's leaves,
+ * there too; where Still Faithful's polish mod is built, once more with it (Leaf Reach), on that scene alone.
  * Run with {@code ./gw :oldfaithful-fixes:serverTicksTest} (with #42's test).
  */
 @Tag("server")
@@ -73,6 +74,21 @@ class ServerWorldFixesTest {
 
 		assertTrue(line(fixed, "#75").contains(": 0 of 1000 inside"), "#75 with the fix: " + line(fixed, "#75"));
 		assertTrue(!line(beta, "#75").contains(": 0 of 1000 inside"), "#75 control: " + line(beta, "#75"));
+
+		// Each leaf right after a check elsewhere left the other answer: with the fix, those beside the chunk wait, marked,
+		// and decide by their own surroundings once it loads; beta's keeps the lone one (unmarked, so for good) and drops
+		// the one by a log. A leaf 6 from the chunk is outside beta's loaded test, so decided at once either way.
+		String leaves = "#85 marked leaves 3 from a chunk not loaded: ";
+		assertTrue(line(fixed, "#85").startsWith(leaves + "lone marked, by a log marked, 6 from it fell; "
+				+ "once it's loaded, lone fell, by a log kept, 6 from it fell"), "#85 with the fix: " + line(fixed, "#85"));
+		assertTrue(line(beta, "#85").startsWith(leaves + "lone kept, by a log fell, 6 from it fell; "
+				+ "once it's loaded, lone kept, by a log fell, 6 from it fell"), "#85 control: " + line(beta, "#85"));
+		// With Still Faithful's Leaf Reach the check asks for 7 each way, so the leaf 6 from the chunk waits too.
+		if (System.getProperty("oldfaithful.polish.mod") != null) {
+			List<String> reach = scenes("polished", "leaves", List.of("oldfaithful.fixes.mod", "oldfaithful.polish.mod"));
+			assertTrue(line(reach, "#85").startsWith(leaves + "lone marked, by a log marked, 6 from it marked; "
+					+ "once it's loaded, lone fell, by a log kept, 6 from it fell"), "#85 with Leaf Reach: " + line(reach, "#85"));
+		}
 		try {
 			delete(run);
 		} catch (IOException e) {
@@ -97,14 +113,18 @@ class ServerWorldFixesTest {
 		return out;
 	}
 
-	/** One server, a new world, the scenes; its output. */
 	private List<String> scenes(boolean withFixes) throws Exception {
+		return scenes(withFixes ? "fixed" : "beta", "world", withFixes ? List.of("oldfaithful.fixes.mod") : List.of());
+	}
+
+	/** One server, a new world, the scenes ({@code world}, or {@code leaves} for #85's alone), with these mods beside the scenario's; its output. */
+	private List<String> scenes(String label, String scenario, List<String> modProperties) throws Exception {
 		Path mods = run.resolve("mods");
 		try (Stream<Path> old = Files.list(mods)) {
 			for (Path p : old.toList()) Files.delete(p);
 		}
 		List<String> wanted = new ArrayList<>(List.of("oldfaithful.fixes.scenario.mod"));
-		if (withFixes) wanted.add("oldfaithful.fixes.mod");
+		wanted.addAll(modProperties);
 		for (String property : wanted) {
 			Path mod = Path.of(System.getProperty(property));
 			Files.copy(mod, mods.resolve(mod.getFileName()));
@@ -113,11 +133,11 @@ class ServerWorldFixesTest {
 		try (ServerSocket s = new ServerSocket(0)) {
 			port = s.getLocalPort();
 		}
-		Files.writeString(run.resolve("server.properties"), String.join("\n", "level-name=world-" + (withFixes ? "fixed" : "beta"),
+		Files.writeString(run.resolve("server.properties"), String.join("\n", "level-name=world-" + label,
 				"online-mode=false", "server-ip=127.0.0.1", "server-port=" + port, "view-distance=4", "spawn-monsters=false",
 				"spawn-animals=true", "level-seed=" + System.getProperty("oldfaithful.fixes.seed", ""), ""));
 		String java = ProcessHandle.current().info().command().orElse("java");
-		Process process = new ProcessBuilder(java, "-Xmx768m", "-Doldfaithful.fixes.scenario=world", "-cp", System.getProperty("oldfaithful.server.classpath"),
+		Process process = new ProcessBuilder(java, "-Xmx768m", "-Doldfaithful.fixes.scenario=" + scenario, "-cp", System.getProperty("oldfaithful.server.classpath"),
 				"net.fabricmc.loader.impl.launch.knot.KnotServer", "nogui").directory(run.toFile()).redirectErrorStream(true).start();
 		List<String> lines = new ArrayList<>();
 		try {
@@ -128,7 +148,7 @@ class ServerWorldFixesTest {
 				String l;
 				while ((l = in.readLine()) != null) {
 					lines.add(l);
-					if (l.contains("[fixes-scenario]") || l.contains("Exception")) System.out.println("  server" + (withFixes ? " (fixes): " : " (beta): ") + l);
+					if (l.contains("[fixes-scenario]") || l.contains("Exception")) System.out.println("  server (" + label + "): " + l);
 					if (l.contains("[fixes-scenario] done") && !done) {
 						done = true;
 						stdin.write("stop\n".getBytes(StandardCharsets.UTF_8));

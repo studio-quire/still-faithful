@@ -28,7 +28,8 @@ back (after a restart).
   through it. Water one block deep breaks a fall from any height. Sneaking stops you at an inside corner too. Mobs
   look at you without nodding. A mob that has died no longer pushes or is pushed while it falls over, and arrows fly
   through it instead of bouncing off. Mobs spawn beside water west and north of 0, 0 as they do elsewhere, and squid no
-  longer spawn in lava. Squid swim all through the water rather than sinking to the bottom, and make no footsteps. Falling sand and gravel no longer delete blocks of their own kind. With a block low
+  longer spawn in lava. Squid swim all through the water rather than sinking to the bottom, and make no footsteps. Falling sand and gravel no longer delete blocks of their own kind. Leaves at the edge of the land the
+  game has loaded no longer float on with nothing holding them, or fall from a whole tree. With a block low
   overhead, a step no longer sinks you into the floor and shoves you back out. Rejoining a world right against a wall,
   a rounding slip no longer lets you walk into it and suffocate until pushed out.
 - **Redstone.** Repeaters work the doors, trapdoors, note blocks, dispensers, TNT and rail junctions they power.

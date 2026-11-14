@@ -57,6 +57,8 @@ final class LibrarySelftestStage implements Stage {
 			client.addAll(extra);
 			joined.addAll(extra);
 			server.addAll(extra);
+			// The joining client has the edition's mods too, so its title check expects the edition's name.
+			joinFlags.addAll(editionFlags);
 			t.notes.add("selftest: on " + edition + " edition's mods as well (library.edition)");
 		}
 		List<String> onServer = new ArrayList<>(mods);

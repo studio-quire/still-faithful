@@ -23,6 +23,16 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   takes a restart.
 - **Stairs** drop themselves, not a plank or a cobblestone.
 - **Leaves you place** never decay; leaves on trees still do.
+- **Leaves on a tree** stay within 6 blocks of its wood, counted through the leaves, as in later versions. Beta's
+  reached 4, and the upper corners of a big oak's leaf clusters are 5 or 6 from its wood, so once a log or leaves near
+  them were cut they fell, and the fall spread, dropping saplings onto the tree (Leaf Reach). On a server, the
+  server's switch.
+- **Water and cactus are lit smoothly** while Smooth Lighting is on. Beta lit water a block at a time and cactus a
+  face at a time even then, so torchlight lay on a pond in squares and a cactus stood out flat beside the smoothly lit
+  sand. Water darkens a little against a wall or a bank, as the ground does (Smooth Water: **Shaded**; **Even** lights
+  it smoothly without darkening it, **Beta** as beta did), and cactus darkens toward its foot, as in later versions
+  (Smooth Cactus). Lava keeps beta's look. With Smooth Lighting off, both look as they did. Smooth Water's choice
+  shows at once, but from Beta after a restart. Your own game's, on any server.
 - **Chests** face you when you place them, and pair as in later versions: a chest joins one beside it only if that
   one faces the same way, stands to its left or right and isn't joined already, and never while you sneak, so double
   chests can stand side by side in a row. A double chest has one lid across both halves, made from your texture
@@ -59,6 +69,12 @@ Every change has its own switch, all on: in the game under **Options > Still Fai
   stand against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past
   posts needs the server to have this too; aiming past them works anywhere. Posts that only touch diagonally no longer
   close a gap to players and the narrower mobs.
+- **Fences join walls** and other blocks, as in later versions, not only other fences: a fence beside stone, planks,
+  glass, a chest, the back of stairs, a door's flat side or any other block with a whole, solid side toward it reaches
+  out to it, where beta's stood apart as a post. Leaves, pumpkins and jack-o'-lanterns are left apart (Fence Joins). With
+  Fence Shape, above, the arms are also what you aim at and bump into. Your own game draws them on any server; bumping
+  into them on a server needs it to have Fence Shape, as walking past posts does. Fences already built change too: a
+  post standing against a wall now reaches out to it.
 - **Chat** lines each have a dark bar only as long as their text, not the chat's full width.
 - **Skeletons** shoot from their eyes, as in later versions, instead of from well above their heads, so in a tunnel,
   a low cave or a doorway two blocks high their arrows no longer stick in the ceiling: they can hit you there.
@@ -133,7 +149,9 @@ everyone, though players without Still Faithful see the new double chests drawn 
 whose game has Old Faithful's Riding Look (others paddle as in beta), and faster glowstone mining needs Still Faithful
 on both sides. Players without Still Faithful 0.8.0 or later, or with its Obsidian set to Beta, mine obsidian at beta's
 speed: with a diamond pickaxe the server accepts it, but without one the obsidian they break at 50 seconds comes back,
-and goes for good at 250, unless the server's Obsidian setting is Diamond Only or Beta.
+and goes for good at 250, unless the server's Obsidian setting is Diamond Only or Beta. On a server with Fence Joins and
+Fence Shape, a player with Fence Shape whose Still Faithful is 0.8.1 or earlier, or who has Fence Joins at Beta, may be pulled back stepping
+from the top of a wall one block high onto a fence that joins it.
 
 ## Problems
 

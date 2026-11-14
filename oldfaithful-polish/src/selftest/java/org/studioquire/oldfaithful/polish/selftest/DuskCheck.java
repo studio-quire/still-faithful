@@ -421,6 +421,21 @@ public final class DuskCheck implements WorldCheck {
 
 	// ---- Steps
 
+	/**
+	 * No light update waits, worked here some milliseconds a tick: beta works 500 a frame, and the checks before this one
+	 * can leave a long queue, so the scene's light (under the beam, round the tree) was still filling in while beta's
+	 * pictures were baked and done by the smooth ones (found 2026-11-14: the whole test failed at darkness 0, 4 and 5 by up
+	 * to 49/255 in shade, this check alone passed). The same updates in the same order, sooner (SceneShot's way).
+	 */
+	private static boolean lit(Minecraft mc) {
+		long until = System.nanoTime() + 20_000_000L;
+		boolean more;
+		do {
+			more = mc.world.doLightingUpdates();
+		} while (more && System.nanoTime() < until);
+		return !more;
+	}
+
 	/** No render chunk near the scene waits to be built (the far terrain may still be settling its light). */
 	private boolean built(Minecraft mc) {
 		for (ChunkBuilder c : ((WorldRendererAccessor) mc.worldRenderer).oldfaithful$chunks()) {
@@ -437,7 +452,7 @@ public final class DuskCheck implements WorldCheck {
 	private Step settle(int ticks) {
 		return mc -> {
 			waited++;
-			quiet = built(mc) ? quiet + 1 : 0;
+			quiet = lit(mc) && built(mc) ? quiet + 1 : 0;
 			if (waited % 100 == 0) log("settling: " + waited + " ticks, quiet " + quiet + ", waiting chunks "
 					+ ((WorldRendererAccessor) mc.worldRenderer).oldfaithful$dirtyChunks().size());
 			return waited >= ticks && quiet >= 20 || waited > 1200;
@@ -490,7 +505,7 @@ public final class DuskCheck implements WorldCheck {
 				grabbed = null;
 				return false;
 			}
-			quiet = built(mc) && world.ambientDarkness == n ? quiet + 1 : 0;
+			quiet = lit(mc) && built(mc) && world.ambientDarkness == n ? quiet + 1 : 0;
 			if (quiet < 12 && waited < 400) return false;
 			if (quiet < 12) {
 				results.check("still #6: " + mode + " darkness " + n + " settled", false);

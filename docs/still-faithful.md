@@ -34,6 +34,7 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 |---|---|---|---|
 | 13 | `blocks.stairsDropStairs` | world | `StairsBlock.dropStacks` drops one of the stairs (same chance, same one random draw as beta's single drop) instead of handing it to the base block |
 | 24 | `leaves.placedStay` | world | Placed leaves get data `kind | 4` (`PlacedLeaves`) instead of beta's `kind | 8` (marked to decay at once); leaves with bit 4 never decay. Bit 4 is unused in beta (every reader masks with 3 or tests 1, 2, 8), later versions use it the same way; a vanilla game reading the world sees ordinary leaves |
+| | `leaves.reach` | world | A leaf marked to look for a log stays where one lies within 6 steps of it through leaves, as in later versions, not beta's 4, and a broken log marks the leaves within 6 of it to look, not 4 (`LeafReach`, below) |
 | 10 note | `glowstone.anyTool` | both | `PlayerInventory.isUsingEffectiveTool` is true for glowstone: 1.0's drop and 1.0's speed by hand (about 10 ticks; beta 31 and nothing). Multiplayer: the server marks its login packet ('g', `ServerMarker`, the fixes' format, so both marks share the field); a client mines faster only there |
 | 10 note | `blocks.obsidian` | world | A choice. `true`, the default, Polished: as 1.0, pickaxes mine it at their speed (Beta 1.9 put it on the list) and its hardness is 50 (1.0.0-RC1), so a diamond pickaxe takes 189 ticks, 9.4 s (beta 301, 15 s), and anything that can't harvest it 250 s (beta 50). `diamond`, Diamond Only: the same with a pickaxe that harvests it, beta's 50 s without one, as a game without the change times it: on a Polished server, a vanilla player mining obsidian that way sees it gone at 50 s, back 4 s later (the server refused the early break) and gone at 250; 1.0's numbers stay the default all the same, as such players are next to none. `false`: beta. `Obsidian`: the mining time and `Block.getHardness()` answer 50, the field stays 10. Multiplayer: the login packet's field being full, the server says which in a sign packet straight after it (`ServerMarker.sign`, below: 'o' or 'd'), and a client with the mod times obsidian by that, whatever its own choice but Beta (which loads none of the change, so it times obsidian as beta anywhere); by beta's where none comes |
 | 20 | `liquids.lavaThins` | world | Where beta draws its 3-in-4 refusal to thin flowing lava (and then schedules nothing, so cut-off lava lingers), the lava thins and its next tick comes 4 times later, as later versions do; the same draw is made, so the world's random runs as before. Lava already stuck in a world goes once something beside it changes |
@@ -50,9 +51,12 @@ and Pure Faithful 0.1.3): github.com/studio-quire/still-faithful, studioquire.or
 | | `blocks.chestPairs` | world (drawn on the client) | Chests pair as later versions pair them (below): a chest placed joins one beside it only if that one faces the same way, stands to its left or right and isn't joined, and never while sneaking; a chest can go anywhere, beside a double chest too. A chest joined so says who to in its data (6 to 13). Needs `blocks.chestsFaceYou`, as pairs go by facing |
 | | `render.chestLids` | client | A double chest's top and bottom are one lid: four half-lids made from the texture pack's lid in tiles beta leaves as placeholders (below) |
 | 30 | `blocks.fenceShape` | both (aiming: client) | A fence is a post (beta's own, 6/16 to 10/16) with an arm as wide to each fence beside it, as later versions shape it: 1.5 high to bump into, 1 high to aim at, with an outline of the post and arms (`Fences`, below) |
+| | `blocks.fenceJoins` | both (drawn: client) | A fence joins what 1.13 joins, not only fences: any block whose side toward it is whole and solid, but leaves and pumpkins (`FenceJoins`, below). Drawn with arms to it; with #30 they're the shape too |
 | | `render.chatBars` | client | Each chat line's dark bar runs from 1 before its text (beta's text starts at x 2; the gap matches the right's) to just past its end (the text's width, which counts its shadow, and 1 more, the 1 beta leaves above the text), not beta's 320 for every line; in play and with the chat open (`chat.InGameHudMixin`). Height, colour, fade and wrapping are beta's; an empty line has no bar; the open chat's typing bar stays full width |
 | | `render.particleDistance` | client | Particles made within 32 blocks of the camera, not beta's 16, and a puff (a blast's, a mob dying or appearing) within 64 (below) |
 | | `render.entityDistance` | client | Everything drawn within 64 blocks at least (a zombie's distance), where beta's distance went by the box: a dropped item 16, a chicken 21, an arrow 32; bigger things as beta (below) |
+| | `render.smoothWater` | client | With Smooth Lighting on, each corner of a water face averages four of beta's own readings for water, as renderSmooth averages a block's corners (`SmoothWater`, below), and in Fast graphics water's layer is drawn blended. Lava keeps beta's light. A choice: `true` Shaded (walls darken the water, as the ground at their foot), `even` Even (they don't), `false` Beta; at once on the settings screen but from Beta |
+| | `render.smoothCactus` | client | With Smooth Lighting on, each corner of a cactus's face averages four readings as renderSmooth averages a block's: beta's reading for the face and three round the corner, a side's in the cactus's own layer of cells, as its sides are drawn a pixel in, so the block it stands on shades its foot (`SmoothCactus`, below) |
 | | `inventory.shiftClick` | client (any server) | Shift-click where beta's stopped short: a dispenser both ways, a furnace's top or fuel slot, armour on; made of beta's own clicks (`ShiftClicks`, below) |
 | | `combat.heldAttack` | client (any server) | While the attack button is held, beta's repeat of the click every 5 ticks hits only the entity the press landed on; any other under the crosshair is passed over, and every one if the press was on a block or on air. The rest of the click is beta's, so mining and the swing are unchanged (`heldattack.MinecraftMixin`, below) |
 | | `furnace.woodenFuel` | world | Wooden things burn in a furnace, as later versions burn them. Beta's `getFuelTime` burns any wood-material block 300 ticks, sticks and saplings 100, and nothing else wooden; where it says 0, `WoodenFuel` answers with later versions' times: wooden tools and sword 200, sign and wooden door 200, bow, fishing rod and ladder 300, boat 1200, bowl 100, and beta's wooden slab (slab data 2) 150. Where beta and later versions both burn something they agree, so it extends beta's table; other mods' fuels stand. Beta's wooden slab is stone material, and later versions kept it as the petrified oak slab, which doesn't burn; it burns here because it's called wooden and made of planks (Claude Opus 5.5's call). Shift-click sends these to the fuel slot, as it asks the same table |
@@ -104,7 +108,8 @@ off for those.
 
 Changed on 2026-11-07 after first being kept as beta. Built by Claude Opus 5.5 the same day. Beta's fence is a whole
 block to aim at and a whole 1 x 1.5 x 1 box to walk into, whatever it joins; here it's the shape it's drawn as. A fence
-joins only fences beside it in beta (`renderFence`), so the arms follow that, and fence gates don't exist.
+joins only fences beside it in beta (`renderFence`), so the arms follow that, and fence gates don't exist; with Fence
+Joins (below), they follow what 1.13 joins.
 - **Shape.** As 1.8 to 1.12 cover it, two boxes: one along z where it joins north or south, one along x where it joins
   east or west or neither (`FenceShape`). Collision 1.5 high, so still no jumping over; aiming 1 high, the ray tested
   against each box. The outline is 1.13's: lines round the post and arms as one shape, no edge where an arm meets the
@@ -127,6 +132,49 @@ joins only fences beside it in beta (`renderFence`), so the arms follow that, an
   wolf, chicken or a zombie, skeleton or creeper (0.6 wide) fits between two such posts, as in later versions; pigs,
   cows and sheep (0.9) still don't. The "smart farm" (the whole box over farmland, #30) goes with it. Path finding is
   beta's, which treats a fence block as solid either way; mobs only stop snagging on posts as they cut corners.
+
+### Fence Joins (2026-11-14)
+
+Fences that join walls and other blocks, not only fences. Built by Claude Opus 5.5 the same day; the rule is `FenceJoins`' class comment. Its own switch,
+`blocks.fenceJoins`, so beta's look can come back without taking #30's shape with it.
+- **The rule.** From 1.13 a fence joins fences of its kind, fence gates, and any block whose side toward it is a whole
+  face of its collision (or support) shape, except leaves, pumpkins, jack-o'-lanterns, melons, barriers and shulker
+  boxes (`Block.isExceptionForConnection`); 1.0 to 1.12 joined only opaque whole cubes, so not glass (1.13's rule as
+  26.3's own `FenceBlock`, `SupportType` and block shapes have it). On beta's blocks, by what they are, so a mod's block that subclasses one
+  follows it: a fence joins a `FenceBlock` of its material; nothing whose material lets things through (air, liquids,
+  plants, torches, rails, redstone, snow layers, fire, portals); no leaves, pumpkins or jack-o'-lanterns (by class);
+  every block drawn as a whole cube (`isFullCube`): stone, planks, logs, glass, ice, glowstone, soul sand, sandstone,
+  TNT, a spawner, a workbench, furnaces, a chest; stairs at their back only, by their data; and any other block where
+  the bounds beta sets for its state (`updateBoundingBox`, what its outline and most collision read; put back after)
+  cover the side toward the fence: a door's flat side, an extended piston's back and its head's face; not a slab, bed,
+  farmland, cake, sign, pressure plate or trapdoor shut. Named out: cactus and cobwebs, whose bounds are a whole block's
+  while neither is one (cactus is inset, a cobweb has no collision), and a block a piston is moving.
+- **The judgement calls** (Claude Opus 5.5's; chests and glass joining kept as they are): a chest joins, as beta's is a whole cube (1.13's is inset, so it doesn't
+  there); soul sand joins, as in 1.13, which counts its side as whole though you sink into it; farmland doesn't, as in
+  1.13 (15/16 high, where beta's collision is a whole block); a door's flat side joins, as in 1.13, where its shape is
+  that 3/16 slab; an open trapdoor joins at its flat side, as in 1.13, but in beta that side always rests on the block
+  holding it up, so it never meets a fence; a snow layer never joins (1.13 joins only eight stacked, which beta never
+  makes); a cactus can't stand beside a fence at all in beta (a solid block beside one breaks it). Fence gates don't
+  exist in beta.
+- **Drawn.** renderFence reads the four ids beside it (twice) and draws an arm where one is its own; a wrap of those
+  reads answers the fence's own id for a block it joins (`fencejoins.BlockRenderManagerMixin`), so beta's own code draws
+  the rails to the block's face. A block's change rebuilds its neighbours' chunks in beta, so a door opening or a wall
+  broken redraws the fence.
+- **With #30** the arms are the shape too: what's bumped into, aimed at and outlined (`Fences` asks `FenceJoins`). With
+  #30 at Beta they're only drawn, and the fence stays beta's whole block.
+- **Multiplayer.** Drawing and aiming are the client's own, on any server. Collision is thin where #30 makes it so (the
+  server marked 'f'), with the client's own joins. Every side reads the same blocks the same way, so a client with Fence
+  Joins has an arm wherever a server has one: the server's replay of its moves comes out as its own (the same or fewer
+  boxes to stop at), as for #30's thin fences, and nothing new is marked. The other way round, a server with Fence Joins
+  and a client without (Still Faithful 0.8.1 or before, or Fence Joins at Beta) disagree only above a block one high:
+  an arm toward a block lies along its face beside the post, and the 0.375 between post and block is narrower than a
+  player, so at the block's height a player meets the post wherever the server meets the arm; above a one-high block
+  (a garden wall, a chest, a stair's back), the server has an arm to step up onto 0.375 sooner, so walking along the
+  top onto the fence can pull that player back (reasoned, not tested). Left so: agreement across every mix of clients
+  and servers is a bonus here, and catching it would need clients to say what they have. A server's arms apply to
+  everything it moves: a chicken (0.3 wide) no longer fits between a post and a wall.
+- **What changes in existing builds.** Only the look, and the shape with #30: a fence against a wall, a house or a chest
+  now reaches it, so a post standing alone against a wall (a table leg, a lamp post) gets arms.
 
 ### Chests (2026-11-08)
 
@@ -430,6 +478,161 @@ From play with Explosive Arrows: the blast doesn't show at a distance. Built by 
   drawing them took 0.29 to 0.51 ms a frame and moving them 0.66 to 1.14 ms a tick. With the switches off, none of
   either was drawn or made.
 
+### Smooth water (2026-11-14)
+
+Smooth lighting on water, tried on lava too (which keeps beta's light: see below), with a survey of what else beta lights flat. Built by Claude
+Opus 5.5 the same day. Not a later version's fix: as far as we know vanilla Java still lights fluids a block at a time
+(from memory, not checked against a jar here), while Sodium and OptiFine smooth water; so polish beta might have had.
+- **Beta.** With Smooth Lighting on, a full block's faces go through `renderSmooth`: each corner averages four light
+  readings in the plane in front of the face (an opaque cell reads its own light, 0, which is beta's ambient occlusion).
+  `renderFluid` doesn't look at the option: each face is lit from one reading, the fluid's own (`LiquidBlock.getLuminance`,
+  the brighter of a cell and the one above it), at the fluid's cell for the top, the cell beside for a side, the cell
+  below for the bottom. So torchlight lay on a pond in squares and a tree's shade on it in blocks.
+- **Here** (`SmoothWater`, `mixin/smoothwater`). Beta's `renderFluid` draws as before, its geometry and texture
+  untouched, and each vertex gets its corner's light just before it's written; a face is known by its light reading,
+  a vertex's corner by where it is, and the bottom goes through `renderBottomFace`'s per-corner colours. Each corner
+  averages four of the fluid's own readings: the face's cell (beta's value for the whole face) and the three around the
+  corner in its plane, the diagonal only where one of the two between isn't a solid block (`renderSmooth`'s rule, which
+  asks whether one is see-through; to it water and glass aren't). For the top the plane is the fluid's layer, each column
+  read as beta reads the top (the light just over the surface, which lies near the top of its cell; a column under a
+  bridge reads the water's own light, as beta's top does there); for a side, the cells beside it; for the bottom, those
+  below. Where the light is the same all round every corner gets beta's one value, so only where it varies does
+  anything change: a pond in full sun with level shores is beta's pixel for pixel.
+- **Walls darken it, by default** (Claude Opus 5.5's call from pictures of both, kept as the default, with water without
+  it a choice of its own): a reading whose two cells are both solid
+  (a bank a block high, a wall, a post or a log standing in the water) is dark, as an opaque cell is in `renderSmooth`,
+  so water shades in within a block of it, to about half at the line itself, as the ground at the foot of a wall does in
+  beta's smooth lighting. Without that (Even, `*-even.png`) such a reading counts as the face's own, so water beside a
+  wall stays at full light while the ground at the wall's foot beside it darkens; in daylight it's then beta's water
+  exactly. The darkening is the part a player sees in the day, along every bank that rises a block above the water.
+- **The choice** (`render.smoothWater`; on the settings screen Smooth Water: Shaded, Even, Beta): `true` Shaded, the
+  default, `even` Even, `false` Beta, so a file from before the choice reads as it did (its `true` Shaded, `false` Beta;
+  anything else reads as Shaded, as the screen reads it). The three are one set of mixins with a branch: `SmoothWater.look`
+  says which, and Beta with the mixins in has them stand aside (every call goes through as beta's). So the screen
+  switches between all three at once (`PolishSettings.smoothWater`, `SmoothWater.choose`), the chunks in view rebuilt
+  before the next frame (`smoothwater.GameRendererMixin`, as beta rebuilds them when Smooth Lighting is switched; not
+  without Smooth Lighting, where water looks the same in each); a game started at Beta has none of the mixins in, as
+  for any switch that's off, so leaving Beta waits for a restart, and the button says so.
+- **Lava keeps beta's light.** The same averaging on lava (`SmoothWater.lavaForTest`, `lava-lava.png`): lava's cells hold
+  block light 15, so its top reads full light everywhere already, and averaging in the cells round it (14 just beside it,
+  dark where solid) only dimmed its rim, the opposite of a pool that glows; its sides read the air beside it, which the
+  lava itself lights evenly. Nothing else changed, so lava is left as beta drew it.
+- **Fast graphics.** Beta draws the translucent layer (water, ice, nether portals) with its colours blended across a face
+  only in Fancy; in Fast it's drawn with GL's flat shading, each triangle in one corner's colour, which would turn
+  per-corner light into triangles. With the switch and Smooth Lighting on, that pass is blended in Fast too
+  (`smoothwater.GameRendererMixin`). Ice, which beta already lit per corner, was drawn in those triangles in Fast where
+  the light varied across it, and is blended now, as in Fancy (reasoned from the code, not pictured).
+- **Smooth dusk.** Four readings averaged, each one the game makes anyway, so linear in the luminances and in quarters:
+  `DuskLight` takes every vertex apart as it does `renderSmooth`'s (none fell back), and `DuskCheck`'s pool goes through it.
+- **From under the surface.** Beta draws the translucent layer without culling, so the top seen from below shows the same
+  corners' light.
+- **Cost.** Per water face, nine readings (the speed mod's cache answers the repeats) and eight block lookups, about what
+  `renderSmooth` spends on a block's face. Too small to measure in a hidden client (`-Pstill.waterLooks`, 2026-11-14,
+  other sessions' builds running): a sheet of open water 48 across (2,304 surfaces) rebuilt ten times each way came out
+  +2.5 ms and -5.5 ms a time on 30 to 37 in two runs, so under a couple of microseconds a surface.
+- **Multiplayer.** Drawing only: any server.
+- **What else beta lights flat** with Smooth Lighting on (the render types in `BlockRenderManager.render`; a survey, of
+  which cactus was built, and doors tried and taken out: Smooth cactus, below). Cross plants (flowers, saplings, tall grass, ferns, dead bushes, mushrooms, sugar cane, cobwebs), wheat, torches,
+  fire, redstone dust, ladders and rails: one reading for the whole block; later versions light these flat too (their
+  models turn ambient occlusion off: from memory, fairly sure for plants, torches, rails and ladders, less for redstone).
+  Doors, cactus and beds: flat, a reading per face. Later versions light cactus smoothly with ambient occlusion and
+  doors flat (checked 2026-11-14 in the 26.3 client jar: its eight door models turn ambient occlusion off, its cactus
+  model keeps it), and draw beds as a block entity, lit flat. Repeaters and levers: the base smooth (through
+  `renderBlock`), the torches and handle flat; the piston's arm flat, its base and head smooth. Falling sand and gravel
+  flat (later versions smooth). Signs and the spawner's mob are block entities lit by one reading, as in later versions.
+  Stairs, fences, slabs, snow, buttons, plates, trapdoors, chests (cubes in beta), glass, leaves, ice and portals go
+  through `renderSmooth`. Where it shows: cactus and doors in a dark place or by a torch (a step a face beside smoothly
+  lit ground and walls), and rails, redstone and plants lying in a torch's gradient (a step a block); the last are
+  flat in later versions too.
+
+### Smooth cactus (2026-11-14)
+
+Smooth lighting on cactus, which later versions light smoothly with ambient occlusion (their cactus model, checked in
+the 26.3 client jar), and on doors, tried beside it and taken out, below. Built by Claude Opus 5.5 the same day.
+- **Beta.** `renderCactus` lights each face from one reading times beta's shade (0.5 bottom, 1 top, 0.8 facing z, 0.6
+  facing x): the cell beyond the face (it keeps `renderFlat`'s tests for a face its box sets into the cell, which a
+  cactus's whole box never meets), though its sides are drawn a pixel in (`Tessellator.translate`). By a torch a cactus
+  was a step a face beside smoothly lit sand.
+- **Here** (`SmoothCactus`, `mixin/smoothcactus`). `renderCactus` draws as before, its texture and the pixel untouched;
+  each face's `renderXFace` call goes through the per-vertex colours renderSmooth uses (`useAo`), worked out first. Each
+  corner averages four readings as renderSmooth's do: beta's reading for the face, and three round the corner in a
+  plane of cells, the diagonal only where one of the two between lets light through (`BLOCKS_ALLOW_VISION`,
+  renderSmooth's rule, the neighbour along the horizontal axis standing in otherwise, as there). Where the light is even
+  every corner is beta's value; tint and shade are beta's.
+- **Which cells.** A side's plane is the cactus's own layer (later versions' rule for a face inside its cell, and their
+  cactus model sets its sides in a pixel too), so the block it stands on shades the foot of its lowest block's sides as
+  the ground does a wall's, while the middle reading stays beta's, the cell beyond; its top and bottom take the cells
+  beyond. On flat sand the cells beyond would come out alike; they differ at a ledge (the own layer still shades the
+  foot) and beside a solid block off its corner (the cells beyond shade that edge).
+- **Vertices.** Each is its corner of the cell's face, four readings in quarters: smooth dusk (`DuskLight`) takes every
+  vertex apart.
+- **Multiplayer.** Drawing only: any server.
+- **Cost.** Per face up to nine readings (the speed mod's cache answers the repeats) and four block lookups,
+  renderSmooth's own; not measured, cactus being few beside the blocks renderSmooth draws.
+- **Doors were tried and taken out** (2026-11-14). Smooth Doors, built beside this, lit a door's faces the same way from
+  the cells beyond each face, the door's own cell in the middle for a face set into its cell. Lit so, doors looked
+  wrong where cactus looked right, probably because a door counted as a block for what's around it. Pictured case by case the same day by Claude Opus 5.5 (test-only looks, 14 arrangements in 33 views,
+  since removed): a face on its cell's side smooths well (under a torch it
+  takes away beta's step between a door's halves), but no rule held for a face set into its cell, which every closed
+  door in a wall one thick has, and an open door's broad face is. From the cells beyond, it takes light from a block
+  away (an open door darkens from the far jamb); from its own layer, later versions' rule for a face inside its cell,
+  the jambs darken all four corners and a closed door's inner side goes dark. And later versions draw doors flat (the
+  survey, above). So doors stay beta's: a rework that still had edge cases wasn't worth
+  keeping (Claude Opus 5.5's call). Door cells hold light like air: the floor of a doorway is darkened by its jambs, with or without a door,
+  as in later versions. Beta's `BLOCKS_ALLOW_VISION` is false for doors as for every solid material (glass and leaves
+  too), and in renderSmooth it only decides whether a corner reads its diagonal cell or the cell beside it twice; door
+  cells counted as open there changed a few corners by a door (thick walls, a corner, a plate by a sign) and weren't
+  kept, too small for a switch. A config file with a `render.smoothDoors` line still loads; nothing reads the line.
+
+### Leaf Reach (2026-11-14)
+
+Leaves reach 6 steps from wood, as later versions keep them, where beta's reached 4.
+Built by Claude Opus 5.5 the same day.
+- **Beta.** A leaf decays only once it's marked to look for a log (data bit 8): `LeavesBlock.onTick` then floods the
+  cube 4 each way round it from every log there, 4 steps face to face through leaves, keeps the leaf and clears its
+  mark if the flood reached it, and otherwise drops it (a sapling 1 in 20). Nothing marks a leaf by itself: a leaf
+  removed or replaced marks the 3 x 3 x 3 round it (`LeavesBlock.onBreak`), so a fall spreads through every leaf out of
+  reach that touches it, at a corner too; and a broken log marks the cube 4 each way round it (`LogBlock.onBreak`). A
+  big oak (`LargeOakTreeFeature`) lays leaf clusters two wide in their top and bottom layers and three between, with
+  wood only at the bottom middle, where the branch ends: five layers tall where the world's generator prepares the tree
+  (`prepare(1, 1, 1)`, as Wild Saplings does too), four from beta's own sapling, which doesn't. So a five-tall cluster's
+  upper layers lie 5 and 6 steps from its wood. Growing marks about a third of the tree's leaves (a log laid over a
+  leaf marks those round it, and the trunk and branches go through the clusters), but all of them within 4, so a tree
+  nobody touches keeps its leaves; a cut near the leaves out of reach sets them off, and from a cut low down the fall
+  can spread to the top.
+- **Here** (`LeafReach`, `mixin/leafreach`): beta's 4 becomes 6 in `onTick`, both the cube it floods (and the one a
+  block wider it asks to be loaded) and the flood's steps, and in `LogBlock.onBreak`. 1.14 gave every leaf a distance
+  to the nearest log, up to 7, where 7 decays, so leaves 6 from wood stay there too: later versions' reach in beta's own
+  machinery. Beta's flood array is 32 wide, room for 6 each way and the cells beside them it reads. Faithful Core's
+  reading of any mod's leaves and logs as beta's (`TreeMixins`, on the same methods' block reads) goes on.
+- **What it does** (`LeafReachCheck`, below: 100 trees of each kind, each grown again for each reach). The world's big
+  oaks, 286 leaves on average, by steps from wood: 14% at 1, 19 at 2, 23 at 3, 22 at 4, 16 at 5, 5 at 6, 0.7 at 7 or
+  more. Once every leaf has looked, beta's 4 drops 22.1% of them (the worst tree 36.6%), 6 drops 0.73% (the worst
+  7.9%). With only the trunk's foot cut, 4 drops 8.1% from half the trees (the worst all of its 36.6%), 6 drops 0.67%
+  from 22 of them. Untouched, none fall either way. Beta's sapling's big oaks (264 leaves): every leaf looking, 9.8%
+  (the worst 22.8%) against 0.59% (8.8%); the foot cut, 3.8% from 68 trees against 0.39% from 19.
+- **What still falls at 6**: leaves of clusters whose branch beta never places (`placeBranches` skips a branch that
+  would leave the trunk under a fifth of the tree's height: 149 of the world's trees' 654 clusters, 166 of the sapling's
+  800), joined to the tree only through a neighbouring cluster, so their far side lies 7 or more steps from wood: all
+  of the 0.73% and 0.59%; no leaf of a cluster with a branch is past 6. None of the world's trees lost a whole cluster at
+  either reach. One of the sapling's hundred had a branchless cluster touching nothing else, which fell whole at any
+  reach, untouched too (growing marked it).
+- **Beside Placed Leaves.** A placed leaf returns before the check, so it never falls, and a path through placed leaves
+  counts as through any leaves (beta's rule).
+- **Worlds that exist** get the wider reach as they are: a leaf already marked is judged at 6 when its tick comes.
+- **After a tree comes down**, leaves within 6 of another tree's wood stay up where beta's 4 let them fall; golems' felling too.
+- **Multiplayer.** Where the world runs, so the server's: a client's `onTick` returns at once, and a client's own log
+  break marks its copy of the leaves, which nothing there reads. A client needs nothing.
+- **Cost.** A marked leaf's check reads 2,197 blocks (13 cubed) where beta's read 729, and floods 6 steps over them
+  where beta's flooded 4: 19 µs a check against 7 in the test (2026-11-14, other sessions' builds running). A leaf
+  checks only once marked, once a mark. A broken log reads the same 2,197 against 729.
+- **Unloaded edges.** Where the cube a block wider than the reach isn't all loaded, beta's check skips the flood but
+  still reads the middle of its array, left there by the last leaf checked anywhere, and keeps or drops the leaf by
+  that (`docs/bugs.md` #85). Old Faithful's fix for it (`leaves.besideUnloaded`, which Still Faithful carries) goes by
+  the check's own region test, so with Leaf Reach a marked leaf within 7 of an unloaded chunk waits, marked, until the
+  land is loaded, where at beta's reach it was 5; checked on the real server with this mod (`ServerWorldFixesTest`,
+  `docs/fixes.md`). With that fix off, beta's leftover decides there again, now within 7.
+
 ### Modern skins
 
 Pure Faithful's hardening fetches real skins, 64x64 included, but beta's `SkinImageProcessor` draws them on a 64x32
@@ -560,7 +763,7 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
 ## Tests
 
 - While iterating on one change, its own check alone: `./gw :harness:clientStartupTestStill -Ptest.only=still` (or
-  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `distance`, `skeleton`, `squid`, `boat`, `held`, `fixes`, `options`, `settings`, `window`, several with commas), about
+  `fence`, `chat`, `dusk`, `skin`, `shiftclick`, `distance`, `skeleton`, `squid`, `boat`, `held`, `water`, `cactus`, `leaf`, `fixes`, `options`, `settings`, `window`, several with commas), about
   half a minute where the whole test takes 1 to 2 minutes; the whole test, and `-Pstill.beta` where a switch changed,
   once before the change is done (`docs/building.md` > What game runs cost).
 - `ShiftClickCheck` (in the same run, 2026-11-09): mouse and key events put into our LWJGL component's queues, read by
@@ -602,7 +805,11 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   day running its own course (no darkness set by the test) at the middle of steps 0, 4, 5 and 11, where smooth would
   draw 0, 4.5, 5.5 and 11, it drew at 0, 4, 5 and 11 and matched beta's baking there to 1/255; dusk played through
   marks no chunk in either mode, and stepped frames are drawn at whole steps only, smooth ones between. The pictures
-  are in `local/run/client-startup-still/dusk/`.
+  are in `local/run/client-startup-still/dusk/`. Its settling and each picture wait for beta's light queue to be empty,
+  working it some milliseconds a tick (2026-11-14): the checks before it can leave a long queue, and in the whole test
+  the scene's light under the beam and round the tree was still filling in while beta's pictures were baked and done by
+  the smooth ones (up to 49/255 apart in shade at darknesses 0, 4 and 5, in every whole run that day, Smooth Water off
+  too; the check alone passed).
 - `SkinCheck` (modern skins, the same run, a third WorldCheck): generated skins (`TestSkins`: a loud one, a part and
   layer to each of twelve hues with a black and a white corner on every face; wide, slim, classic 64x32; a realistic
   one, wide and slim; one with a cape; and for looking through a layer, a sieve of holes and rows of alpha with a hue to
@@ -640,6 +847,17 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   1.0, the fence instead of the wall and the pig), and the pig snagged on the row's end on 7 of 38 ticks. A camera
   exactly along a diagonal into a post's vertical edge misses it by rounding, as beta's own block test would; the
   pictures look from off the diagonal.
+  Then Fence Joins (2026-11-14): three rows 44 blocks south with two fences running into each thing from the west, a
+  stone wall, a house's corner (from the south too), glass, stairs' back and side, leaves, a chest, a door's flat side,
+  a slab, farmland under wheat, soul sand, a pumpkin and a cobweb. For each nearer fence, its collision boxes as
+  movement reads them and whether `FenceJoins` draws it joined; the crosshair from the north-west at where the wall's
+  fence's arm lies; a player moved west along a chest's top by `Entity.move` onto the fence beside it; pictures in
+  `local/run/fences/joins/` (`-polished`, `-beta` by Fence Joins), at Normal view distance. 2026-11-14, both ways: with
+  the switches, an arm (1.0 toward it) to the wall, both sides of the corner, glass, the stairs' back, the chest, the
+  door and soul sand, the post (0.625) beside the stairs' side, leaves, slab, farmland, pumpkin and cobweb, each 1.5
+  high and drawn the same way; the crosshair met the arm's north face at z 0.375; the player stepped up at the chest's
+  edge (+0.30). With `-Pstill.beta`, the whole block beside each (1.0), none drawn joined, the crosshair on the block's
+  face at z 0, the step up at the same place onto beta's whole block.
 - `ChatCheck` (chat bars, the same run, after FenceCheck): messages put in the chat in a room of white wool open to the
   sky, so every bar lies on a plain wall, and each line's bar end found in the picture along the bar's top row (the last
   sharp brightening, from a pixel that isn't a letter's shadow: commas of the line above reach into that row), against
@@ -723,6 +941,45 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   click hit once. With the switch the pig behind the glass and the one turned onto were hit 0 times; with
   `-Pstill.beta`, 2 and 4. Not covered: a press another mod took (reasoned), multiplayer (the same client code; a
   server only receives the hits).
+- `SmoothWaterCheck` (Smooth Water, the same run, last; `-Ptest.only=water`, about 25 s with the start): five small scenes
+  on floating islands, built where water doesn't freeze, with grass laid as dirt under every solid block (beta turns it
+  so on a random tick, which once changed a picture between two): a pond under a tree at noon with a bank a block high
+  along one shore, a pond with two torches at midnight (also in Fast graphics), a flooded tunnel with a waterfall in it,
+  a lava pool half under an overhang, and a pond against a cobblestone wall with a log standing in it. Each pictured with
+  Smooth Lighting on in Beta, Shaded and Even (the lava in the first two), chosen through the settings screen's own
+  registry (`step`, as a click: the file written, then applied), the scene's chunks rebuilt between, animation,
+  particles and clouds held still (`DuskCheck.frozen`). Also checked: the game started in the file's choice; a choice
+  rebuilds the chunks in view before the next frame (once, at the start; between pictures only the scene's are rebuilt,
+  so the rest of the view stays as it was); every choice takes at once, or without the change only Beta, Shaded and Even
+  waiting for a restart; the file's choice is put back at the end. With the change, every water scene's Shaded picture
+  differs from Beta's (2 to 10% of the pixels by more than 4/255), the lava's doesn't (0 pixels), Even by the wall is
+  Beta's exactly (0 pixels) and differs from Shaded there (2.4%), and smooth dusk takes every vertex apart (none fell
+  back); Even against the others elsewhere is reported, not judged (the shore's bank hides the water's row beside it
+  from the camera, so there Even and Shaded come out alike). With `-Pstill.beta`, every picture of a scene is the same,
+  the Fast one too (2026-11-14 before the choice; with it, run with the change only). Pictures in
+  `local/run/smooth-water/` (`<scene>-beta.png`, `-shaded.png`, `-even.png`); `-Pstill.waterLooks` adds lava lit
+  smoothly (`lava-lava.png`) and the rebuild timing (Cost, above).
+- `SmoothCactusCheck` (Smooth Cactus, the same run, after SmoothWaterCheck; `-Ptest.only=cactus`, about 20 s with the
+  start): two scenes on floating sand islands, each pictured with Smooth Lighting on, lit as beta lit them
+  (`SmoothCactus.betaForTest`) and as the change lights them, the scene's chunks rebuilt and beta's light queue worked
+  off between, particles and animation held still from the start (`DuskCheck.frozen`; a torch's flame made while the
+  scenes settled was once in the first picture only): cactus one to three high on sand at noon, one beside a sand
+  mound off its corner; the same at midnight with torches off two of them. 2026-11-14, both ways: with the change, each
+  picture differs from beta's (2.7 and 3.5% of the pixels by more than 4/255) and smooth dusk took every vertex apart
+  (none fell back); with `-Pstill.beta`, each pair is the same picture. Pictures in `local/run/smooth-cactus/`
+  (`<scene>-beta.png`, `-polished.png`).
+- `LeafReachCheck` (Leaf Reach, the same run, last; `-Ptest.only=leaf`, about 20 s with the start): in an empty place in
+  the air, 100 big oaks of each kind grown by beta's generator on a block of dirt, each grown once for each reach (beta's
+  4 by `LeafReach.betaForTest`, then 6), and left to beta's own decay tick on every marked leaf until a pass changes
+  nothing: what growing marked, then the trunk's foot cut, then every leaf marked. Checked: each tree grows the same both
+  times and stays in its box; every leaf lies in one of the generator's clusters (laid out as `placeFoliageCluster`
+  lays them); and once every leaf has looked, the leaves left are exactly those within the reach of a log in steps
+  through leaves (a search over the tree as grown), on all 200 trees at each reach, so both of `onTick`'s 4s changed.
+  Then a broken log with a row of six leaves out from it and another log two steps off the row's first leaf: at 6 only
+  the sixth, now 7 from a log, falls (marked only because the broken log marks 6 out); at 4 the fourth to the sixth;
+  placed leaves on the row and past its end stay. Numbers above; every tree in
+  `local/run/leaf-reach/trees-<polished|beta>.csv`. 2026-11-14, both ways: with `-Pstill.beta` (beta's own code, Placed
+  Leaves off too) every number at 4 the same as `betaForTest`'s, and the placed leaf past the row's end falls too.
 - `./gw :harness:fencesMultiplayerTest` (#30, about 3.5 minutes): the server package with and without the polish mod,
   each joined by the hidden client with Still Faithful's mods with and without it; the server builds the scene on
   "!oftest fences" and puts the player at each walk's start on "!oftest tp" (`MultiplayerScenes`), flying off so beta's

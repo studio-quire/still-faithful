@@ -11,9 +11,10 @@ same terrain in less time.
 
 From Old Faithful: beta's clear mistakes fixed, each on a switch in config/oldfaithful-fixes.properties, and lighting
 as beta's own rule says it should be. Still Faithful's own: what later versions improved while the game stayed beta
-(stairs that drop themselves, placed leaves that stay, glowstone by hand, obsidian mined as in 1.0, lava that thins
-out, sturdier boats that steer as in later versions, minecarts that meet on every track, animals that stay once a
-player has looked after them, fences shaped as in later versions, chests that pair as in later versions, wooden tools, boats and other
+(stairs that drop themselves, placed leaves that stay, leaves that stay within 6 blocks of their tree's wood,
+glowstone by hand, obsidian mined as in 1.0, lava that thins out, sturdier boats that steer as in later versions,
+minecarts that meet on every track, animals that stay once a player has looked after them, fences shaped as in later
+versions and joining the blocks beside them, chests that pair as in later versions, wooden tools, boats and other
 wooden things that burn in a furnace, skeletons shooting from their eyes, squid that swim on under the surface
 instead of bouncing against it),
 each on a switch in config/stillfaithful-polish.properties.
@@ -26,6 +27,8 @@ game has Old Faithful's Riding Look (Old Faithful, Still Faithful, More Faithful
 Players without Still Faithful 0.8.0 or later, or with its Obsidian set to Beta, mine obsidian at beta's speed: with a
 diamond pickaxe the server accepts it, but without one the obsidian they break at 50 seconds comes back, and goes for
 good at 250, unless blocks.obsidian is diamond (Diamond Only) or false in config/stillfaithful-polish.properties.
+With blocks.fenceJoins and blocks.fenceShape on, players with Fence Shape whose Still Faithful is 0.8.1 or earlier, or
+who have Fence Joins at Beta, may be pulled back stepping from the top of a wall one block high onto a fence that joins it.
 
 What it can't change, because it's how beta 1.7.3's online mode works: a server a player joins could pass that
 player's login on to another server, so online mode isn't proof against a hostile server operator. Players should

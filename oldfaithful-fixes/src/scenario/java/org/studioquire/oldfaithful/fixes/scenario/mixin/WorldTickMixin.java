@@ -16,7 +16,8 @@ abstract class WorldTickMixin {
 	@Inject(method = "tick", at = @At("TAIL"))
 	private void oldfaithful$scenario(CallbackInfo ci) {
 		if (!((Object) this instanceof ServerWorld)) return;
-		if ("world".equals(System.getProperty("oldfaithful.fixes.scenario"))) WorldFixes.tick((ServerWorld) (Object) this);
+		String scenario = System.getProperty("oldfaithful.fixes.scenario");
+		if ("world".equals(scenario) || "leaves".equals(scenario)) WorldFixes.tick((ServerWorld) (Object) this);
 		else if ("squids".equals(System.getProperty("oldfaithful.fixes.scenario"))) SquidWatch.tick((ServerWorld) (Object) this);
 		else if (System.getProperty("oldfaithful.fixes.scenario", "").startsWith("bulk")) TickCensus.tick((ServerWorld) (Object) this);
 		else Scenario.tick((ServerWorld) (Object) this);

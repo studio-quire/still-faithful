@@ -192,6 +192,10 @@ public final class FixesConfig implements IMixinConfigPlugin {
 			{"render.entityCulling", "culling",
 					"# #84: mobs at the edge of the screen vanished while part of them was still in view (a head, arms, legs, a\n"
 					+ "# squid's tentacles): the game skipped anything whose box was out of view, and most mobs reach past theirs.\n"},
+			{"leaves.besideUnloaded", "leafedge",
+					"# #85: leaves at the edge of the loaded world, far from any player, could stay or fall by what another tree's\n"
+					+ "# leaves had left behind: a stray leaf floated on with nothing holding it, or a leaf fell from a whole tree.\n"
+					+ "# With this, such a leaf waits until the land round it is loaded, then stays or falls by its own tree.\n"},
 	};
 
 	private static final List<String> off = new ArrayList<>();

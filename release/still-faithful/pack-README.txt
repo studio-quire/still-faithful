@@ -10,7 +10,13 @@ content. Nothing new to collect or craft; beta's world, made kinder to live in.
 
 Still Faithful's own, each on its own switch:
 - Stairs drop themselves, not a plank or a cobblestone.
-- Leaves you place never decay; leaves on trees still do.
+- Leaves you place never decay; leaves on trees still do, but stay within 6 blocks of the tree's wood, counted
+  through the leaves, as in later versions, where beta's 4 let the tops of a big oak's leaf clusters fall once
+  something near them was cut (Leaf Reach).
+- Water and cactus are lit smoothly while Smooth Lighting is on, where beta lit water a block at a time and cactus a
+  face at a time, so torchlight lay on a pond in squares. Water darkens a little against a wall or a bank, as the
+  ground does (Smooth Water: Shaded; Even doesn't darken it, Beta is beta's), and cactus toward its foot (Smooth
+  Cactus). Lava keeps beta's look. It works on any server.
 - Chests face you when you place them, and pair as in later versions: only with a chest to the left or right that
   faces the same way and isn't joined already, never while you sneak, so double chests can stand side by side. A
   double chest has one lid across both halves. Chests placed before keep beta's rules.
@@ -43,6 +49,9 @@ Still Faithful's own, each on its own switch:
 - Fences are a post with arms to the fences beside them, as in later versions, instead of a whole block: you can stand
   against a post, walk past its corner and aim past it, and still can't jump over. On a server, walking past posts
   needs the server to have this too.
+- Fences also join walls and other blocks with a whole, solid side toward them (stone, planks, glass, a chest, the
+  back of stairs, a door's flat side), as in later versions, not only other fences; leaves, pumpkins and
+  jack-o'-lanterns are left apart (Fence Joins). Fences already built change too.
 - Each line of chat has a dark bar only as long as its text, not the chat's full width.
 - Skeletons shoot from their eyes instead of from well above their heads, so under a ceiling two blocks high their
   arrows no longer stick in it; elsewhere they hit a player standing about as often as before (Skeleton Arrows).
@@ -71,7 +80,7 @@ Old Faithful too (there, placed leaves can decay again and kept animals can desp
 
 Settings: in the game, Options > Still Faithful... has every switch, in beta's own style; Still Faithful's are under
 Changes > Polish. Most changes take effect after a restart (the screen marks one that's waiting); Dusk's Smooth and Stepped
-switch at once. The same settings are files in .minecraft/config:
+switch at once, and so do Smooth Water's choices, except leaving Beta. The same settings are files in .minecraft/config:
 - stillfaithful-polish.properties: a switch for each of Still Faithful's changes, all on.
 - oldfaithful-fixes.properties, oldfaithful-lighting.properties, oldfaithful-options.properties: Old Faithful's.
 - purefaithful-display.properties and purefaithful-hardening.properties: Pure Faithful's.

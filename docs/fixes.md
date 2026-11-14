@@ -80,6 +80,7 @@ causes, traced in the decompiled game, are in each entry there; the mixins' comm
 | 70 | `render.seams` | client | Each render chunk drawn under its own translation, its corner minus the camera in double precision, rounded once; the chunk's list keeps only beta's scale about its middle (`ChunkTransform`) |
 | 72 | `render.textureEdges` | client | While a chunk is built, a quad's texture coordinates lying exactly on a tile edge at either end of its range move a thousandth of a texel inward (`TextureEdges`) |
 | 84 | `render.entityCulling` | client | An entity is culled by its box where it's drawn in that frame (between its last tick's place and this one's, as the renderer puts it), grown on every side by a block, a squid's by 1.5, a ghast's by 3, a dying mob's by its height besides, a sleeping player's to 2 (`EntityCulling`, a wrap of the box `renderEntities` hands the culler) |
+| 85 | `leaves.besideUnloaded` | world | A marked leaf whose decay check finds its surroundings not all loaded decides nothing: no keep, no drop, the mark stays for a later random tick. Keyed on the check's own region test, so Still Faithful's Leaf Reach (7 each way) and Faithful Core's `Leaves` are covered |
 
 "World" means wherever the world runs: the server in multiplayer, the client in single player (beta has no
 integrated server). In multiplayer a server without the mod keeps beta's behaviour for those whatever the client has.
@@ -190,7 +191,13 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   100) in whatever land a new world has there, so those that need room open the sky over themselves first (#56, #64,
   #66, #74; 2026-11-09): a tree's leaves a block over the pool, and a hill over half of it, each failed #56 with the
   fix as pigs landed on them (two of three runs that day; both worlds pass with `-Pfixes.seed=2887346908578568466` and
-  `2340498244118505845`).
+  `2340498244118505845`). And #85 (2026-11-14), far off at x -2048, z 2048, in two chunks loaded with the one east of
+  them not: marked leaves 3 from that chunk, a lone one and one by a log, each put through beta's decay check just after
+  a leaf elsewhere left the other answer in the check's shared array, then again once the chunk is loaded (with the fix:
+  both wait, marked, then the lone one falls and the other is kept; without: the lone one kept, unmarked, the other
+  dropped), and a lone one 6 from it, outside beta's loaded test. Where the polish mod is in the build, a third server
+  runs that scene alone with it too (`-Doldfaithful.fixes.scenario=leaves`, about 10 s): with Leaf Reach's test 7 each
+  way, the leaf 6 from the chunk waits as well.
 - `./gw :oldfaithful-fixes:squidWatch [-Psquids.ticks=12000]` (#76, #77; 2026-11-06): a measurement, not a pass or fail (`SquidWatch`, `SquidWatchRun`). The real server with this mod and without it (`-Psquids.labels`, `fixed,beta` by default; `polished` adds Still Faithful's polish mod, for its Squid Surfacing), side by side, each a new world with real squid in tanks: water 30 deep starting on the floor and at any height, 3 deep, 1 deep, a trough of thinning flow, dry land. Their height over time, footsteps, splashes and how they behave at the surface, in `local/run/squid-watch/<label>-<time>/watch.txt`. As long as its ticks at 20 a second; the numbers in `docs/bugs.md` #77.
 - `./gw :harness:fixesMultiplayerTest` (2026-11-02): the multiplayer fixes on the server package, in all four mixes:
   a server with and without this mod, each joined by the real client (hidden on a private desktop, as the start-up

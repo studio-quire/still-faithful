@@ -16,6 +16,7 @@
     "fishing.FishingBobberEntityMixin",
     "furnace.FurnaceBlockEntityMixin",
     "landings.EntityMixin",
+    "leafedge.LeavesBlockMixin",
     "liquids.FlowingLiquidBlockMixin",
     "lowroof.EntityMixin",
     "minecarts.MinecartEntityMixin",
