@@ -702,16 +702,26 @@ clock runs on; the same world on a vanilla server loads cleanly and its clock st
 world's generation leaves some 240,000 liquid ticks, worked through at 1,000 a tick (about 250 ticks, 13 s, as
 `serverTicksTest`'s wait showed 2026-11-09; this said four minutes before); vanilla
 dropped what was left on quitting, now it's saved and finished next time.
-A save or an unload takes each chunk's ticks from the queue grouped by chunk (2026-11-09, Claude Fable 5.2): one pass
-over the queue, kept until the queue changes, which the world's set of pending ticks reports by counting its changes
-(`PendingTicks.Counted`, wrapped round whatever set the world has). Up to 0.2.3 the whole queue was read for every chunk
-saved or unloaded, so a save cost chunks times ticks queued: about 17 ms a chunk on a queue of 940,000, which 2,304
-chunks made with nobody near leave. Measured on the real server on that land (`serverTicksTest -Pticks.square=48
--Pfixes.seed=1733`, other sessions' tests and the user's game running): the save of 2,881 chunks 43.5 s with 0.2.3's
-jar, 4.1 s now; 48 chunks unloaded 1.2 s, now 0.04 s. What's written and what comes back is the same, tick for tick:
-`everyTickSavedAndRestored` (`docs/fixes.md` > Tests) passes on 0.2.3's jar and on this one. One grouping costs about
-three whole-queue reads (13 ms at 240,000 ticks), so a save of one or two chunks on a long queue is a little slower
-than it was, and everything larger faster.
+A save or an unload takes each chunk's ticks from an index of the queue by chunk (`PendingTicks.Indexed`, wrapped round
+whatever set the world has): made from the queue in one pass at the world's first save or unload, then kept up to date
+as ticks are queued and run, each chunk's in the queue's own order (beta's `BlockEvent.compareTo`, a total order: due
+time, then the order made). Up to 0.2.3 the whole queue was read for every chunk saved or unloaded, so a save cost
+chunks times ticks queued: about 17 ms a chunk on a queue of 940,000, which 2,304 chunks made with nobody near leave.
+From 0.2.4 to 0.2.9 (2026-11-09, Claude Fable 5.2) the queue was grouped by chunk in one pass and the grouping kept
+while the queue stood still, which made a save fast but cost a whole pass (13 ms at 240,000 ticks, about 50 at a
+million) in any tick a chunk unloaded or saved after ticks had run, so every tick with an unload paid it while a long
+queue drained (a hang audit, 2026-11-15). Measured on the real server on that land (`serverTicksTest -Pticks.square=48
+-Pfixes.seed=1733`, with other tests and a game running alongside): the save of 2,881 chunks 43.5 s with 0.2.3's
+jar, 4.1 s with 0.2.4's; 48 chunks unloaded 1.2 s, then 0.04 s. What's written and what comes back is the same, tick
+for tick: `everyTickSavedAndRestored` (`docs/fixes.md` > Tests) passes on 0.2.3's jar and on every one since. The index
+costs a few bytes a tick queued (by its layout, about 10 MB for a million, beside the hundred or so the queue itself
+takes), and each tick queued or run a lookup among its chunk's ticks.
+The sweep of parked ticks (every 20 ticks) asks the world whether a tick's surroundings are loaded once for each
+quarter of a chunk with ticks parked in it, not once a tick (2026-11-15): the blocks within 8 of a tick span two chunks
+each way, which two going by the quarter it's in, and nothing loads or unloads during the sweep, so every tick in a
+quarter gets the answer the first one did. Tens of thousands can stay parked at a server's spawn edge for good.
+Left as it is (2026-11-15): a block rescheduled while its tick is parked, and parked again, is parked twice, and both
+are saved in `TileTicks` (only the first comes back on load). Keeping one would change what's written, so it stays.
 
 ### 43. A missing block entity crashes the game when its block is broken (T, Pure)
 Fixed (2026-11-02, after 0.1.0) in `oldfaithful-saves`: every loaded chunk's vanilla blocks with a block entity that

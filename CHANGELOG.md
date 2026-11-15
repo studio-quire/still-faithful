@@ -7,6 +7,19 @@ are inside the pack as those releases have them;
 [Pure Faithful's](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md) cover those. Entries say
 what a player or server owner notices.
 
+## 0.9.1 (2026-11-15)
+
+On Old Faithful 0.2.10 and Pure Faithful 0.1.7.
+
+- Saving without the pause (Autosave, under Polish): if the background saving ever stopped (nothing is known to stop
+  it), saving or leaving a world could have waited for it forever; now the game writes what's left itself and goes on.
+  And if a session's very first chunk save came while the game was already closing (from another mod saving as it
+  closes; none is known to), it's now written, where it was dropped with an error.
+- From Old Faithful 0.2.10: saving and unloading chunks no longer slows while many blocks are waiting to update. From
+  Pure Faithful 0.1.7: a screen no longer stands still longer than the statistics' background save takes, big
+  explosions' particles cost less, and an unplugged display no longer brings a crash screen. Their changelogs have the
+  detail.
+
 ## 0.9.0 (2026-11-14)
 
 On Old Faithful 0.2.9 and Pure Faithful 0.1.6.

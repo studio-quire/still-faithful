@@ -287,14 +287,17 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		boolean windows = System.getProperty("os.name").toLowerCase().contains("win");
 		List<String> command = windows ? List.of("cmd", "/c", dir.resolve("start.bat").toString()) : List.of("sh", dir.resolve("start.sh").toString());
 		List<String> refused;
+		Integer exit;
 		try (GameProcess p = new GameProcess(command, dir, dir.resolve("harness-output-refused.log"), Map.of("JAVA", getJavaExecutable().get(), "JAVA_OPTS", "-Xmx768m"))) {
-			// It says so and goes no further, though the process stays until it's closed.
+			// It says so and stops by itself.
 			p.await(l -> l.contains("accept-missing-content") || l.contains("Done ("), 120);
+			exit = p.waitFor(60);
 			refused = p.lines();
 		}
 		lines.add("--- server: Water Bottles taken out");
 		lines.addAll(refused);
 		expect("Water Bottles taken out: the server refuses to start and says how to go on", refused.stream().anyMatch(l -> l.contains("accept-missing-content")));
+		expect("and stops by itself (exit " + exit + ")", exit != null);
 		Path worldFile = dir.resolve("world/faithful-world.properties");
 		Files.writeString(worldFile, Files.readString(worldFile) + "accept-missing-content=true\n");
 		start(dir, "told to go on");
@@ -313,11 +316,13 @@ public abstract class LibraryPackTestTask extends ClientStartupTask {
 		Files.delete(bottles);
 		try (GameProcess p = new GameProcess(command, dir, dir.resolve("harness-output-refused-again.log"), Map.of("JAVA", getJavaExecutable().get(), "JAVA_OPTS", "-Xmx768m"))) {
 			p.await(l -> l.contains("accept-missing-content") || l.contains("Done ("), 120);
+			exit = p.waitFor(60);
 			refused = p.lines();
 		}
 		lines.add("--- server: Water Bottles taken out a second time");
 		lines.addAll(refused);
 		expect("taken out a second time: refused again", refused.stream().anyMatch(l -> l.contains("accept-missing-content=true")));
+		expect("and stopped by itself again (exit " + exit + ")", exit != null);
 	}
 
 	/** A properties file's lines, or none where there's no such file (or no path). */

@@ -33,15 +33,25 @@ import net.minecraft.world.chunk.storage.RegionFile;
  * stays), and a shutdown waits for the queue (up to 10 s).</li>
  * </ul>
  * The queue holds at most {@link #CAPACITY} saves; past that the game thread waits, as beta always did.
+ * <p>
+ * Nothing stops the writer: it takes no notice of interrupts, and a failed save, however it fails, is reported and the
+ * next one written. Should it end all the same, a thread waiting on it finds out within {@link #CHECK_MS} and writes
+ * the queued saves itself, one at a time in the queue's order, as the writer would have; from then on each save is
+ * written by the thread that queues it. The same holds from the start if the JVM is already exiting when the first
+ * save is queued (from another shutdown hook): a writer started then could be cut off with saves still queued.
  */
 public final class BackgroundSaves {
 	static final int CAPACITY = 256;
+	/** How often a thread waiting on the writer checks that it's still there. */
+	static final long CHECK_MS = 100;
 	private static final Object LOCK = new Object();
 	private static final ArrayDeque<Task> queue = new ArrayDeque<>();
 	private static final Map<String, Integer> pending = new HashMap<>();
+	/** The save being written, and the thread writing it: the writer, or one standing in for it. */
 	private static Task writing;
+	private static Thread writingOn;
 	private static Thread writer;
-	/** Saves written by the writer so far (for the self-test). */
+	/** Saves written by the writer thread so far (for the self-test). */
 	public static volatile long written;
 
 	private static final class Task {
@@ -73,33 +83,71 @@ public final class BackgroundSaves {
 		Task task = new Task(region, chunkX & 31, chunkZ & 31, data, key(dir, chunkX, chunkZ), properties);
 		synchronized (LOCK) {
 			start();
-			while (queue.size() >= CAPACITY) waitOn();
+			while (queue.size() >= CAPACITY && writer.isAlive()) waitOn();
 			queue.addLast(task);
 			pending.merge(task.key, 1, Integer::sum);
 			LOCK.notifyAll();
 		}
+		if (!writer.isAlive()) await(BackgroundSaves::idle);
 	}
 
 	/** Before a chunk is read from disk: waits until any queued save of it is written. */
 	public static void awaitChunk(File dir, int chunkX, int chunkZ) {
 		if (Thread.currentThread() == writer) return;
 		String key = key(dir, chunkX, chunkZ);
-		synchronized (LOCK) {
-			while (pending.containsKey(key)) waitOn();
-		}
+		await(() -> !pending.containsKey(key));
 	}
 
 	/** Waits until every queued save is written. */
 	public static void drain() {
 		if (Thread.currentThread() == writer) return;
-		synchronized (LOCK) {
-			while (!queue.isEmpty() || writing != null) waitOn();
+		await(BackgroundSaves::idle);
+	}
+
+	private static boolean idle() {
+		return queue.isEmpty() && writing == null;
+	}
+
+	private interface Condition {
+		/** Asked holding LOCK. */
+		boolean holds();
+	}
+
+	private static void await(Condition done) {
+		try {
+			await(done, 0);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new IllegalStateException("interrupted waiting for chunk saves", e);
+		}
+	}
+
+	/**
+	 * Waits until {@code done} holds, or until {@code until} (milliseconds, 0 for no limit; false then). While the
+	 * writer isn't running, this thread writes the queue in its place, all of it.
+	 */
+	private static boolean await(Condition done, long until) throws InterruptedException {
+		while (true) {
+			Task task = null;
+			synchronized (LOCK) {
+				// A wait reached from inside a save this thread is writing: the writer's own returns at once too.
+				if (writingOn == Thread.currentThread()) return true;
+				boolean late = until != 0 && System.currentTimeMillis() >= until;
+				if (!late && (writer == null || !writer.isAlive())) task = standIn();
+				if (task == null) {
+					if (done.holds()) return true;
+					if (late) return false;
+					LOCK.wait(CHECK_MS);
+					continue;
+				}
+			}
+			writeTaken(task);
 		}
 	}
 
 	private static void waitOn() {
 		try {
-			LOCK.wait();
+			LOCK.wait(CHECK_MS);
 		} catch (InterruptedException e) {
 			Thread.currentThread().interrupt();
 			throw new IllegalStateException("interrupted waiting for chunk saves", e);
@@ -110,8 +158,13 @@ public final class BackgroundSaves {
 		if (writer != null) return;
 		writer = new Thread(BackgroundSaves::loop, "Still Faithful chunk writer");
 		writer.setDaemon(true);
+		try {
+			Runtime.getRuntime().addShutdownHook(new Thread(BackgroundSaves::atExit, "Still Faithful chunk writer (exit)"));
+		} catch (IllegalStateException exiting) {
+			// The JVM is already exiting: no writer, so each save is written by the thread that queues it.
+			return;
+		}
 		writer.start();
-		Runtime.getRuntime().addShutdownHook(new Thread(BackgroundSaves::atExit, "Still Faithful chunk writer (exit)"));
 	}
 
 	private static void loop() {
@@ -121,26 +174,63 @@ public final class BackgroundSaves {
 				while (queue.isEmpty()) {
 					try {
 						LOCK.wait();
-					} catch (InterruptedException e) {
-						return;
+					} catch (InterruptedException ignored) {
+						// Nothing stops the writer: a save queued is a save written.
 					}
 				}
-				task = queue.pollFirst();
-				writing = task;
+				task = take();
 			}
-			try {
-				write(task);
-			} catch (Throwable t) {
-				// As beta's own save does with a failure: say so and go on with the next.
-				System.out.println("[stillfaithful-polish] WARN A chunk save failed (" + task.key + "): " + t);
-				t.printStackTrace(System.out);
-			} finally {
-				synchronized (LOCK) {
-					writing = null;
-					pending.computeIfPresent(task.key, (k, n) -> n > 1 ? n - 1 : null);
-					LOCK.notifyAll();
-				}
+			writeTaken(task);
+		}
+	}
+
+	/** Holding LOCK: the queue's next save for a thread standing in for the writer, or null if there's none for it. */
+	private static Task standIn() {
+		if (writing != null) {
+			if (writingOn.isAlive()) return null;
+			// Its thread ended after the write was tried and before it was marked done: only the marking is left.
+			done(writing);
+		}
+		return take();
+	}
+
+	/** Holding LOCK: the queue's next save, now this thread's to write, or null if the queue is empty. */
+	private static Task take() {
+		Task task = queue.pollFirst();
+		if (task != null) {
+			writing = task;
+			writingOn = Thread.currentThread();
+		}
+		return task;
+	}
+
+	/** Holding LOCK: a save is written, or failed. */
+	private static void done(Task task) {
+		writing = null;
+		writingOn = null;
+		pending.computeIfPresent(task.key, (k, n) -> n > 1 ? n - 1 : null);
+		LOCK.notifyAll();
+	}
+
+	private static void writeTaken(Task task) {
+		try {
+			write(task);
+		} catch (Throwable t) {
+			report(task, t);
+		} finally {
+			synchronized (LOCK) {
+				done(task);
 			}
+		}
+	}
+
+	private static void report(Task task, Throwable t) {
+		try {
+			// As beta's own save does with a failure: say so and go on with the next.
+			System.out.println("[stillfaithful-polish] WARN A chunk save failed (" + task.key + "): " + t);
+			t.printStackTrace(System.out);
+		} catch (Throwable ignored) {
+			// Saying so failed too (out of memory, say): going on matters more.
 		}
 	}
 
@@ -153,19 +243,14 @@ public final class BackgroundSaves {
 		synchronized (p) {
 			p.setSizeOnDisk(p.getSizeOnDisk() + bytes);
 		}
-		BackgroundSaves.written++;
+		if (Thread.currentThread() == writer) BackgroundSaves.written++;
 	}
 
 	private static void atExit() {
-		long until = System.currentTimeMillis() + 10_000;
-		synchronized (LOCK) {
-			while ((!queue.isEmpty() || writing != null) && System.currentTimeMillis() < until) {
-				try {
-					LOCK.wait(100);
-				} catch (InterruptedException e) {
-					return;
-				}
-			}
+		try {
+			await(BackgroundSaves::idle, System.currentTimeMillis() + 10_000);
+		} catch (InterruptedException ignored) {
+			// An interrupted exit stops waiting.
 		}
 	}
 }

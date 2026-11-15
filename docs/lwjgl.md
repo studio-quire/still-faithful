@@ -160,7 +160,8 @@ What we do (display mod, our layer only):
   measured top of the loop so it stays locked to it; a missed refresh or any jump over half a period takes the measured
   time. The timer (`TimerMixin`) and the mouse cut-off both use it, so movement and turning agree and each frame moves
   the world by one refresh's worth. Without vsync it's the measured time at full precision; `frame.smooth=false` is
-  vanilla's timing exactly.
+  vanilla's timing exactly. The refresh is read every 300 frames; when no display answers (the last one unplugged or
+  switched off), the last reading stands.
 - `mouse.subpixel` (off by default; off in Purist, an option in Fixed): look turns by the unrounded motion (`MouseState.takenFX`,
   the same events the integer deltas came from), so slow diagonals don't step. A feel change against beta's whole
   pixels, so Old Faithful's settings screen offers it as Smooth Look.

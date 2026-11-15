@@ -758,6 +758,13 @@ saves mod makes it. Why it can't tear or lose a save (`BackgroundSaves`'s commen
 - a full save (leaving, save-all, stopping) waits for the queue in the storage's flush, before the saves mod forces
   everything to disk; the save snapshot is taken in one tick, as beta's;
 - a hard kill mid-write is a crash mid-write, harmless with the saves mod; a shutdown waits up to 10 s for the queue.
+- nothing stops the writer: it ignores interrupts, and a save that fails, however it fails, is reported and the next
+  one written. Were it to end all the same, the next thread to wait on it (a chunk loading, a full save, a full queue)
+  finds out within 100 ms and writes what's queued itself, in order, as the writer would have, and from then on each
+  save is written by the thread that queues it. The same from the start if the first save of a session comes while the
+  JVM is already exiting (from another mod's shutdown hook): a writer started then could be cut off with saves queued.
+  Until 2026-11-15 the waits had no such check (a dead writer would have held them for good) and that first save was
+  dropped with an error, its shutdown hook registered after the writer started (a hang audit; neither was seen).
 Without the saves mod the switch does nothing (beta's own writer isn't crash-safe, so writes stay synchronous).
 
 ## Tests
@@ -930,6 +937,10 @@ Without the saves mod the switch does nothing (beta's own writer isn't crash-saf
   does (the keys, sneaking, the 0.98 decay, `travel` and `moveNonSolid` in floats with the game's sine table, three
   frictions) reads back as its keys at every tenth of a degree of yaw and 400 random ones, every combination of keys;
   and of 200,000 random pushes of 0.002 to 0.052 added to it, under 1 in 1000 reads as other keys.
+- `BackgroundSavesTest` (the same task): #14 without its writer, as if it had ended. Saves left queued are written
+  by the next thread to wait, oldest first (a chunk saved twice ends with its later save), a save queued then is
+  written before `enqueue` returns, and a save whose thread ended without marking it done doesn't hold up a wait for
+  its chunk or for all; read back from a real region file.
 - `HeldAttackCheck` (Held Attack, the same run, last; `-Ptest.only=held`, about 20 s with the start): the attack button
   held as a player holds it, its press and release put into our LWJGL component's queue and held state (as
   `ShiftClickCheck`'s clicks), so beta's own press, repeat and mining run, and the real wraps decide. In single player,

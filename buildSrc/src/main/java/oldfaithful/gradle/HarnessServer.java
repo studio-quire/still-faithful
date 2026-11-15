@@ -77,7 +77,7 @@ final class HarnessServer implements AutoCloseable {
 
 	/** Waits until it's ready; false if it stopped before that, which {@link #stop} then reports. */
 	boolean awaitStart() throws InterruptedException {
-		// A failed start leaves the process up: the console thread outlives the server's.
+		// A start that fails past the core's own checks leaves the process up (beta idles until told to stop); one the core turns down ends it.
 		String line = process.await(l -> l.contains("Done (") || l.contains("Stopping server") || l.startsWith("java.lang."), 180);
 		up = line != null && line.contains("Done (");
 		return up;

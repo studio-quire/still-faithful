@@ -130,9 +130,11 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
 
 - `./gw :oldfaithful-fixes:test`: `SliderSteps` (every percentage labelled as itself; which are reachable pixel by
   pixel at GUI scales 1 to 6; the knob on whole pixels); `ServerMarker`; `PendingTicks` (#42: a chunk's ticks as the
-  mod finds them, from the queue grouped by chunk, against the whole queue read for that chunk, through random ticks
-  queued, run, parked, saved and unloaded with the game's own `BlockEvent`s; and the grouping made once while the queue
-  stands). Seconds.
+  mod finds them, from its index of the queue by chunk, against the whole queue read for that chunk, through random
+  ticks queued, run, parked, saved and unloaded with the game's own `BlockEvent`s, and taken off through the set in
+  every way it offers; the index made once and kept; a chunk's array of ticks against a TreeSet of the same through
+  growing and draining from either end; and the sweep of parked ticks against beta's region check asked for each tick,
+  at heights either side of its test and in chunks at the ends of int). Seconds.
 - `serverTest`, `clientAudit` and `clientAuditSdl` carry the mod, so every one of its mixins is applied and audited.
 - `./gw :harness:clientStartupTestFixed`: the unseen start-up test with Pure's mods and this one, then `FixesCheck`
   in the running world, each scene set up away from the player: water on a torch (#19), a furnace on a lava bucket
@@ -172,12 +174,12 @@ With the fixes, Pure's hardening (`ServerContent`'s item probe) accepts slabs an
   format. Each record must hold exactly its chunk's ticks, in order (queued by due time, then parked), and the queue
   must have lost exactly the unloaded chunks' ticks. After a restart, loading the square must put exactly those ticks
   back, each in its chunk and due after its saved delay (a block saved twice, parked and queued again since, comes
-  back once). It prints how long the unloads and the save took. About 25 s more. `-Pticks.square=48` for the towers
+  back once). It prints how long the unloads and the save took, and one chunk's ticks asked for with the queue changed since the last time (what a tick with an unload pays while a long queue drains). About 25 s more. `-Pticks.square=48` for the towers
   test's size (a queue near a million), `-Pfixes.seed=N` for the same land again (`ServerWorldFixesTest`'s world too),
   and `-Pfixes.jar=<jar>` runs the task's tests on another build of the mod: the released 0.2.3 passes this one too,
-  with the save of 2,881 chunks at 43 s where it's now 4 (`docs/bugs.md` #42). Its servers carry the speed mod too, as
+  with the save of 2,881 chunks at 43 s where 0.2.4's took 4 (`docs/bugs.md` #42). Its servers carry the speed mod too, as
   every edition does: that mod puts its own set (`TickSet`) in the world's field of pending ticks, and it's the set
-  `PendingTicks.Counted` then goes round, so the census is of the two together; it says which set the world had in its
+  `PendingTicks.Indexed` then goes round, so the census is of the two together; it says which set the world had in its
   first tick, and the test fails unless that's `TickSet`. Beta's own HashSet under the count is the unit test's.
 - `ServerWorldFixesTest` (run with `serverTicksTest`, about 45 s more): the world fixes from the piston hunt on the
   real server, with this mod and then without it (each must show beta's bug there), each in a new world, by the

@@ -120,10 +120,14 @@ public final class TickCensus {
 		say("time " + now + ": " + chunks.size() + " chunks loaded, " + queued + " ticks queued and " + parked + " parked, in "
 				+ expected.size() + " chunks");
 
-		// What the mod would write for each chunk, as its save asks.
+		// What the mod would write for each chunk, as its save asks. The first chunk alone too: ticks have run and been
+		// queued since it last asked, as in any tick where a chunk unloads while the queue drains.
 		long t0 = System.nanoTime();
 		Map<Long, NbtList> collected = new LinkedHashMap<>();
-		for (long key : chunks) collected.put(key, PendingTicks.collect(world, x(key), z(key), false));
+		for (long key : chunks) {
+			collected.put(key, PendingTicks.collect(world, x(key), z(key), false));
+			if (collected.size() == 1) say("collected for one chunk, the queue having changed, in " + String.format("%.3f", (System.nanoTime() - t0) / 1e6) + " ms");
+		}
 		say("collected for " + chunks.size() + " chunks in " + ms(t0) + " ms");
 		for (long key : chunks) same("collected", key, expected.get(key), read(collected.get(key)));
 

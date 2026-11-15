@@ -135,8 +135,12 @@ public final class FramePacing {
 		culled = true;
 		if (refreshAge-- <= 0) {
 			refreshAge = 300;
-			int hz = Display.getDesktopDisplayMode().getFrequency();
-			refreshNs = hz > 0 ? 1_000_000_000L / hz : 0;
+			try {
+				int hz = Display.getDesktopDisplayMode().getFrequency();
+				refreshNs = hz > 0 ? 1_000_000_000L / hz : 0;
+			} catch (RuntimeException e) {
+				// No display to ask (the last one unplugged or switched off): the last refresh stands until one answers.
+			}
 		}
 		long release = System.nanoTime();
 		if (lastRelease != 0 && buildEnd != 0) {

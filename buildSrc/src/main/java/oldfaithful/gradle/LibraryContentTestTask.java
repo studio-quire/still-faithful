@@ -145,8 +145,7 @@ public abstract class LibraryContentTestTask extends ClientStartupTask {
 		try (GameProcess refused = new GameProcess(command, dir, dir.resolve("harness-output-refused.log"), Map.of("JAVA", getJavaExecutable().get(), "JAVA_OPTS", "-Xmx768m"))) {
 			String line = refused.await(l -> l.contains("accept-missing-content") || l.contains("Done ("), 120);
 			expect("without the mod, a server stops and says how to go on: " + line, line != null && line.contains("accept-missing-content"));
-			refused.send("stop");
-			refused.waitFor(30);
+			expect("and its process ends by itself", refused.waitFor(60) != null);
 		}
 		Files.writeString(worldFile, Files.readString(worldFile) + "accept-missing-content=true\n");
 		start(dir, "removed", "");

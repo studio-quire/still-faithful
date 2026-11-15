@@ -5,6 +5,18 @@ its server package, and names the Pure Faithful release it's built on, whose mod
 that release has them; [Pure Faithful's changelog](https://github.com/studio-quire/pure-faithful/blob/main/CHANGELOG.md)
 covers those. Entries say what a player or server owner notices.
 
+## 0.2.10 (2026-11-15)
+
+Released with Still Faithful 0.9.1, which carries it; on Pure Faithful 0.1.7.
+
+- Saving and unloading chunks no longer slows while many blocks are waiting to update (Saved Block Ticks, under
+  Redstone and Lighting): with the flowing water and lava a new world's land leaves, or land made with nobody near,
+  each tick a chunk unloaded or saved could cost a server, or single player, up to tens of milliseconds for as long as
+  they lasted. The check every second on blocks waiting at the edge of the loaded land takes far less time too. Which
+  blocks update, when, and what's saved are unchanged.
+- Pure Faithful 0.1.7's changes are in the pack: a screen no longer stands still longer than the statistics'
+  background save takes, big explosions' particles cost less, and an unplugged display no longer brings a crash screen.
+
 ## 0.2.9 (2026-11-14)
 
 Released with Still Faithful 0.9.0, which carries it; on Pure Faithful 0.1.6, as 0.2.8 was.

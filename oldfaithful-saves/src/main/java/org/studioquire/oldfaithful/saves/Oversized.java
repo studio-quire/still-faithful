@@ -10,7 +10,7 @@ import java.io.IOException;
 /**
  * Chunks too big for the region format (a record of 256 sectors or more, 1 MB compressed: thousands of dropped items,
  * say). Vanilla silently doesn't save them, so everything since the chunk last fit is lost. Here the record goes into
- * {@code region/oldfaithful-oversized/r.X.Z.<lx>.<lz>.dat}, stamped with the header entry and time the region held for
+ * {@code region/purefaithful-oversized/r.X.Z.<lx>.<lz>.dat}, stamped with the header entry and time the region held for
  * the chunk when it was written; the region keeps that previous record, which plain b1.7.3 reads. The side file counts
  * only while the region still holds exactly that entry: a later save of the chunk, here or by plain b1.7.3, supersedes
  * it.

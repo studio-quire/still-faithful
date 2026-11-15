@@ -51,7 +51,7 @@ the end of its last sector, in one write, so the file is never left a partial se
 constructor opens a file, a file that is a partial sector long anyway (from before, or another tool) is padded at the
 end (`RegionWrites.alignBeforeOpen`, logged), so the constructor's own padding never runs.
 
-**Oversized chunks** (`Oversized`): the record goes to `region/oldfaithful-oversized/r.X.Z.<lx>.<lz>.dat`, stamped with
+**Oversized chunks** (`Oversized`): the record goes to `region/purefaithful-oversized/r.X.Z.<lx>.<lz>.dat`, stamped with
 the header entry and time the region held when it was written; the region keeps its previous record, which plain
 b1.7.3 reads. The side file counts only while the region still holds exactly that entry, so a later save of the chunk
 (here, or by plain b1.7.3) supersedes it; ours deletes it once that save is durable.
@@ -185,6 +185,16 @@ damaged); a file locked by another program (the retry path).
 
 ## Doubts and limits
 
+- A full save forces each region with new writes twice (data, then header), one file after another: about 1-2 ms a
+  region on the NVMe drive it was measured on (40 regions of 30 fresh chunks, 55-90 ms), and less as played, since the background thread
+  has usually committed most of them before the save ends. Forcing several files at once was tried (2026-11-15) and
+  was several times slower there: 160-320 ms on 2 threads, 540-715 ms on 4 or 8, and plain `FileChannel.force` on 40
+  files outside the mod did the same. So it stays one at a time. Not measured on a hard disk.
+- A file whose forcing keeps failing (a drive that takes writes but can't flush them) stays queued: every full save
+  waits its minute, exit waits 30 s, and that session's saves of the region never become visible, where vanilla's
+  unforced writes would have. Writing the header unforced after repeated failures would show them, but a power cut
+  could then leave the header pointing at a record that never reached the disk, where now the previous record stays
+  whole; so it's left as it is (2026-11-15).
 - StationAPI replaces chunk storage with its own format, which still writes through `RegionFile` (so the crash-safe
   writes apply) but loads through its own code, so the careful load doesn't.
 - Pre-region (Alpha-format) worlds go through `AlphaChunkStorage`'s own save, which vanilla converts away on opening;

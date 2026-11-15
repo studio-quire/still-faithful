@@ -449,7 +449,9 @@ final class LibraryWorldStages {
 				copyWorld(arena, dir);
 				String line = server.startRefused(arenaFlags(t, dir.resolve("out")), l -> l.contains("accept-missing-content"));
 				if (line == null || !line.contains("accept-missing-content")) t.fail(String.join(", ", ids), "removal-refused", "the server didn't stop and say how to go on: " + line);
-				server.stop(null);
+				Integer[] exit = {null};
+				server.waitStopped(exit);
+				if (exit[0] == null) t.fail(String.join(", ", ids), "removal-refused", "the server refused, but its process didn't end by itself");
 				Path file = dir.resolve("world/faithful-world.properties");
 				Files.writeString(file, Files.readString(file) + "accept-missing-content=true\n");
 				withKeeper(t, label, server, arenaFlags(t, dir.resolve("out")), anyContent, (s, k) -> snapshot(s, "removed.txt"));
